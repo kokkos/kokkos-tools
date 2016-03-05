@@ -4,11 +4,11 @@ LDFLAGS=-L$(CUDA_ROOT)/lib64
 LIBS=-lnvToolsExt
 SHARED_CXXFLAGS=-shared -fPIC
 
-all: kp_nvtx_connector.so
+all: kp_nvprof_connector.so
 
-kp_nvtx_connector.so: kp_nvtx_connector.cpp
+kp_nvprof_connector.so: kp_nvprof_connector.cpp
 	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) \
-		-o $@ kp_nvtx_connector.cpp $(LIBS)
+		-o $@ kp_nvprof_connector.cpp $(LIBS)
 
 clean:
 	rm *.so
