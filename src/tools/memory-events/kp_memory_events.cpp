@@ -54,7 +54,6 @@
 
 #include "kp_memory_events.hpp"
 #include "kp_timer.hpp"
-#include "omp.h"
 
 std::vector<EventRecord> events;
 std::unordered_map<const void*,int> event_map;
@@ -158,7 +157,6 @@ extern "C" void kokkosp_deallocate_data(const void* ptr) {
   
   double time = timer.seconds();
   auto event = event_map.find(ptr);
-  if(omp_in_parallel()) printf("Called In Parallel Deallocate %i\n",(event==event_map.end())?0:1);
   if(event==event_map.end()) {
     events.push_back(EventRecord(ptr,0,MEMOP_DEALLOCATE,-1,time,""));
   } else {
