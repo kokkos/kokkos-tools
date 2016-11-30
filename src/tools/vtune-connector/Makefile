@@ -1,4 +1,4 @@
-CXX=icpc
+CXX=g++
 CXXFLAGS=-O3 -std=c++11 -g -I$(VTUNE_HOME)/include
 LDFLAGS=-L$(VTUNE_HOME)/lib64
 LIBS=-littnotify

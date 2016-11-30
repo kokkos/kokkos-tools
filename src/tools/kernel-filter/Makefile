@@ -1,4 +1,4 @@
-CXX=icpc
+CXX=g++
 CXXFLAGS=-O3 -std=c++11 -g
 SHARED_CXXFLAGS=-shared -fPIC
 
