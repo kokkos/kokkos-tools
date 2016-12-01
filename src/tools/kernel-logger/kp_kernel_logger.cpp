@@ -51,7 +51,7 @@ extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devI
 		devID, *kID);
 
 	int level = kokkosp_print_region_stack();
-	kokkosp_print_region_stack_indent(level - 1);
+	kokkosp_print_region_stack_indent(level);
 	
 	printf("%s\n", name);
 }
@@ -67,7 +67,7 @@ extern "C" void kokkosp_begin_parallel_scan(const char* name, const uint32_t dev
 		devID, *kID);
 
 	int level = kokkosp_print_region_stack();
-	kokkosp_print_region_stack_indent(level - 1);
+	kokkosp_print_region_stack_indent(level);
 	
 	printf("%s\n", name);
 }
@@ -83,7 +83,7 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t d
 		devID, *kID);
 
 	int level = kokkosp_print_region_stack();
-	kokkosp_print_region_stack_indent(level - 1);
+	kokkosp_print_region_stack_indent(level);
 	
 	printf("%s\n", name);
 }
@@ -93,12 +93,15 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
 }
 
 extern "C" void kokkosp_push_profile_region(char* regionName) {
+	printf("KokkosP: Entering profiling region: %s\n", regionName);
+
 	std::string regionNameStr(regionName);
 	regions.push_back(regionNameStr);
 }
 
 extern "C" void kokkosp_pop_profile_region() {
 	if(regions.size() > 0) {
+		printf("KokkosP: Exiting profiling region: %s\n", regions.back().c_str());
 		regions.pop_back();
 	}
 }
