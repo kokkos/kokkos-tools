@@ -56,12 +56,11 @@
 #include "kp_timer.hpp"
 
 std::vector<EventRecord> events;
-std::unordered_map<const void*,int> event_map;
+
 int num_spaces;
 std::vector<std::tuple<double,uint64_t,double> > space_size_track[16];
 uint64_t space_size[16];
 
-static std::atomic<int> lock;
 static std::mutex m;
 
 Kokkos::Timer timer;
@@ -82,8 +81,6 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   for(int i=0; i<16; i++)
     space_size[i] = 0;
   
-  lock = 0;
-
   timer.reset();
 }
 
@@ -147,24 +144,30 @@ extern "C" void kokkosp_allocate_data(const SpaceHandle space, const char* label
   space_size_track[space_i].push_back(std::make_tuple(time,space_size[space_i],max_mem_usage()));
 
   int i=events.size();
-  event_map.insert(std::make_pair(ptr,i));
   events.push_back(EventRecord(ptr,size,MEMOP_ALLOCATE,space_i,time,label));
 }
 
 
-extern "C" void kokkosp_deallocate_data(const void* ptr) {
+extern "C" void kokkosp_deallocate_data(const SpaceHandle space, const char* label, const void* const ptr, const uint64_t size) {
   std::lock_guard<std::mutex> lock(m);
-  
+
   double time = timer.seconds();
-  auto event = event_map.find(ptr);
-  if(event==event_map.end()) {
-    events.push_back(EventRecord(ptr,0,MEMOP_DEALLOCATE,-1,time,""));
-  } else {
-    int i_old = (*event).second;
-    events.push_back(EventRecord(ptr,events[i_old].size,MEMOP_DEALLOCATE,events[i_old].space,time,events[i_old].name));
-    int space_i = events[i_old].space;
-    space_size[space_i] -= events[i_old].size;
+
+  int space_i = num_spaces;
+  for(int s = 0; s<num_spaces; s++)
+    if(strcmp(space_name[s],space.name)==0)
+      space_i = s;
+
+  if(space_i == num_spaces) {
+    strncpy(space_name[num_spaces],space.name,64);
+    num_spaces++;
+  }
+  if(space_size[space_i] >= size) {
+    space_size[space_i] -= size;
     space_size_track[space_i].push_back(std::make_tuple(time,space_size[space_i],max_mem_usage()));
   }
+
+  int i=events.size();
+  events.push_back(EventRecord(ptr,size,MEMOP_DEALLOCATE,space_i,time,label));
 }
 
