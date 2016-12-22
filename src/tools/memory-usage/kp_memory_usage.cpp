@@ -55,8 +55,6 @@
 #include "kp_memory_events.hpp"
 #include "kp_timer.hpp"
 
-std::vector<EventRecord> events;
-
 int num_spaces;
 std::vector<std::tuple<double,uint64_t,double> > space_size_track[16];
 uint64_t space_size[16];
@@ -88,20 +86,6 @@ extern "C" void kokkosp_finalize_library() {
   char* hostname = (char*) malloc(sizeof(char) * 256);
   gethostname(hostname, 256);
   int pid = getpid();
-
-  {
-    char* fileOutput = (char*) malloc(sizeof(char) * 256);
-    sprintf(fileOutput, "%s-%d.mem_events", hostname, pid);
-
-    FILE* ofile = fopen(fileOutput, "wb");
-    free(fileOutput);
-
-    fprintf(ofile,"# Memory Events\n");
-    fprintf(ofile,"# Time     Ptr                  Size        MemSpace      Op         Name\n");
-    for(int i=0; i<events.size();i++)
-      events[i].print_record(ofile);
-    fclose(ofile);
-  }
 
   for(int s = 0; s<num_spaces; s++) {	
     char* fileOutput = (char*) malloc(sizeof(char) * 256);
@@ -142,9 +126,6 @@ extern "C" void kokkosp_allocate_data(const SpaceHandle space, const char* label
   }
   space_size[space_i] += size;
   space_size_track[space_i].push_back(std::make_tuple(time,space_size[space_i],max_mem_usage()));
-
-  int i=events.size();
-  events.push_back(EventRecord(ptr,size,MEMOP_ALLOCATE,space_i,time,label));
 }
 
 
@@ -166,8 +147,5 @@ extern "C" void kokkosp_deallocate_data(const SpaceHandle space, const char* lab
     space_size[space_i] -= size;
     space_size_track[space_i].push_back(std::make_tuple(time,space_size[space_i],max_mem_usage()));
   }
-
-  int i=events.size();
-  events.push_back(EventRecord(ptr,size,MEMOP_DEALLOCATE,space_i,time,label));
 }
 
