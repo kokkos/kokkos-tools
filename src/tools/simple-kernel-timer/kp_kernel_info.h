@@ -18,7 +18,8 @@ double seconds() {
 enum KernelExecutionType {
 	PARALLEL_FOR = 0,
 	PARALLEL_REDUCE = 1,
-	PARALLEL_SCAN = 2
+	PARALLEL_SCAN = 2,
+        REGION = 3
 };
 
 class KernelPerformanceInfo {
@@ -121,7 +122,9 @@ class KernelPerformanceInfo {
 				kType = PARALLEL_REDUCE;
 			} else if(kernelT == 2) {
 				kType = PARALLEL_SCAN;
-			}
+			} else if(kernelT == 3) {
+                                kType = REGION;
+                        }
 			
 			free(entry);
                         return true;

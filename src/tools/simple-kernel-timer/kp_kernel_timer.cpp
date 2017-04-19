@@ -22,6 +22,8 @@ static KernelPerformanceInfo* currentEntry;
 static std::map<std::string, KernelPerformanceInfo*> count_map;
 static double initTime;
 static char* outputDelimiter;
+static int current_region_level = 0;
+static KernelPerformanceInfo* regions[512];
 
 #define MAX_STACK_SIZE 128
 
@@ -38,6 +40,22 @@ void increment_counter(const char* name, KernelExecutionType kType) {
 	}
 
 	currentEntry->startTimer();
+}
+
+void increment_counter_region(const char* name, KernelExecutionType kType) {
+        std::string nameStr(name);
+
+        if(count_map.find(name) == count_map.end()) {
+                KernelPerformanceInfo* info = new KernelPerformanceInfo(nameStr, kType);
+                count_map.insert(std::pair<std::string, KernelPerformanceInfo*>(nameStr, info));
+
+                regions[current_region_level] = info;
+        } else {
+                regions[current_region_level] = count_map[nameStr];
+        }
+
+        regions[current_region_level]->startTimer();
+        current_region_level++;
 }
 
 extern "C" void kokkosp_init_library(const int loadSeq,
@@ -135,6 +153,8 @@ extern "C" void kokkosp_finalize_library() {
 			kType = const_cast<char*>("SCAN"); break;
 		case PARALLEL_REDUCE:
 			kType = const_cast<char*>("RDCE"); break;
+                case REGION
+                        kType = const_cast<char*>("REGI"); break;
 		}
 
 		int demangleStatus;
@@ -239,5 +259,14 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t d
 
 extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
 	currentEntry->addFromTimer();
+}
+
+extern "C" void kokkosp_push_profile_region(char* regionName) {
+        increment_counter_region(regionName, REGION);
+}
+
+extern "C" void kokkosp_pop_profile_region() {
+        current_region_level--;
+        regions[current_region_level]->addFromTimer();
 }
 

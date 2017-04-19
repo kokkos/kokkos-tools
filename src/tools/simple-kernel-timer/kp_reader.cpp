@@ -84,8 +84,10 @@ int main(int argc, char* argv[]) {
 	std::sort(kernelInfo.begin(), kernelInfo.end(), compareKernelPerformanceInfo);
 
 	for(int i = 0; i < kernelInfo.size(); i++) {
+          if(kernelInfo[i]->getKernelType() != REGION) {
 		totalKernelsTime += kernelInfo[i]->getTime();
 		totalKernelsCalls += kernelInfo[i]->getCallCount();
+          }
 	}
 
 	for(int i = 0; i < kernelInfo.size(); i++) {
