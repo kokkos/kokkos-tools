@@ -36,7 +36,11 @@ extern "C" void kokkosp_finalize_library() {
   getrusage(RUSAGE_SELF, &sys_resources);
   long hwm = sys_resources.ru_maxrss;
 
-  MPI_Reduce(MPI_IN_PLACE, &hwm, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
+  if (world_rank == 0) {
+    MPI_Reduce(MPI_IN_PLACE, &hwm, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
+  } else {
+    MPI_Reduce(&hwm, &hwm, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
+  }
 
   if (world_rank == 0) {
     printf("KokkosP: High water mark memory consumption: %ld kB\n",
