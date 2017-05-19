@@ -5,7 +5,6 @@
 #include <cinttypes>
 #include <mpi.h>
 
-static uint64_t uniqID = 0;
 static int world_rank = 0;
 
 extern "C" void kokkosp_init_library(const int loadSeq,
