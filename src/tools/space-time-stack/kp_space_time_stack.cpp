@@ -8,6 +8,12 @@
 #include <chrono>
 #include <queue>
 
+#define USE_MPI
+
+#ifdef USE_MPI
+#include <mpi.h>
+#endif
+
 namespace {
 
 struct KokkosPDeviceInfo {
@@ -62,6 +68,9 @@ struct StackNode {
   StackKind kind;
   std::set<StackNode> children;
   double total_runtime;
+#ifdef USE_MPI
+  double mpi_max_runtime;
+#endif
   std::int64_t number_of_calls;
   Now start_time;
   StackNode(StackNode* parent_in, std::string&& name_in, StackKind kind_in):
@@ -168,7 +177,55 @@ struct StackNode {
   }
   void print(std::ostream& os) const {
     this->print_recursive(os, "", "", this->total_runtime);
+    os << '\n';
   }
+#ifdef USE_MPI
+  void reduce_over_mpi() {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    std::queue<StackNode*> q;
+    q.push(this);
+    while (!q.empty()) {
+      auto node = q.front(); q.pop();
+      node->mpi_max_runtime = node->total_runtime;
+      MPI_Allreduce(MPI_IN_PLACE, &(node->total_runtime),
+          1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      MPI_Allreduce(MPI_IN_PLACE, &(node->mpi_max_runtime),
+          1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+      /* There may be kernels that were called on rank 0 but were not
+         called on certain other ranks.
+         We will count these and add empty entries in the other ranks.
+         There may also be kernels which were *not* called on rank 0 but
+         *were* called on certain other ranks.
+         We are *ignoring* these, because I can't think of an easy and
+         scalable way to combine that data */
+      int nchildren = int(node->children.size());
+      MPI_Bcast(&nchildren, 1, MPI_INT, 0, MPI_COMM_WORLD);
+      if (rank == 0) {
+        for (auto& child : node->children) {
+          int name_len = int(child.name.length());
+          MPI_Bcast(&name_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
+          auto name = child.name;
+          MPI_Bcast(&name[0], name_len, MPI_CHAR, 0, MPI_COMM_WORLD);
+          int kind = child.kind;
+          MPI_Bcast(&kind, 1, MPI_INT, 0, MPI_COMM_WORLD);
+          q.push(const_cast<StackNode*>(&child));
+        }
+      } else {
+        for (int i = 0; i < nchildren; ++i) {
+          int name_len;
+          MPI_Bcast(&name_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
+          std::string name(size_t(name_len), '?');
+          MPI_Bcast(&name[0], name_len, MPI_CHAR, 0, MPI_COMM_WORLD);
+          int kind;
+          MPI_Bcast(&kind, 1, MPI_INT, 0, MPI_COMM_WORLD);
+          auto child = node->get_child(std::move(name), StackKind(kind));
+          q.push(child);
+        }
+      }
+    }
+  }
+#endif
 };
 
 struct State {
@@ -185,13 +242,29 @@ struct State {
       abort();
     }
     stack_frame->end(end_time);
-    std::cout << "TOP-DOWN TIME TREE:\n";
-    std::cout << "================== \n";
-    stack_root.print(std::cout);
-    auto inv_stack_root = stack_root.invert();
-    std::cout << "BOTTOM-UP TIME TREE:\n";
-    std::cout << "=================== \n";
-    inv_stack_root.print(std::cout);
+#ifdef USE_MPI
+    stack_root.reduce_over_mpi();
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 0)
+#endif
+    {
+      std::cout << "\nBEGIN KOKKOS PROFILING REPORT:\n";
+#ifdef USE_MPI
+      std::cout << "TOTAL TIME: " << stack_root.mpi_max_runtime << " seconds\n";
+#else
+      std::cout << "TOTAL TIME: " << stack_root.total_runtime << " seconds\n";
+#endif
+      std::cout << "TOP-DOWN TIME TREE:\n";
+      std::cout << "================== \n";
+      stack_root.print(std::cout);
+      auto inv_stack_root = stack_root.invert();
+      std::cout << "BOTTOM-UP TIME TREE:\n";
+      std::cout << "=================== \n";
+      inv_stack_root.print(std::cout);
+      std::cout << "END KOKKOS PROFILING REPORT.\n";
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
   }
   std::uint64_t begin_kernel(const char* name, StackKind kind) {
     std::string name_str(name);
