@@ -49,21 +49,30 @@ double operator-(Now b, Now a) {
          1e-9;
 }
 
+enum StackKind {
+  STACK_FOR,
+  STACK_REDUCE,
+  STACK_SCAN,
+  STACK_REGION
+};
+
 struct StackNode {
   StackNode* parent;
   std::string name;
+  StackKind kind;
   std::set<StackNode> children;
   double total_runtime;
   std::int64_t number_of_calls;
   Now start_time;
-  StackNode(StackNode* parent_in, std::string&& name):
+  StackNode(StackNode* parent_in, std::string&& name_in, StackKind kind_in):
     parent(parent_in),
-    name(std::forward<std::string>(name)),
+    name(std::move(name_in)),
+    kind(kind_in),
     total_runtime(0.0),
     number_of_calls(0) {
   }
-  StackNode* get_child(std::string&& child_name) {
-    StackNode candidate(this, std::move(child_name));
+  StackNode* get_child(std::string&& child_name, StackKind child_kind) {
+    StackNode candidate(this, std::move(child_name), child_kind);
     auto it = children.find(candidate);
     if (it == children.end()) {
       auto res = children.emplace(std::move(candidate));
@@ -73,6 +82,9 @@ struct StackNode {
     return const_cast<StackNode*>(&(*(it)));
   }
   bool operator<(StackNode const& other) const {
+    if (this->kind != other.kind) {
+      return int(this->kind) < int(other.kind);
+    }
     return this->name < other.name;
   }
   std::string get_full_name() const {
@@ -91,7 +103,7 @@ struct StackNode {
     this->total_runtime += runtime;
   }
   StackNode invert() const {
-    StackNode inv_root(nullptr, "");
+    StackNode inv_root(nullptr, "", STACK_REGION);
     std::queue<StackNode const*> q;
     q.push(this);
     while (!q.empty()) {
@@ -107,7 +119,7 @@ struct StackNode {
       inv_node->number_of_calls += calls;
       for (; node; node = node->parent) {
         std::string name = node->name;
-        inv_node = inv_node->get_child(std::move(name));
+        inv_node = inv_node->get_child(std::move(name), node->kind);
         inv_node->total_runtime += self_time;
         inv_node->number_of_calls += calls;
       }
@@ -120,7 +132,13 @@ struct StackNode {
     if (percent < 1) return; // 1% of total runtime is noise threshold
     if (!this->name.empty()) {
       os << my_indent;
-      os << percent << "% / " << this->number_of_calls << " " << this->name;
+      os << percent << "% " << this->number_of_calls << " " << this->name;
+      switch (this->kind) {
+        case STACK_FOR: os << " [for]"; break;
+        case STACK_REDUCE: os << " [reduce]"; break;
+        case STACK_SCAN: os << " [scan]"; break;
+        case STACK_REGION: os << " [region]"; break;
+      };
       os << '\n';
     }
     if (this->children.empty()) return;
@@ -156,7 +174,7 @@ struct StackNode {
 struct State {
   StackNode stack_root;
   StackNode* stack_frame;
-  State():stack_root(nullptr, ""),stack_frame(&stack_root) {
+  State():stack_root(nullptr, "", STACK_REGION),stack_frame(&stack_root) {
     stack_frame->begin();
   }
   ~State() {
@@ -175,8 +193,9 @@ struct State {
     std::cout << "=================== \n";
     inv_stack_root.print(std::cout);
   }
-  std::uint64_t begin_kernel(std::string&& name) {
-    stack_frame = stack_frame->get_child(std::move(name));
+  std::uint64_t begin_kernel(const char* name, StackKind kind) {
+    std::string name_str(name);
+    stack_frame = stack_frame->get_child(std::move(name_str), kind);
     stack_frame->begin();
     return reinterpret_cast<std::uint64_t>(stack_frame);
   }
@@ -189,6 +208,15 @@ struct State {
       abort();
     }
     stack_frame->end(end_time);
+    stack_frame = stack_frame->parent;
+  }
+  void push_region(const char* name) {
+    std::string name_str(name);
+    stack_frame = stack_frame->get_child(std::move(name_str), STACK_REGION);
+    stack_frame->begin();
+  }
+  void pop_region() {
+    stack_frame->end(now());
     stack_frame = stack_frame->parent;
   }
 };
@@ -212,19 +240,19 @@ extern "C" void kokkosp_init_library(
 extern "C" void kokkosp_begin_parallel_for(
     const char* name, std::uint32_t devid, std::uint64_t* kernid) {
   (void) devid;
-  *kernid = global_state->begin_kernel(std::string(name) + " [for]");
+  *kernid = global_state->begin_kernel(name, STACK_FOR);
 }
 
 extern "C" void kokkosp_begin_parallel_reduce(
     const char* name, std::uint32_t devid, std::uint64_t* kernid) {
   (void) devid;
-  *kernid = global_state->begin_kernel(std::string(name) + " [reduce]");
+  *kernid = global_state->begin_kernel(name, STACK_REDUCE);
 }
 
 extern "C" void kokkosp_begin_parallel_scan(
     const char* name, std::uint32_t devid, std::uint64_t* kernid) {
   (void) devid;
-  *kernid = global_state->begin_kernel(std::string(name) + " [scan]");
+  *kernid = global_state->begin_kernel(name, STACK_SCAN);
 }
 
 extern "C" void kokkosp_end_parallel_for(std::uint64_t kernid) {
@@ -237,6 +265,14 @@ extern "C" void kokkosp_end_parallel_reduce(std::uint64_t kernid) {
 
 extern "C" void kokkosp_end_parallel_scan(std::uint64_t kernid) {
   global_state->end_kernel(kernid);
+}
+
+extern "C" void kokkosp_push_profile_region(const char* name) {
+  global_state->push_region(name);
+}
+
+extern "C" void kokkosp_pop_profile_region() {
+  global_state->pop_region();
 }
 
 extern "C" void kokkosp_finalize_library() {
