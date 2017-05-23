@@ -1,5 +1,7 @@
 #include <cstdint>
 #include <iostream>
+#include <ios>
+#include <iomanip>
 #include <cstdlib>
 #include <memory>
 #include <string>
@@ -24,19 +26,30 @@ struct SpaceHandle {
   char name[64];                                                                        
 };
 
-#if 0
 enum Space {
   SPACE_HOST,
   SPACE_CUDA
 };
 
-enum Space get_space(SpaceHandle const& handle) {
-  if (handle.name[0] == 'H') return SPACE_HOST;
-  if (handle.name[0] == 'C') return SPACE_CUDA;
+enum { NSPACES = 2 };
+
+Space get_space(SpaceHandle const& handle) {
+  switch (handle.name[0]) {
+    case 'H': return SPACE_HOST;
+    case 'C': return SPACE_CUDA;
+  }
   abort();
   return SPACE_HOST;
 }
-#endif
+
+const char* get_space_name(int space) {
+  switch (space) {
+    case SPACE_HOST: return "HOST";
+    case SPACE_CUDA: return "CUDA";
+  }
+  abort();
+  return nullptr;
+}
 
 struct Now {
   typedef std::chrono::time_point<std::chrono::high_resolution_clock> Impl;
@@ -91,10 +104,10 @@ struct StackNode {
     return const_cast<StackNode*>(&(*(it)));
   }
   bool operator<(StackNode const& other) const {
-    if (this->kind != other.kind) {
-      return int(this->kind) < int(other.kind);
+    if (kind != other.kind) {
+      return int(kind) < int(other.kind);
     }
-    return this->name < other.name;
+    return name < other.name;
   }
   std::string get_full_name() const {
     std::string full_name;
@@ -104,12 +117,12 @@ struct StackNode {
     return full_name;
   }
   void begin() {
-    this->number_of_calls++;
-    this->start_time = now();
+    number_of_calls++;
+    start_time = now();
   }
   void end(Now const& end_time) {
-    auto runtime = (end_time - this->start_time);
-    this->total_runtime += runtime;
+    auto runtime = (end_time - start_time);
+    total_runtime += runtime;
   }
   StackNode invert() const {
     StackNode inv_root(nullptr, "", STACK_REGION);
@@ -137,12 +150,12 @@ struct StackNode {
   }
   void print_recursive(
       std::ostream& os, std::string my_indent, std::string const& child_indent, double tree_time) const {
-    auto percent = int((this->total_runtime / tree_time) * 100.0);
-    if (percent < 1) return; // 1% of total runtime is noise threshold
-    if (!this->name.empty()) {
+    auto percent = (total_runtime / tree_time) * 100.0;
+    if (percent < 0.1) return;
+    if (!name.empty()) {
       os << my_indent;
-      os << percent << "% " << this->number_of_calls << " " << this->name;
-      switch (this->kind) {
+      os << percent << "% " << number_of_calls << " " << name;
+      switch (kind) {
         case STACK_FOR: os << " [for]"; break;
         case STACK_REDUCE: os << " [reduce]"; break;
         case STACK_SCAN: os << " [scan]"; break;
@@ -150,7 +163,7 @@ struct StackNode {
       };
       os << '\n';
     }
-    if (this->children.empty()) return;
+    if (children.empty()) return;
     auto by_time = [](StackNode const* a, StackNode const* b) {
       if (a->total_runtime != b->total_runtime) {
         return a->total_runtime > b->total_runtime;
@@ -176,8 +189,12 @@ struct StackNode {
     }
   }
   void print(std::ostream& os) const {
-    this->print_recursive(os, "", "", this->total_runtime);
+    std::ios saved_state(nullptr);
+    saved_state.copyfmt(os);
+    os << std::fixed << std::setprecision(1);
+    print_recursive(os, "", "", total_runtime);
     os << '\n';
+    os.copyfmt(saved_state);
   }
 #ifdef USE_MPI
   void reduce_over_mpi() {
@@ -228,9 +245,66 @@ struct StackNode {
 #endif
 };
 
+struct Allocation {
+  std::string name;
+  void* ptr;
+  std::uint64_t size;
+  StackNode* frame;
+  Allocation(std::string&& name_in, void* ptr_in, std::uint64_t size_in,
+      StackNode* frame_in):
+    name(std::move(name_in)),ptr(ptr_in),size(size_in),frame(frame_in) {
+  }
+  bool operator<(Allocation const& other) const {
+    if (size != other.size) return size > other.size;
+    return ptr < other.ptr;
+  }
+};
+
+struct Allocations {
+  std::uint64_t total_size;
+  std::set<Allocation> by_space[NSPACES];
+  Allocations():total_size(0) {}
+  void allocate(Space space, std::string&& name, void* ptr, std::uint64_t size,
+      StackNode* frame) {
+    auto res = by_space[space].emplace(
+        Allocation(std::move(name), ptr, size, frame));
+    assert(res.second);
+    total_size += size;
+  }
+  void deallocate(Space space, std::string&& name, void* ptr, std::uint64_t size,
+      StackNode* frame) {
+    auto key = Allocation(std::move(name), ptr, size, frame);
+    auto it = by_space[space].find(key);
+    assert(it != by_space[space].end());
+    total_size -= it->size;
+    by_space[space].erase(it);
+  }
+  void print(std::ostream& os) {
+    os << "BYTES ALLOCATED: " << total_size << '\n';
+    std::ios saved_state(nullptr);
+    saved_state.copyfmt(os);
+    os << std::fixed << std::setprecision(1);
+    for (int space = 0; space < NSPACES; ++space) {
+      if (by_space[space].empty()) continue;
+      os << get_space_name(space) << " ALLOCATIONS:\n";
+      std::cout << "================ \n";
+      for (auto& allocation : by_space[space]) {
+        auto percent = double(allocation.size) / double(total_size) * 100.0;
+        if (percent < 0.1) continue;
+        os << "  " << percent << "% " << allocation.frame->get_full_name()
+          << "/" << allocation.name << '\n';
+      }
+    }
+    os << '\n';
+    os.copyfmt(saved_state);
+  }
+};
+
 struct State {
   StackNode stack_root;
   StackNode* stack_frame;
+  Allocations current_allocations;
+  Allocations hwm_allocations;
   State():stack_root(nullptr, "", STACK_REGION),stack_frame(&stack_root) {
     stack_frame->begin();
   }
@@ -262,6 +336,8 @@ struct State {
       std::cout << "BOTTOM-UP TIME TREE:\n";
       std::cout << "=================== \n";
       inv_stack_root.print(std::cout);
+      std::cout << "MEMORY HIGH WATER MARK:\n";
+      hwm_allocations.print(std::cout);
       std::cout << "END KOKKOS PROFILING REPORT.\n";
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -291,6 +367,17 @@ struct State {
   void pop_region() {
     stack_frame->end(now());
     stack_frame = stack_frame->parent;
+  }
+  void allocate(Space space, const char* name, void* ptr, std::uint64_t size) {
+    current_allocations.allocate(
+        space, std::string(name), ptr, size, stack_frame);
+    if (current_allocations.total_size > hwm_allocations.total_size) {
+      hwm_allocations = current_allocations;
+    }
+  }
+  void deallocate(Space space, const char* name, void* ptr, std::uint64_t size) {
+    current_allocations.deallocate(
+        space, std::string(name), ptr, size, stack_frame);
   }
 };
 
@@ -346,6 +433,18 @@ extern "C" void kokkosp_push_profile_region(const char* name) {
 
 extern "C" void kokkosp_pop_profile_region() {
   global_state->pop_region();
+}
+
+extern "C" void kokkosp_allocate_data(
+    SpaceHandle handle, const char* name, void* ptr, uint64_t size) {
+  auto space = get_space(handle);
+  global_state->allocate(space, name, ptr, size);
+}
+
+extern "C" void kokkosp_deallocate_data(
+    SpaceHandle handle, const char* name, void* ptr, uint64_t size) {
+  auto space = get_space(handle);
+  global_state->deallocate(space, name, ptr, size);
 }
 
 extern "C" void kokkosp_finalize_library() {
