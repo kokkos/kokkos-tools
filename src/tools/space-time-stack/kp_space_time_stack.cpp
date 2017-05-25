@@ -81,9 +81,8 @@ struct StackNode {
   StackKind kind;
   std::set<StackNode> children;
   double total_runtime;
-#ifdef USE_MPI
-  double mpi_max_runtime;
-#endif
+  double max_runtime;
+  double avg_runtime;
   std::int64_t number_of_calls;
   Now start_time;
   StackNode(StackNode* parent_in, std::string&& name_in, StackKind kind_in):
@@ -112,6 +111,7 @@ struct StackNode {
   std::string get_full_name() const {
     std::string full_name;
     for (auto p = this; p; p = p->parent) {
+      if (p->name.empty() && !p->parent) continue;
       full_name = p->name + '/' + full_name;
     }
     return full_name;
@@ -154,7 +154,8 @@ struct StackNode {
     if (percent < 0.1) return;
     if (!name.empty()) {
       os << my_indent;
-      os << percent << "% " << number_of_calls << " " << name;
+      auto imbalance = (max_runtime / avg_runtime - 1.0) * 100.0;
+      os << percent << "% " << imbalance << "% " << number_of_calls << " " << name;
       switch (kind) {
         case STACK_FOR: os << " [for]"; break;
         case STACK_REDUCE: os << " [reduce]"; break;
@@ -196,19 +197,24 @@ struct StackNode {
     os << '\n';
     os.copyfmt(saved_state);
   }
-#ifdef USE_MPI
   void reduce_over_mpi() {
-    int rank;
+#ifdef USE_MPI
+    int rank, comm_size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
     std::queue<StackNode*> q;
     q.push(this);
     while (!q.empty()) {
       auto node = q.front(); q.pop();
-      node->mpi_max_runtime = node->total_runtime;
+      node->max_runtime = node->total_runtime;
+      node->avg_runtime = node->total_runtime;
       MPI_Allreduce(MPI_IN_PLACE, &(node->total_runtime),
           1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-      MPI_Allreduce(MPI_IN_PLACE, &(node->mpi_max_runtime),
+      MPI_Allreduce(MPI_IN_PLACE, &(node->max_runtime),
           1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+      MPI_Allreduce(MPI_IN_PLACE, &(node->avg_runtime),
+          1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      node->avg_runtime /= comm_size;
       /* There may be kernels that were called on rank 0 but were not
          called on certain other ranks.
          We will count these and add empty entries in the other ranks.
@@ -241,8 +247,18 @@ struct StackNode {
         }
       }
     }
-  }
+#else
+    std::queue<StackNode*> q;
+    q.push(this);
+    while (!q.empty()) {
+      auto node = q.front(); q.pop();
+      node->max_runtime = node->total_runtime;
+      node->avg_runtime = node->total_runtime;
+      for (auto& child : node->children) {
+        q.push(const_cast<StackNode*>(&child));
+      }
 #endif
+  }
 };
 
 struct Allocation {
@@ -280,7 +296,25 @@ struct Allocations {
     by_space[space].erase(it);
   }
   void print(std::ostream& os) {
-    os << "BYTES ALLOCATED: " << total_size << '\n';
+#ifdef USE_MPI
+    auto max_total_size = total_size;
+    MPI_Allreduce(MPI_IN_PLACE, &max_total_size, 1,
+        MPI_UINT64_T, MPI_MAX, MPI_COMM_WORLD);
+    /* this bit of logic is here to break ties in case two
+     * or more MPI ranks allocated the same (maximum) amount of
+     * memory. the one with the lowest MPI rank will print
+     * its snapshot */
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    auto min_max_rank = (max_total_size == total_size) ? rank : size;
+    MPI_Allreduce(MPI_IN_PLACE, &min_max_rank, 1,
+        MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+    assert(min_max_rank < size);
+    if (rank != min_max_rank) return;
+    os << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
+#endif
+    os << "MAX BYTES ALLOCATED: " << total_size << '\n';
     std::ios saved_state(nullptr);
     saved_state.copyfmt(os);
     os << std::fixed << std::setprecision(1);
@@ -291,8 +325,10 @@ struct Allocations {
       for (auto& allocation : by_space[space]) {
         auto percent = double(allocation.size) / double(total_size) * 100.0;
         if (percent < 0.1) continue;
-        os << "  " << percent << "% " << allocation.frame->get_full_name()
-          << "/" << allocation.name << '\n';
+        std::string full_name = allocation.frame->get_full_name();
+        if (full_name.empty()) full_name = allocation.name;
+        else full_name = full_name + "/" + allocation.name;
+        os << "  " << percent << "% " << full_name << '\n';
       }
     }
     os << '\n';
@@ -316,28 +352,31 @@ struct State {
       abort();
     }
     stack_frame->end(end_time);
+    auto inv_stack_root = stack_root.invert();
 #ifdef USE_MPI
     stack_root.reduce_over_mpi();
+    inv_stack_root.reduce_over_mpi();
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (rank == 0)
 #endif
     {
       std::cout << "\nBEGIN KOKKOS PROFILING REPORT:\n";
-#ifdef USE_MPI
-      std::cout << "TOTAL TIME: " << stack_root.mpi_max_runtime << " seconds\n";
-#else
-      std::cout << "TOTAL TIME: " << stack_root.total_runtime << " seconds\n";
-#endif
+      std::cout << "TOTAL TIME: " << stack_root.max_runtime << " seconds\n";
       std::cout << "TOP-DOWN TIME TREE:\n";
+      std::cout << "<percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
       std::cout << "================== \n";
       stack_root.print(std::cout);
-      auto inv_stack_root = stack_root.invert();
       std::cout << "BOTTOM-UP TIME TREE:\n";
+      std::cout << "<percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
       std::cout << "=================== \n";
       inv_stack_root.print(std::cout);
-      std::cout << "MEMORY HIGH WATER MARK:\n";
-      hwm_allocations.print(std::cout);
+    }
+    hwm_allocations.print(std::cout);
+#ifdef USE_MPI
+    if (rank == 0)
+#endif
+    {
       std::cout << "END KOKKOS PROFILING REPORT.\n";
     }
     MPI_Barrier(MPI_COMM_WORLD);
