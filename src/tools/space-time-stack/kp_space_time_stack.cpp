@@ -72,7 +72,8 @@ enum StackKind {
   STACK_FOR,
   STACK_REDUCE,
   STACK_SCAN,
-  STACK_REGION
+  STACK_REGION,
+  STACK_COPY
 };
 
 struct StackNode {
@@ -161,6 +162,7 @@ struct StackNode {
         case STACK_REDUCE: os << " [reduce]"; break;
         case STACK_SCAN: os << " [scan]"; break;
         case STACK_REGION: os << " [region]"; break;
+        case STACK_COPY: os << " [copy]"; break;
       };
       os << '\n';
     }
@@ -381,10 +383,17 @@ struct State {
     }
     MPI_Barrier(MPI_COMM_WORLD);
   }
-  std::uint64_t begin_kernel(const char* name, StackKind kind) {
+  void begin_frame(const char* name, StackKind kind) {
     std::string name_str(name);
     stack_frame = stack_frame->get_child(std::move(name_str), kind);
     stack_frame->begin();
+  }
+  void end_frame(Now end_time) {
+    stack_frame->end(end_time);
+    stack_frame = stack_frame->parent;
+  }
+  std::uint64_t begin_kernel(const char* name, StackKind kind) {
+    begin_frame(name, kind);
     return reinterpret_cast<std::uint64_t>(stack_frame);
   }
   void end_kernel(std::uint64_t kernid) {
@@ -395,17 +404,13 @@ struct State {
                 << "\" to end, got different kernel ID\n";
       abort();
     }
-    stack_frame->end(end_time);
-    stack_frame = stack_frame->parent;
+    end_frame(end_time);
   }
   void push_region(const char* name) {
-    std::string name_str(name);
-    stack_frame = stack_frame->get_child(std::move(name_str), STACK_REGION);
-    stack_frame->begin();
+    begin_frame(name, STACK_REGION);
   }
   void pop_region() {
-    stack_frame->end(now());
-    stack_frame = stack_frame->parent;
+    end_frame(now());
   }
   void allocate(Space space, const char* name, void* ptr, std::uint64_t size) {
     current_allocations.allocate(
@@ -417,6 +422,21 @@ struct State {
   void deallocate(Space space, const char* name, void* ptr, std::uint64_t size) {
     current_allocations.deallocate(
         space, std::string(name), ptr, size, stack_frame);
+  }
+  void begin_deep_copy(
+      Space, const char* dst_name, const void*,
+      Space, const char* src_name, const void*,
+      std::uint64_t) {
+    std::string frame_name;
+    frame_name += "\"";
+    frame_name += dst_name;
+    frame_name += "\"=\"";
+    frame_name += src_name;
+    frame_name += "\"";
+    begin_frame(frame_name.c_str(), STACK_COPY);
+  }
+  void end_deep_copy() {
+    end_frame(now());
   }
 };
 
@@ -434,6 +454,11 @@ extern "C" void kokkosp_init_library(
     abort();
   }
   global_state = new State();
+}
+
+extern "C" void kokkosp_finalize_library() {
+  delete global_state;
+  global_state = nullptr;
 }
 
 extern "C" void kokkosp_begin_parallel_for(
@@ -486,7 +511,16 @@ extern "C" void kokkosp_deallocate_data(
   global_state->deallocate(space, name, ptr, size);
 }
 
-extern "C" void kokkosp_finalize_library() {
-  delete global_state;
-  global_state = nullptr;
+extern "C" void kokkosp_begin_deep_copy(
+    SpaceHandle dst_handle, const char* dst_name, const void* dst_ptr,
+    SpaceHandle src_handle, const char* src_name, const void* src_ptr,
+    uint64_t size) {
+  auto dst_space = get_space(dst_handle);
+  auto src_space = get_space(src_handle);
+  global_state->begin_deep_copy(dst_space, dst_name, dst_ptr,
+      src_space, src_name, src_ptr, size);
+}
+
+extern "C" void kokkosp_end_deep_copy() {
+  global_state->end_deep_copy();
 }
