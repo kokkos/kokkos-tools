@@ -259,6 +259,7 @@ struct StackNode {
       for (auto& child : node->children) {
         q.push(const_cast<StackNode*>(&child));
       }
+    }
 #endif
   }
 };
@@ -381,7 +382,9 @@ struct State {
     {
       std::cout << "END KOKKOS PROFILING REPORT.\n";
     }
+#ifdef USE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
+#endif
   }
   void begin_frame(const char* name, StackKind kind) {
     std::string name_str(name);
