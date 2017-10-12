@@ -7,7 +7,6 @@
 #include <string>
 #include <set>
 #include <cassert>
-#include <chrono>
 #include <queue>
 
 #define USE_MPI
@@ -15,6 +14,8 @@
 #ifdef USE_MPI
 #include <mpi.h>
 #endif
+
+#include <chrono>
 
 namespace {
 
@@ -281,22 +282,22 @@ struct Allocation {
 
 struct Allocations {
   std::uint64_t total_size;
-  std::set<Allocation> by_space[NSPACES];
+  std::set<Allocation> alloc_set;
   Allocations():total_size(0) {}
-  void allocate(Space space, std::string&& name, void* ptr, std::uint64_t size,
+  void allocate(std::string&& name, void* ptr, std::uint64_t size,
       StackNode* frame) {
-    auto res = by_space[space].emplace(
+    auto res = alloc_set.emplace(
         Allocation(std::move(name), ptr, size, frame));
     assert(res.second);
     total_size += size;
   }
-  void deallocate(Space space, std::string&& name, void* ptr, std::uint64_t size,
+  void deallocate(std::string&& name, void* ptr, std::uint64_t size,
       StackNode* frame) {
     auto key = Allocation(std::move(name), ptr, size, frame);
-    auto it = by_space[space].find(key);
-    assert(it != by_space[space].end());
+    auto it = alloc_set.find(key);
+    assert(it != alloc_set.end());
     total_size -= it->size;
-    by_space[space].erase(it);
+    alloc_set.erase(it);
   }
   void print(std::ostream& os) {
 #ifdef USE_MPI
@@ -315,24 +316,22 @@ struct Allocations {
         MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     assert(min_max_rank < size);
     if (rank != min_max_rank) return;
-    os << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
 #endif
     os << "MAX BYTES ALLOCATED: " << total_size << '\n';
+#ifdef USE_MPI
+    os << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
+#endif
+    os << "ALLOCATIONS AT TIME OF HIGH WATER MARK:\n";
     std::ios saved_state(nullptr);
     saved_state.copyfmt(os);
     os << std::fixed << std::setprecision(1);
-    for (int space = 0; space < NSPACES; ++space) {
-      if (by_space[space].empty()) continue;
-      os << get_space_name(space) << " ALLOCATIONS:\n";
-      std::cout << "================ \n";
-      for (auto& allocation : by_space[space]) {
-        auto percent = double(allocation.size) / double(total_size) * 100.0;
-        if (percent < 0.1) continue;
-        std::string full_name = allocation.frame->get_full_name();
-        if (full_name.empty()) full_name = allocation.name;
-        else full_name = full_name + "/" + allocation.name;
-        os << "  " << percent << "% " << full_name << '\n';
-      }
+    for (auto& allocation : alloc_set) {
+      auto percent = double(allocation.size) / double(total_size) * 100.0;
+      if (percent < 0.1) continue;
+      std::string full_name = allocation.frame->get_full_name();
+      if (full_name.empty()) full_name = allocation.name;
+      else full_name = full_name + "/" + allocation.name;
+      os << "  " << percent << "% " << full_name << '\n';
     }
     os << '\n';
     os.copyfmt(saved_state);
@@ -342,8 +341,8 @@ struct Allocations {
 struct State {
   StackNode stack_root;
   StackNode* stack_frame;
-  Allocations current_allocations;
-  Allocations hwm_allocations;
+  Allocations current_allocations[NSPACES];
+  Allocations hwm_allocations[NSPACES];
   State():stack_root(nullptr, "", STACK_REGION),stack_frame(&stack_root) {
     stack_frame->begin();
   }
@@ -368,14 +367,18 @@ struct State {
       std::cout << "TOTAL TIME: " << stack_root.max_runtime << " seconds\n";
       std::cout << "TOP-DOWN TIME TREE:\n";
       std::cout << "<percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
-      std::cout << "================== \n";
+      std::cout << "=================== \n";
       stack_root.print(std::cout);
       std::cout << "BOTTOM-UP TIME TREE:\n";
       std::cout << "<percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
       std::cout << "=================== \n";
       inv_stack_root.print(std::cout);
     }
-    hwm_allocations.print(std::cout);
+    for (int space = 0; space < NSPACES; ++space) {
+      std::cout << "KOKKOS " << get_space_name(space) << " SPACE:\n";
+      std::cout << "=================== \n";
+      hwm_allocations[space].print(std::cout);
+    }
 #ifdef USE_MPI
     if (rank == 0)
 #endif
@@ -416,15 +419,15 @@ struct State {
     end_frame(now());
   }
   void allocate(Space space, const char* name, void* ptr, std::uint64_t size) {
-    current_allocations.allocate(
-        space, std::string(name), ptr, size, stack_frame);
-    if (current_allocations.total_size > hwm_allocations.total_size) {
-      hwm_allocations = current_allocations;
+    current_allocations[space].allocate(
+        std::string(name), ptr, size, stack_frame);
+    if (current_allocations[space].total_size > hwm_allocations[space].total_size) {
+      hwm_allocations[space] = current_allocations[space];
     }
   }
   void deallocate(Space space, const char* name, void* ptr, std::uint64_t size) {
-    current_allocations.deallocate(
-        space, std::string(name), ptr, size, stack_frame);
+    current_allocations[space].deallocate(
+        std::string(name), ptr, size, stack_frame);
   }
   void begin_deep_copy(
       Space, const char* dst_name, const void*,
