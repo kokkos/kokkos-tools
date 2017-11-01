@@ -375,8 +375,13 @@ struct State {
       inv_stack_root.print(std::cout);
     }
     for (int space = 0; space < NSPACES; ++space) {
-      std::cout << "KOKKOS " << get_space_name(space) << " SPACE:\n";
-      std::cout << "=================== \n";
+#ifdef USE_MPI
+      if (rank == 0)
+#endif
+      {
+        std::cout << "KOKKOS " << get_space_name(space) << " SPACE:\n";
+        std::cout << "=================== \n";
+      }
       hwm_allocations[space].print(std::cout);
     }
 #ifdef USE_MPI
