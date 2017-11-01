@@ -8,6 +8,7 @@
 #include <set>
 #include <cassert>
 #include <queue>
+#include <sys/resource.h>
 
 #define USE_MPI
 
@@ -76,6 +77,43 @@ enum StackKind {
   STACK_REGION,
   STACK_COPY
 };
+
+void print_process_hwm() {
+  struct rusage sys_resources;
+  getrusage(RUSAGE_SELF, &sys_resources);
+  long hwm = sys_resources.ru_maxrss;
+  long hwm_max = hwm;
+
+#ifdef USE_MPI
+  int rank, world_size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+  // Max
+  MPI_Reduce(&hwm, &hwm_max, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
+
+  // Min
+  long hwm_min;
+  MPI_Reduce(&hwm, &hwm_min, 1, MPI_LONG, MPI_MIN, 0, MPI_COMM_WORLD);
+
+  // Average
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+  long hwm_ave;
+  MPI_Reduce(&hwm, &hwm_ave, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+  hwm_ave /= world_size;
+
+  if (rank == 0)
+#endif
+  {
+    printf("Host process high water mark memory consumption: %ld kB\n",
+      hwm_max);
+#ifdef USE_MPI
+    printf("  Max: %ld, Min: %ld, Ave: %ld kB\n",
+      hwm_max,hwm_min,hwm_ave);
+#endif
+    printf("\n");
+  }
+}
 
 struct StackNode {
   StackNode* parent;
@@ -384,6 +422,7 @@ struct State {
       }
       hwm_allocations[space].print(std::cout);
     }
+    print_process_hwm();
 #ifdef USE_MPI
     if (rank == 0)
 #endif
