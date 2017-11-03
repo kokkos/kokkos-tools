@@ -353,26 +353,33 @@ struct Allocations {
     MPI_Allreduce(MPI_IN_PLACE, &min_max_rank, 1,
         MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     assert(min_max_rank < size);
-    if (rank != min_max_rank) return;
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (rank == min_max_rank)
 #endif
-    os << "MAX BYTES ALLOCATED: " << total_size << '\n';
+    {
+      os << "MAX BYTES ALLOCATED: " << total_size << '\n';
 #ifdef USE_MPI
-    os << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
+      os << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
 #endif
-    os << "ALLOCATIONS AT TIME OF HIGH WATER MARK:\n";
-    std::ios saved_state(nullptr);
-    saved_state.copyfmt(os);
-    os << std::fixed << std::setprecision(1);
-    for (auto& allocation : alloc_set) {
-      auto percent = double(allocation.size) / double(total_size) * 100.0;
-      if (percent < 0.1) continue;
-      std::string full_name = allocation.frame->get_full_name();
-      if (full_name.empty()) full_name = allocation.name;
-      else full_name = full_name + "/" + allocation.name;
-      os << "  " << percent << "% " << full_name << '\n';
+      os << "ALLOCATIONS AT TIME OF HIGH WATER MARK:\n";
+      std::ios saved_state(nullptr);
+      saved_state.copyfmt(os);
+      os << std::fixed << std::setprecision(1);
+      for (auto& allocation : alloc_set) {
+        auto percent = double(allocation.size) / double(total_size) * 100.0;
+        if (percent < 0.1) continue;
+        std::string full_name = allocation.frame->get_full_name();
+        if (full_name.empty()) full_name = allocation.name;
+        else full_name = full_name + "/" + allocation.name;
+        os << "  " << percent << "% " << full_name << '\n';
+      }
+      os << '\n';
+      os.flush();
+      os.copyfmt(saved_state);
     }
-    os << '\n';
-    os.copyfmt(saved_state);
+#ifdef USE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
   }
 };
 
@@ -398,6 +405,7 @@ struct State {
     inv_stack_root.reduce_over_mpi();
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Barrier(MPI_COMM_WORLD);
     if (rank == 0)
 #endif
     {
@@ -419,6 +427,7 @@ struct State {
       {
         std::cout << "KOKKOS " << get_space_name(space) << " SPACE:\n";
         std::cout << "=================== \n";
+        std::cout.flush();
       }
       hwm_allocations[space].print(std::cout);
     }
@@ -428,6 +437,7 @@ struct State {
 #endif
     {
       std::cout << "END KOKKOS PROFILING REPORT.\n";
+      std::cout.flush();
     }
 #ifdef USE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
