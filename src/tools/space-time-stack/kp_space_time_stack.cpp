@@ -8,6 +8,7 @@
 #include <set>
 #include <cassert>
 #include <queue>
+#include <sstream>
 #include <sys/resource.h>
 
 #define USE_MPI
@@ -338,6 +339,7 @@ struct Allocations {
     alloc_set.erase(it);
   }
   void print(std::ostream& os) {
+    std::string s;
 #ifdef USE_MPI
     auto max_total_size = total_size;
     MPI_Allreduce(MPI_IN_PLACE, &max_total_size, 1,
@@ -353,32 +355,53 @@ struct Allocations {
     MPI_Allreduce(MPI_IN_PLACE, &min_max_rank, 1,
         MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     assert(min_max_rank < size);
-    MPI_Barrier(MPI_COMM_WORLD);
     if (rank == min_max_rank)
 #endif
     {
-      os << "MAX BYTES ALLOCATED: " << total_size << '\n';
+      std::stringstream ss;
+      ss << "MAX BYTES ALLOCATED: " << total_size << '\n';
 #ifdef USE_MPI
-      os << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
+      ss << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
 #endif
-      os << "ALLOCATIONS AT TIME OF HIGH WATER MARK:\n";
+      ss << "ALLOCATIONS AT TIME OF HIGH WATER MARK:\n";
       std::ios saved_state(nullptr);
-      saved_state.copyfmt(os);
-      os << std::fixed << std::setprecision(1);
+      ss << std::fixed << std::setprecision(1);
       for (auto& allocation : alloc_set) {
         auto percent = double(allocation.size) / double(total_size) * 100.0;
         if (percent < 0.1) continue;
         std::string full_name = allocation.frame->get_full_name();
         if (full_name.empty()) full_name = allocation.name;
         else full_name = full_name + "/" + allocation.name;
-        os << "  " << percent << "% " << full_name << '\n';
+        ss << "  " << percent << "% " << full_name << '\n';
       }
-      os << '\n';
-      os.flush();
-      os.copyfmt(saved_state);
+      ss << '\n';
+      s = ss.str();
     }
 #ifdef USE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
+    // a little MPI dance to send the string from min_max_rank to rank 0
+    MPI_Request request;
+    int string_size;
+    if (rank == 0) {
+      MPI_Irecv(&string_size, 1, MPI_INT, min_max_rank, 42, MPI_COMM_WORLD, &request);
+    }
+    if (rank == min_max_rank) {
+      string_size = int(s.size());
+      MPI_Send(&string_size, 1, MPI_INT, 0, 42, MPI_COMM_WORLD);
+    }
+    if (rank == 0) {
+      MPI_Wait(&request, MPI_STATUS_IGNORE);
+      s.resize(size_t(string_size));
+      MPI_Irecv(const_cast<char*>(s.data()), string_size, MPI_CHAR, min_max_rank, 42, MPI_COMM_WORLD, &request);
+    }
+    if (rank == min_max_rank) {
+      MPI_Send(s.data(), string_size, MPI_CHAR, 0, 42, MPI_COMM_WORLD);
+    }
+    if (rank == 0) {
+      MPI_Wait(&request, MPI_STATUS_IGNORE);
+      os << s;
+    }
+#else
+    os << s;
 #endif
   }
 };
@@ -405,7 +428,6 @@ struct State {
     inv_stack_root.reduce_over_mpi();
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Barrier(MPI_COMM_WORLD);
     if (rank == 0)
 #endif
     {
@@ -439,9 +461,6 @@ struct State {
       std::cout << "END KOKKOS PROFILING REPORT.\n";
       std::cout.flush();
     }
-#ifdef USE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
   }
   void begin_frame(const char* name, StackKind kind) {
     std::string name_str(name);
