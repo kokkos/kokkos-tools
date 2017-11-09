@@ -394,7 +394,7 @@ struct Allocations {
       MPI_Irecv(const_cast<char*>(s.data()), string_size, MPI_CHAR, min_max_rank, 42, MPI_COMM_WORLD, &request);
     }
     if (rank == min_max_rank) {
-      MPI_Send(s.data(), string_size, MPI_CHAR, 0, 42, MPI_COMM_WORLD);
+      MPI_Send(const_cast<char*>(s.data()), string_size, MPI_CHAR, 0, 42, MPI_COMM_WORLD);
     }
     if (rank == 0) {
       MPI_Wait(&request, MPI_STATUS_IGNORE);
