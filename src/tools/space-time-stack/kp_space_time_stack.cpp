@@ -361,13 +361,13 @@ struct Allocations {
 #endif
     {
       std::stringstream ss;
-      ss << "MAX BYTES ALLOCATED: " << total_size << '\n';
+      ss << std::fixed << std::setprecision(2);
+      ss << "MAX MEMORY ALLOCATED: " << double(total_size)/1024.0 << " kB" << '\n'; // convert bytes to kB
 #ifdef USE_MPI
       ss << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
 #endif
       ss << "ALLOCATIONS AT TIME OF HIGH WATER MARK:\n";
       std::ios saved_state(nullptr);
-      ss << std::fixed << std::setprecision(1);
       for (auto& allocation : alloc_set) {
         auto percent = double(allocation.size) / double(total_size) * 100.0;
         if (percent < 0.1) continue;
