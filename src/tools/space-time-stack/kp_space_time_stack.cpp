@@ -196,6 +196,9 @@ struct StackNode {
     if (!name.empty()) {
       os << my_indent;
       auto imbalance = (max_runtime / avg_runtime - 1.0) * 100.0;
+      os << std::scientific << std::setprecision(2);
+      os << avg_runtime << " sec ";
+      os << std::fixed << std::setprecision(1);
       os << percent << "% " << imbalance << "% " << number_of_calls << " " << name;
       switch (kind) {
         case STACK_FOR: os << " [for]"; break;
@@ -234,7 +237,6 @@ struct StackNode {
   void print(std::ostream& os) const {
     std::ios saved_state(nullptr);
     saved_state.copyfmt(os);
-    os << std::fixed << std::setprecision(1);
     print_recursive(os, "", "", total_runtime);
     os << '\n';
     os.copyfmt(saved_state);
@@ -434,11 +436,11 @@ struct State {
       std::cout << "\nBEGIN KOKKOS PROFILING REPORT:\n";
       std::cout << "TOTAL TIME: " << stack_root.max_runtime << " seconds\n";
       std::cout << "TOP-DOWN TIME TREE:\n";
-      std::cout << "<percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
+      std::cout << "<average time> <percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
       std::cout << "=================== \n";
       stack_root.print(std::cout);
       std::cout << "BOTTOM-UP TIME TREE:\n";
-      std::cout << "<percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
+      std::cout << "<average time> <percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
       std::cout << "=================== \n";
       inv_stack_root.print(std::cout);
     }
