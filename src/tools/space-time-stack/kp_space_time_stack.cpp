@@ -361,7 +361,7 @@ struct Allocations {
 #endif
     {
       std::stringstream ss;
-      ss << std::fixed << std::setprecision(2);
+      ss << std::fixed << std::setprecision(1);
       ss << "MAX MEMORY ALLOCATED: " << double(total_size)/1024.0 << " kB" << '\n'; // convert bytes to kB
 #ifdef USE_MPI
       ss << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
