@@ -123,8 +123,8 @@ class KernelPerformanceInfo {
 			} else if(kernelT == 2) {
 				kType = PARALLEL_SCAN;
 			} else if(kernelT == 3) {
-                                kType = REGION;
-                        }
+        kType = REGION;
+      }
 			
 			free(entry);
                         return true;

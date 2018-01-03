@@ -84,30 +84,91 @@ int main(int argc, char* argv[]) {
 	std::sort(kernelInfo.begin(), kernelInfo.end(), compareKernelPerformanceInfo);
 
 	for(int i = 0; i < kernelInfo.size(); i++) {
-          if(kernelInfo[i]->getKernelType() != REGION) {
-		totalKernelsTime += kernelInfo[i]->getTime();
-		totalKernelsCalls += kernelInfo[i]->getCallCount();
-          }
+    if(kernelInfo[i]->getKernelType() != REGION) {
+		  totalKernelsTime += kernelInfo[i]->getTime();
+		  totalKernelsCalls += kernelInfo[i]->getCallCount();
+    }
 	}
 
-	for(int i = 0; i < kernelInfo.size(); i++) {
+  printf("Regions: \n\n");
+
+  for(int i = 0; i < kernelInfo.size(); i++) {
 		const double callCountDouble = (double) kernelInfo[i]->getCallCount();
 
-                if(fixed_width)
-		printf("%100s%c%15.5f%c%20" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n", kernelInfo[i]->getName(),
+		if(kernelInfo[i]->getKernelType() != REGION) continue;
+    if(fixed_width)
+		printf("%100s%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
+		  kernelInfo[i]->getName(),
+		   ( kernelInfo[i]->getKernelType() == PARALLEL_FOR) ? (
+		     " (ParFor)  " ) : (
+		   ( kernelInfo[i]->getKernelType() == PARALLEL_REDUCE) ? (
+	       " (ParRed)  " ) : (
+       ( kernelInfo[i]->getKernelType() == PARALLEL_SCAN) ? (
+         " (ParScan) " ) : (
+         " (Region)  " )
+	     )),
 			delimiter,kernelInfo[i]->getTime(),
 			delimiter,kernelInfo[i]->getCallCount(),
 			delimiter,kernelInfo[i]->getTime() / callCountDouble,
 			delimiter,(kernelInfo[i]->getTime() / totalKernelsTime) * 100.0,
 			delimiter,(kernelInfo[i]->getTime() / totalExecuteTime) * 100.0 );
-                else
-                printf("%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n", kernelInfo[i]->getName(),
-                        delimiter,kernelInfo[i]->getTime(),
-                        delimiter,kernelInfo[i]->getCallCount(),
-                        delimiter,kernelInfo[i]->getTime() / callCountDouble,
-                        delimiter,(kernelInfo[i]->getTime() / totalKernelsTime) * 100.0,
-                        delimiter,(kernelInfo[i]->getTime() / totalExecuteTime) * 100.0 );
+    else
+    printf("%s%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n", kernelInfo[i]->getName(),
+         ( kernelInfo[i]->getKernelType() == PARALLEL_FOR) ? (
+           " (ParFor)  " ) : (
+         ( kernelInfo[i]->getKernelType() == PARALLEL_REDUCE) ? (
+           " (ParRed)  " ) : (
+         ( kernelInfo[i]->getKernelType() == PARALLEL_SCAN) ? (
+           " (ParScan) " ) : (
+           " (REGION)  " )
+         )),
+      delimiter,kernelInfo[i]->getTime(),
+      delimiter,kernelInfo[i]->getCallCount(),
+      delimiter,kernelInfo[i]->getTime() / callCountDouble,
+      delimiter,(kernelInfo[i]->getTime() / totalKernelsTime) * 100.0,
+      delimiter,(kernelInfo[i]->getTime() / totalExecuteTime) * 100.0 );
 	}
+
+  printf("\n");
+  printf("-------------------------------------------------------------------------\n");
+  printf("Kernels: \n\n");
+
+  for(int i = 0; i < kernelInfo.size(); i++) {
+    const double callCountDouble = (double) kernelInfo[i]->getCallCount();
+
+    if(kernelInfo[i]->getKernelType() == REGION) continue;
+    if(fixed_width)
+    printf("%100s%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
+      kernelInfo[i]->getName(),
+       ( kernelInfo[i]->getKernelType() == PARALLEL_FOR) ? (
+         " (ParFor)  " ) : (
+       ( kernelInfo[i]->getKernelType() == PARALLEL_REDUCE) ? (
+         " (ParRed)  " ) : (
+       ( kernelInfo[i]->getKernelType() == PARALLEL_SCAN) ? (
+         " (ParScan) " ) : (
+         " (Region)  " )
+       )),
+      delimiter,kernelInfo[i]->getTime(),
+      delimiter,kernelInfo[i]->getCallCount(),
+      delimiter,kernelInfo[i]->getTime() / callCountDouble,
+      delimiter,(kernelInfo[i]->getTime() / totalKernelsTime) * 100.0,
+      delimiter,(kernelInfo[i]->getTime() / totalExecuteTime) * 100.0 );
+    else
+    printf("%s%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n", kernelInfo[i]->getName(),
+         ( kernelInfo[i]->getKernelType() == PARALLEL_FOR) ? (
+           " (ParFor)  " ) : (
+         ( kernelInfo[i]->getKernelType() == PARALLEL_REDUCE) ? (
+           " (ParRed)  " ) : (
+         ( kernelInfo[i]->getKernelType() == PARALLEL_SCAN) ? (
+           " (ParScan) " ) : (
+           " (REGION)  " )
+         )),
+      delimiter,kernelInfo[i]->getTime(),
+      delimiter,kernelInfo[i]->getCallCount(),
+      delimiter,kernelInfo[i]->getTime() / callCountDouble,
+      delimiter,(kernelInfo[i]->getTime() / totalKernelsTime) * 100.0,
+      delimiter,(kernelInfo[i]->getTime() / totalExecuteTime) * 100.0 );
+  }
 
 	printf("\n");
 	printf("-------------------------------------------------------------------------\n");
