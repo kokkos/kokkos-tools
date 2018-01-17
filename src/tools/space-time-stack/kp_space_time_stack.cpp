@@ -526,14 +526,10 @@ State* global_state = nullptr;
 }  // end anonymous namespace
 
 extern "C" void kokkosp_init_library(
-    int loadseq, uint64_t version, uint32_t ndevinfos, KokkosPDeviceInfo* devinfos) {
+    int loadseq, uint64_t, uint32_t ndevinfos, KokkosPDeviceInfo* devinfos) {
   (void)loadseq;
   (void)ndevinfos;
   (void)devinfos;
-  if (version != 20150628) {
-    std::cerr << "kokkosp_init_library: version " << version << " != 20150628\n";
-    abort();
-  }
   global_state = new State();
 }
 
