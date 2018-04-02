@@ -336,9 +336,17 @@ struct Allocations {
       StackNode* frame) {
     auto key = Allocation(std::move(name), ptr, size, frame);
     auto it = alloc_set.find(key);
-    assert(it != alloc_set.end());
-    total_size -= it->size;
-    alloc_set.erase(it);
+    if (it == alloc_set.end()) {
+      std::stringstream ss;
+      ss << "WARNING! allocation(\"" << key.name << "\", " << key.ptr
+         << ", " << key.size << "), deallocated at \"" << frame->get_full_name() << "\", "
+         << " was not in the currently allocated set!\n";
+      auto s = ss.str();
+      std::cerr << s;
+    } else {
+      total_size -= it->size;
+      alloc_set.erase(it);
+    }
   }
   void print(std::ostream& os) {
     std::string s;
