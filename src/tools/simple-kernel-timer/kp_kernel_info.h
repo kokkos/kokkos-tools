@@ -5,9 +5,9 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <cstring>
-
-
-
+#if defined(HAVE_GCC_ABI_DEMANGLE)
+#include <cxxabi.h>
+#endif
 double seconds() {
 	struct timeval now;
 	gettimeofday(&now, NULL);
@@ -26,7 +26,7 @@ class KernelPerformanceInfo {
 	public:
 		KernelPerformanceInfo(std::string kName, KernelExecutionType kernelType) :
 			kType(kernelType) {
-			
+
 			kernelName = (char*) malloc(sizeof(char) * (kName.size() + 1));
 			strcpy(kernelName, kName.c_str());
 
@@ -76,11 +76,11 @@ class KernelPerformanceInfo {
 		char* getName() {
 			return kernelName;
 		}
-		
+
 		void addCallCount(const uint64_t newCalls) {
 			callCount += newCalls;
 		}
-		
+
 		bool readFromFile(FILE* input) {
 			uint32_t recordLen = 0;
 			uint32_t actual_read = fread(&recordLen, sizeof(recordLen), 1, input);
@@ -93,7 +93,7 @@ class KernelPerformanceInfo {
 			uint32_t kernelNameLength;
 			copy((char*) &kernelNameLength, &entry[nextIndex], sizeof(kernelNameLength));
 			nextIndex += sizeof(kernelNameLength);
-			
+
 			if(strlen(kernelName) > 0) {
 				free(kernelName);
 			}
@@ -101,21 +101,31 @@ class KernelPerformanceInfo {
 			kernelName = (char*) malloc( sizeof(char) * (kernelNameLength + 1));
 			copy(kernelName, &entry[nextIndex], kernelNameLength);
 			kernelName[kernelNameLength] = '\0';
+#if defined(HAVE_GCC_ABI_DEMANGLE)
+			{
+				int status = -1;
+				char* demangledKernelName = abi::__cxa_demangle(kernelName, NULL, NULL, &status);
+				if (status==0) {
+					free(kernelName);
+					kernelName = demangledKernelName;
+				}
+			}
+#endif // HAVE_GCC_ABI_DEMANGLE
 			nextIndex += kernelNameLength;
-			
+
 			copy((char*) &callCount, &entry[nextIndex], sizeof(callCount));
 			nextIndex += sizeof(callCount);
-			
+
 			copy((char*) &time, &entry[nextIndex], sizeof(time));
 			nextIndex += sizeof(time);
-			
+
 			copy((char*) &timeSq, &entry[nextIndex], sizeof(timeSq));
 			nextIndex += sizeof(timeSq);
-			
+
 			uint32_t kernelT = 0;
 			copy((char*) &kernelT, &entry[nextIndex], sizeof(kernelT));
 			nextIndex += sizeof(kernelT);
-			
+
 			if(kernelT == 0) {
 				kType = PARALLEL_FOR;
 			} else if(kernelT == 1) {
@@ -125,44 +135,44 @@ class KernelPerformanceInfo {
 			} else if(kernelT == 3) {
         kType = REGION;
       }
-			
+
 			free(entry);
                         return true;
 		}
-		
+
 		void writeToFile(FILE* output) {
 			const uint32_t kernelNameLen = (uint32_t) strlen(kernelName);
-			
-			const uint32_t recordLen = 
-				sizeof(uint32_t) + 
+
+			const uint32_t recordLen =
+				sizeof(uint32_t) +
 				sizeof(char) * kernelNameLen +
 				sizeof(uint64_t) +
 				sizeof(double) +
-				sizeof(double) + 
+				sizeof(double) +
 				sizeof(uint32_t);
-		
+
 			uint32_t nextIndex = 0;
 			char* entry = (char*) malloc(recordLen);
 
 			copy(&entry[nextIndex], (char*) &kernelNameLen, sizeof(kernelNameLen));
 			nextIndex += sizeof(kernelNameLen);
-			
+
 			copy(&entry[nextIndex], kernelName, kernelNameLen);
 			nextIndex += kernelNameLen;
-			
+
 			copy(&entry[nextIndex], (char*) &callCount, sizeof(callCount));
 			nextIndex += sizeof(callCount);
-			
+
 			copy(&entry[nextIndex], (char*) &time, sizeof(time));
 			nextIndex += sizeof(time);
-			
+
 			copy(&entry[nextIndex], (char*) &timeSq, sizeof(timeSq));
 			nextIndex += sizeof(timeSq);
-			
+
 			uint32_t kernelTypeOutput = (uint32_t) kType;
 			copy(&entry[nextIndex], (char*) &kernelTypeOutput, sizeof(kernelTypeOutput));
 			nextIndex += sizeof(kernelTypeOutput);
-			
+
 			fwrite(&recordLen, sizeof(uint32_t), 1, output);
 			fwrite(entry, recordLen, 1, output);
 			free(entry);
@@ -174,7 +184,7 @@ class KernelPerformanceInfo {
 				dest[i] = src[i];
 			}
 		}
-	
+
 		char* kernelName;
 		uint64_t callCount;
 		double time;

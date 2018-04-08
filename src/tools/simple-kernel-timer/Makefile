@@ -1,6 +1,8 @@
 CXX=g++
 CXXFLAGS=-O3 -std=c++11 -g
 SHARED_CXXFLAGS=-shared -fPIC
+# comment the following line if abi::__cxa_demangle is not supported by your compiler
+CXXFLAGS+= -DHAVE_GCC_ABI_DEMANGLE
 
 all: kp_kernel_timer.so kp_reader
 
