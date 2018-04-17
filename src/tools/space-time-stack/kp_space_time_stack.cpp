@@ -11,9 +11,11 @@
 #include <sstream>
 #include <sys/resource.h>
 
-#define USE_MPI
+#ifndef USE_MPI
+#define USE_MPI 1
+#endif
 
-#ifdef USE_MPI
+#if USE_MPI
 #include <mpi.h>
 #endif
 
@@ -85,7 +87,7 @@ void print_process_hwm() {
   long hwm = sys_resources.ru_maxrss;
   long hwm_max = hwm;
 
-#ifdef USE_MPI
+#if USE_MPI
   int rank, world_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -108,7 +110,7 @@ void print_process_hwm() {
   {
     printf("Host process high water mark memory consumption: %ld kB\n",
       hwm_max);
-#ifdef USE_MPI
+#if USE_MPI
     printf("  Max: %ld, Min: %ld, Ave: %ld kB\n",
       hwm_max,hwm_min,hwm_ave);
 #endif
@@ -242,7 +244,7 @@ struct StackNode {
     os.copyfmt(saved_state);
   }
   void reduce_over_mpi() {
-#ifdef USE_MPI
+#if USE_MPI
     int rank, comm_size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
@@ -350,7 +352,7 @@ struct Allocations {
   }
   void print(std::ostream& os) {
     std::string s;
-#ifdef USE_MPI
+#if USE_MPI
     auto max_total_size = total_size;
     MPI_Allreduce(MPI_IN_PLACE, &max_total_size, 1,
         MPI_UINT64_T, MPI_MAX, MPI_COMM_WORLD);
@@ -371,7 +373,7 @@ struct Allocations {
       std::stringstream ss;
       ss << std::fixed << std::setprecision(1);
       ss << "MAX MEMORY ALLOCATED: " << double(total_size)/1024.0 << " kB" << '\n'; // convert bytes to kB
-#ifdef USE_MPI
+#if USE_MPI
       ss << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
 #endif
       ss << "ALLOCATIONS AT TIME OF HIGH WATER MARK:\n";
@@ -387,7 +389,7 @@ struct Allocations {
       ss << '\n';
       s = ss.str();
     }
-#ifdef USE_MPI
+#if USE_MPI
     // a little MPI dance to send the string from min_max_rank to rank 0
     MPI_Request request;
     int string_size;
@@ -433,7 +435,7 @@ struct State {
     }
     stack_frame->end(end_time);
     auto inv_stack_root = stack_root.invert();
-#ifdef USE_MPI
+#if USE_MPI
     stack_root.reduce_over_mpi();
     inv_stack_root.reduce_over_mpi();
     int rank;
@@ -453,7 +455,7 @@ struct State {
       inv_stack_root.print(std::cout);
     }
     for (int space = 0; space < NSPACES; ++space) {
-#ifdef USE_MPI
+#if USE_MPI
       if (rank == 0)
 #endif
       {
@@ -464,7 +466,7 @@ struct State {
       hwm_allocations[space].print(std::cout);
     }
     print_process_hwm();
-#ifdef USE_MPI
+#if USE_MPI
     if (rank == 0)
 #endif
     {
