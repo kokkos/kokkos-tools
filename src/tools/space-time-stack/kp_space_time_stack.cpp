@@ -122,6 +122,7 @@ struct StackNode {
   StackKind kind;
   std::set<StackNode> children;
   double total_runtime;
+  double total_kokkos_runtime;
   double max_runtime;
   double avg_runtime;
   std::int64_t number_of_calls;
@@ -165,6 +166,15 @@ struct StackNode {
     auto runtime = (end_time - start_time);
     total_runtime += runtime;
   }
+  void adopt() {
+    if (this->kind != STACK_REGION) {
+      this->total_kokkos_runtime = this->total_runtime;
+    }
+    for (auto& child : this->children) {
+      const_cast<StackNode&>(child).adopt();
+      this->total_kokkos_runtime += child.total_kokkos_runtime;
+    }
+  }
   StackNode invert() const {
     StackNode inv_root(nullptr, "", STACK_REGION);
     std::queue<StackNode const*> q;
@@ -172,6 +182,7 @@ struct StackNode {
     while (!q.empty()) {
       auto node = q.front(); q.pop();
       auto self_time = node->total_runtime;
+      auto kokkos_time = node->total_kokkos_runtime;
       auto calls = node->number_of_calls;
       for (auto& child : node->children) {
         self_time -= child.total_runtime;
@@ -180,11 +191,13 @@ struct StackNode {
       auto inv_node = &inv_root;
       inv_node->total_runtime += self_time;
       inv_node->number_of_calls += calls;
+      inv_node->total_kokkos_runtime += kokkos_time;
       for (; node; node = node->parent) {
         std::string name = node->name;
         inv_node = inv_node->get_child(std::move(name), node->kind);
         inv_node->total_runtime += self_time;
         inv_node->number_of_calls += calls;
+        inv_node->total_kokkos_runtime += kokkos_time;
       }
     }
     return inv_root;
@@ -199,7 +212,8 @@ struct StackNode {
       os << std::scientific << std::setprecision(2);
       os << avg_runtime << " sec ";
       os << std::fixed << std::setprecision(1);
-      os << percent << "% " << imbalance << "% " << number_of_calls << " " << name;
+      auto percent_kokkos = (total_kokkos_runtime / total_runtime) * 100.0;
+      os << percent << "% " << percent_kokkos << "% " << imbalance << "% " << number_of_calls << " " << name;
       switch (kind) {
         case STACK_FOR: os << " [for]"; break;
         case STACK_REDUCE: os << " [reduce]"; break;
@@ -259,6 +273,8 @@ struct StackNode {
       MPI_Allreduce(MPI_IN_PLACE, &(node->avg_runtime),
           1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       node->avg_runtime /= comm_size;
+      MPI_Allreduce(MPI_IN_PLACE, &(node->total_kokkos_runtime),
+          1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       /* There may be kernels that were called on rank 0 but were not
          called on certain other ranks.
          We will count these and add empty entries in the other ranks.
@@ -432,10 +448,11 @@ struct State {
       abort();
     }
     stack_frame->end(end_time);
+    stack_root.adopt();
     auto inv_stack_root = stack_root.invert();
-#ifdef USE_MPI
     stack_root.reduce_over_mpi();
     inv_stack_root.reduce_over_mpi();
+#ifdef USE_MPI
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (rank == 0)
@@ -444,11 +461,11 @@ struct State {
       std::cout << "\nBEGIN KOKKOS PROFILING REPORT:\n";
       std::cout << "TOTAL TIME: " << stack_root.max_runtime << " seconds\n";
       std::cout << "TOP-DOWN TIME TREE:\n";
-      std::cout << "<average time> <percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
+      std::cout << "<average time> <percent of total time> <percent time in Kokkos> <percent MPI imbalance> <number of calls> <name> [type]\n";
       std::cout << "=================== \n";
       stack_root.print(std::cout);
       std::cout << "BOTTOM-UP TIME TREE:\n";
-      std::cout << "<average time> <percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
+      std::cout << "<average time> <percent of total time> <percent time in Kokkos> <percent MPI imbalance> <number of calls> <name> [type]\n";
       std::cout << "=================== \n";
       inv_stack_root.print(std::cout);
     }
