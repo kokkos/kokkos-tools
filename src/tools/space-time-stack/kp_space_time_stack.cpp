@@ -10,10 +10,13 @@
 #include <queue>
 #include <sstream>
 #include <sys/resource.h>
+#include <algorithm>
 
-#define USE_MPI
+#ifndef USE_MPI
+#define USE_MPI 1
+#endif
 
-#ifdef USE_MPI
+#if USE_MPI
 #include <mpi.h>
 #endif
 
@@ -85,7 +88,7 @@ void print_process_hwm() {
   long hwm = sys_resources.ru_maxrss;
   long hwm_max = hwm;
 
-#ifdef USE_MPI
+#if USE_MPI
   int rank, world_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -108,7 +111,7 @@ void print_process_hwm() {
   {
     printf("Host process high water mark memory consumption: %ld kB\n",
       hwm_max);
-#ifdef USE_MPI
+#if USE_MPI
     printf("  Max: %ld, Min: %ld, Ave: %ld kB\n",
       hwm_max,hwm_min,hwm_ave);
 #endif
@@ -131,7 +134,8 @@ struct StackNode {
     parent(parent_in),
     name(std::move(name_in)),
     kind(kind_in),
-    total_runtime(0.0),
+    total_runtime(0.),
+    total_kokkos_runtime(0.),
     number_of_calls(0) {
   }
   StackNode* get_child(std::string&& child_name, StackKind child_kind) {
@@ -168,12 +172,13 @@ struct StackNode {
   }
   void adopt() {
     if (this->kind != STACK_REGION) {
-      this->total_kokkos_runtime = this->total_runtime;
+      this->total_kokkos_runtime += this->total_runtime;
     }
     for (auto& child : this->children) {
       const_cast<StackNode&>(child).adopt();
       this->total_kokkos_runtime += child.total_kokkos_runtime;
     }
+    assert(this->total_kokkos_runtime >= 0.);
   }
   StackNode invert() const {
     StackNode inv_root(nullptr, "", STACK_REGION);
@@ -182,22 +187,25 @@ struct StackNode {
     while (!q.empty()) {
       auto node = q.front(); q.pop();
       auto self_time = node->total_runtime;
-      auto kokkos_time = node->total_kokkos_runtime;
+      auto self_kokkos_time = node->total_kokkos_runtime;
       auto calls = node->number_of_calls;
       for (auto& child : node->children) {
         self_time -= child.total_runtime;
+        self_kokkos_time -= child.total_kokkos_runtime;
         q.push(&child);
       }
+      self_time = std::max(self_time, 0.); // floating-point may give negative epsilon instead of zero
+      self_kokkos_time = std::max(self_kokkos_time, 0.); // floating-point may give negative epsilon instead of zero
       auto inv_node = &inv_root;
       inv_node->total_runtime += self_time;
       inv_node->number_of_calls += calls;
-      inv_node->total_kokkos_runtime += kokkos_time;
+      inv_node->total_kokkos_runtime += self_kokkos_time;
       for (; node; node = node->parent) {
         std::string name = node->name;
         inv_node = inv_node->get_child(std::move(name), node->kind);
         inv_node->total_runtime += self_time;
         inv_node->number_of_calls += calls;
-        inv_node->total_kokkos_runtime += kokkos_time;
+        inv_node->total_kokkos_runtime += self_kokkos_time;
       }
     }
     return inv_root;
@@ -256,7 +264,7 @@ struct StackNode {
     os.copyfmt(saved_state);
   }
   void reduce_over_mpi() {
-#ifdef USE_MPI
+#if USE_MPI
     int rank, comm_size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
@@ -366,7 +374,7 @@ struct Allocations {
   }
   void print(std::ostream& os) {
     std::string s;
-#ifdef USE_MPI
+#if USE_MPI
     auto max_total_size = total_size;
     MPI_Allreduce(MPI_IN_PLACE, &max_total_size, 1,
         MPI_UINT64_T, MPI_MAX, MPI_COMM_WORLD);
@@ -387,7 +395,7 @@ struct Allocations {
       std::stringstream ss;
       ss << std::fixed << std::setprecision(1);
       ss << "MAX MEMORY ALLOCATED: " << double(total_size)/1024.0 << " kB" << '\n'; // convert bytes to kB
-#ifdef USE_MPI
+#if USE_MPI
       ss << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
 #endif
       ss << "ALLOCATIONS AT TIME OF HIGH WATER MARK:\n";
@@ -403,7 +411,7 @@ struct Allocations {
       ss << '\n';
       s = ss.str();
     }
-#ifdef USE_MPI
+#if USE_MPI
     // a little MPI dance to send the string from min_max_rank to rank 0
     MPI_Request request;
     int string_size;
@@ -470,7 +478,7 @@ struct State {
       inv_stack_root.print(std::cout);
     }
     for (int space = 0; space < NSPACES; ++space) {
-#ifdef USE_MPI
+#if USE_MPI
       if (rank == 0)
 #endif
       {
@@ -481,7 +489,7 @@ struct State {
       hwm_allocations[space].print(std::cout);
     }
     print_process_hwm();
-#ifdef USE_MPI
+#if USE_MPI
     if (rank == 0)
 #endif
     {

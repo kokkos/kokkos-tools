@@ -8,6 +8,9 @@
 
 std::vector<std::string> regions;
 static uint64_t uniqID;
+struct SpaceHandle {
+  char name[64];
+};
 
 void kokkosp_print_region_stack_indent(const int level) {
 	printf("KokkosP: ");
@@ -104,4 +107,21 @@ extern "C" void kokkosp_pop_profile_region() {
 		printf("KokkosP: Exiting profiling region: %s\n", regions.back().c_str());
 		regions.pop_back();
 	}
+}
+
+extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char* name, void* ptr, uint64_t size) {
+  printf("KokkosP: Allocate<%s> name: %s pointer: %p size: %lu\n",handle.name,name,ptr,size);
+}
+
+extern "C" void kokkosp_deallocate_data(SpaceHandle handle, const char* name, void* ptr, uint64_t size) {
+  printf("KokkosP: Deallocate<%s> name: %s pointer: %p size: %lu\n",handle.name,name,ptr,size);
+}
+
+extern "C" void kokkosp_begin_deep_copy(
+    SpaceHandle dst_handle, const char* dst_name, const void* dst_ptr,
+    SpaceHandle src_handle, const char* src_name, const void* src_ptr,
+    uint64_t size) {
+  printf("KokkosP: DeepCopy<%s,%s> DST(name: %s pointer: %p) SRC(name: %s pointer %p) Size: %lu\n",
+    dst_handle.name, src_handle.name,
+    dst_name, dst_ptr, src_name, src_ptr, size);
 }

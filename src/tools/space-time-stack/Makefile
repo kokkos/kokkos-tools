@@ -1,6 +1,9 @@
 CXX=mpicxx
 CFLAGS=-shared -O3 -g -fPIC -std=c++11 -Wall -Wextra
 
+#Turn MPI support off:
+#CFLAGS += -DUSE_MPI=0
+
 kp_space_time_stack.so: kp_space_time_stack.cpp
 	$(CXX) $(CFLAGS) -o $@ $<
 
