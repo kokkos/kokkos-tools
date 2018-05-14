@@ -156,8 +156,8 @@ struct StackNode {
     return name < other.name;
   }
   std::string get_full_name() const {
-    std::string full_name;
-    for (auto p = this; p; p = p->parent) {
+    std::string full_name = this->name;
+    for (auto p = this->parent; p; p = p->parent) {
       if (p->name.empty() && !p->parent) continue;
       full_name = p->name + '/' + full_name;
     }
