@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-O3 -std=c++11 -g -fopenmp
+CXXFLAGS=-O3 -std=c++11 -g
 SHARED_CXXFLAGS=-shared -fPIC
 
 all: kp_memory_events.so
