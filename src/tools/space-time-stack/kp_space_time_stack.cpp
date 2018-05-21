@@ -222,7 +222,19 @@ struct StackNode {
       os << avg_runtime << " sec ";
       os << std::fixed << std::setprecision(1);
       auto percent_kokkos = (total_kokkos_runtime / total_runtime) * 100.0;
-      os << percent << "% " << percent_kokkos << "% " << imbalance << "% " << number_of_calls << " " << name;
+
+      // Sum over kids if we're a region 
+      if (kind==STACK_REGION) {
+        double child_runtime = 0.0;
+        for (auto& child : children) {
+          child_runtime += child.total_runtime;
+        }
+        auto remainder = (1.0 - child_runtime / total_runtime) * 100.0;
+        os << percent << "% " << percent_kokkos << "% " << imbalance << "% " << remainder << "% " << number_of_calls << " " << name;
+      }
+      else
+        os << percent << "% " << percent_kokkos << "% " << imbalance << "% " << "------ " << number_of_calls << " " << name;
+
       switch (kind) {
         case STACK_FOR: os << " [for]"; break;
         case STACK_REDUCE: os << " [reduce]"; break;
@@ -230,6 +242,8 @@ struct StackNode {
         case STACK_REGION: os << " [region]"; break;
         case STACK_COPY: os << " [copy]"; break;
       };
+
+
       os << '\n';
     }
     if (children.empty()) return;
@@ -470,7 +484,7 @@ struct State {
       std::cout << "\nBEGIN KOKKOS PROFILING REPORT:\n";
       std::cout << "TOTAL TIME: " << stack_root.max_runtime << " seconds\n";
       std::cout << "TOP-DOWN TIME TREE:\n";
-      std::cout << "<average time> <percent of total time> <percent time in Kokkos> <percent MPI imbalance> <number of calls> <name> [type]\n";
+      std::cout << "<average time> <percent of total time> <percent time in Kokkos> <percent MPI imbalance> <remainder> <number of calls> <name> [type]\n";
       std::cout << "=================== \n";
       stack_root.print(std::cout);
       std::cout << "BOTTOM-UP TIME TREE:\n";
