@@ -475,7 +475,7 @@ struct State {
     auto inv_stack_root = stack_root.invert();
     stack_root.reduce_over_mpi();
     inv_stack_root.reduce_over_mpi();
-#ifdef USE_MPI
+#if USE_MPI
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (rank == 0)
