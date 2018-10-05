@@ -72,15 +72,15 @@ struct EventRecord {
 
   void print_record() const {
     if(operation == MEMOP_ALLOCATE)
-      printf("%lf %16p %14d %16s Allocate   %s\n",time,ptr,size,space<0?"":space_name[space],name);
+      printf("%lf %16p %14lu %16s Allocate   %s\n",time,ptr,size,space<0?"":space_name[space],name);
     if(operation == MEMOP_DEALLOCATE)
-      printf("%lf %16p %14d %16s DeAllocate %s\n",time,ptr,-size,space<0?"":space_name[space],name);
+      printf("%lf %16p %14li %16s DeAllocate %s\n",time,ptr,-size,space<0?"":space_name[space],name);
   }
   void print_record(FILE* ofile) const {
     if(operation == MEMOP_ALLOCATE)
-      fprintf(ofile,"%lf %16p %14d %16s Allocate   %s\n",time,ptr,size,space<0?"":space_name[space],name);
+      fprintf(ofile,"%lf %16p %14lu %16s Allocate   %s\n",time,ptr,size,space<0?"":space_name[space],name);
     if(operation == MEMOP_DEALLOCATE)
-      fprintf(ofile,"%lf %16p %14d %16s DeAllocate %s\n",time,ptr,-size,space<0?"":space_name[space],name);
+      fprintf(ofile,"%lf %16p %14li %16s DeAllocate %s\n",time,ptr,-size,space<0?"":space_name[space],name);
   }
 };
 
