@@ -14,15 +14,15 @@ bool compareKernelPerformanceInfo(KernelPerformanceInfo* left, KernelPerformance
 
 int find_index(std::vector<KernelPerformanceInfo*>& kernels,
 	const char* kernelName) {
-	
+
 	for(int i = 0; i < kernels.size(); i++) {
 		KernelPerformanceInfo* nextKernel = kernels[i];
-	
+
 		if(strcmp(nextKernel->getName(), kernelName) == 0) {
 			return i;
-		}	
+		}
 	}
-	
+
 	return -1;
 }
 
@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
 	}
 
         char delimiter   = ' ';
-        int fixed_width  = 1;
+        int fixed_width  = 0;
 
         int commandline_args = 1;
         while( (commandline_args<argc ) && (argv[commandline_args][0]=='-') ) {
@@ -56,10 +56,10 @@ int main(int argc, char* argv[]) {
 
 	for(int i = commandline_args; i < argc; i++) {
 		FILE* the_file = fopen(argv[i], "rb");
-		
+
 		double fileExecuteTime = 0;
 		fread(&fileExecuteTime, sizeof(fileExecuteTime), 1, the_file);
-		
+
 		totalExecuteTime += fileExecuteTime;
 
 		while(! feof(the_file)) {
@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
 
 		if(kernelInfo[i]->getKernelType() != REGION) continue;
     if(fixed_width)
-		printf("%100s%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
+		printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
 		  kernelInfo[i]->getName(),
 		   ( kernelInfo[i]->getKernelType() == PARALLEL_FOR) ? (
 		     " (ParFor)  " ) : (
@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
 			delimiter,(kernelInfo[i]->getTime() / totalKernelsTime) * 100.0,
 			delimiter,(kernelInfo[i]->getTime() / totalExecuteTime) * 100.0 );
     else
-    printf("%s%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n", kernelInfo[i]->getName(),
+    printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n", kernelInfo[i]->getName(),
          ( kernelInfo[i]->getKernelType() == PARALLEL_FOR) ? (
            " (ParFor)  " ) : (
          ( kernelInfo[i]->getKernelType() == PARALLEL_REDUCE) ? (
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
 
     if(kernelInfo[i]->getKernelType() == REGION) continue;
     if(fixed_width)
-    printf("%100s%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
+    printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
       kernelInfo[i]->getName(),
        ( kernelInfo[i]->getKernelType() == PARALLEL_FOR) ? (
          " (ParFor)  " ) : (
@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
       delimiter,(kernelInfo[i]->getTime() / totalKernelsTime) * 100.0,
       delimiter,(kernelInfo[i]->getTime() / totalExecuteTime) * 100.0 );
     else
-    printf("%s%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n", kernelInfo[i]->getName(),
+    printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n", kernelInfo[i]->getName(),
          ( kernelInfo[i]->getKernelType() == PARALLEL_FOR) ? (
            " (ParFor)  " ) : (
          ( kernelInfo[i]->getKernelType() == PARALLEL_REDUCE) ? (

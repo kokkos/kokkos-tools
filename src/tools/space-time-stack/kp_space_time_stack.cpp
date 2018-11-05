@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cinttypes>
 #include <iostream>
 #include <ios>
 #include <iomanip>
@@ -10,6 +11,7 @@
 #include <queue>
 #include <sstream>
 #include <sys/resource.h>
+#include <algorithm>
 
 #ifndef USE_MPI
 #define USE_MPI 1
@@ -124,6 +126,7 @@ struct StackNode {
   StackKind kind;
   std::set<StackNode> children;
   double total_runtime;
+  double total_kokkos_runtime;
   double max_runtime;
   double avg_runtime;
   std::int64_t number_of_calls;
@@ -132,7 +135,8 @@ struct StackNode {
     parent(parent_in),
     name(std::move(name_in)),
     kind(kind_in),
-    total_runtime(0.0),
+    total_runtime(0.),
+    total_kokkos_runtime(0.),
     number_of_calls(0) {
   }
   StackNode* get_child(std::string&& child_name, StackKind child_kind) {
@@ -152,8 +156,8 @@ struct StackNode {
     return name < other.name;
   }
   std::string get_full_name() const {
-    std::string full_name;
-    for (auto p = this; p; p = p->parent) {
+    std::string full_name = this->name;
+    for (auto p = this->parent; p; p = p->parent) {
       if (p->name.empty() && !p->parent) continue;
       full_name = p->name + '/' + full_name;
     }
@@ -167,6 +171,16 @@ struct StackNode {
     auto runtime = (end_time - start_time);
     total_runtime += runtime;
   }
+  void adopt() {
+    if (this->kind != STACK_REGION) {
+      this->total_kokkos_runtime += this->total_runtime;
+    }
+    for (auto& child : this->children) {
+      const_cast<StackNode&>(child).adopt();
+      this->total_kokkos_runtime += child.total_kokkos_runtime;
+    }
+    assert(this->total_kokkos_runtime >= 0.);
+  }
   StackNode invert() const {
     StackNode inv_root(nullptr, "", STACK_REGION);
     std::queue<StackNode const*> q;
@@ -174,19 +188,25 @@ struct StackNode {
     while (!q.empty()) {
       auto node = q.front(); q.pop();
       auto self_time = node->total_runtime;
+      auto self_kokkos_time = node->total_kokkos_runtime;
       auto calls = node->number_of_calls;
       for (auto& child : node->children) {
         self_time -= child.total_runtime;
+        self_kokkos_time -= child.total_kokkos_runtime;
         q.push(&child);
       }
+      self_time = std::max(self_time, 0.); // floating-point may give negative epsilon instead of zero
+      self_kokkos_time = std::max(self_kokkos_time, 0.); // floating-point may give negative epsilon instead of zero
       auto inv_node = &inv_root;
       inv_node->total_runtime += self_time;
       inv_node->number_of_calls += calls;
+      inv_node->total_kokkos_runtime += self_kokkos_time;
       for (; node; node = node->parent) {
         std::string name = node->name;
         inv_node = inv_node->get_child(std::move(name), node->kind);
         inv_node->total_runtime += self_time;
         inv_node->number_of_calls += calls;
+        inv_node->total_kokkos_runtime += self_kokkos_time;
       }
     }
     return inv_root;
@@ -201,7 +221,20 @@ struct StackNode {
       os << std::scientific << std::setprecision(2);
       os << avg_runtime << " sec ";
       os << std::fixed << std::setprecision(1);
-      os << percent << "% " << imbalance << "% " << number_of_calls << " " << name;
+      auto percent_kokkos = (total_kokkos_runtime / total_runtime) * 100.0;
+
+      // Sum over kids if we're a region 
+      if (kind==STACK_REGION) {
+        double child_runtime = 0.0;
+        for (auto& child : children) {
+          child_runtime += child.total_runtime;
+        }
+        auto remainder = (1.0 - child_runtime / total_runtime) * 100.0;
+        os << percent << "% " << percent_kokkos << "% " << imbalance << "% " << remainder << "% " << number_of_calls << " " << name;
+      }
+      else
+        os << percent << "% " << percent_kokkos << "% " << imbalance << "% " << "------ " << number_of_calls << " " << name;
+
       switch (kind) {
         case STACK_FOR: os << " [for]"; break;
         case STACK_REDUCE: os << " [reduce]"; break;
@@ -209,6 +242,8 @@ struct StackNode {
         case STACK_REGION: os << " [region]"; break;
         case STACK_COPY: os << " [copy]"; break;
       };
+
+
       os << '\n';
     }
     if (children.empty()) return;
@@ -261,6 +296,8 @@ struct StackNode {
       MPI_Allreduce(MPI_IN_PLACE, &(node->avg_runtime),
           1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       node->avg_runtime /= comm_size;
+      MPI_Allreduce(MPI_IN_PLACE, &(node->total_kokkos_runtime),
+          1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       /* There may be kernels that were called on rank 0 but were not
          called on certain other ranks.
          We will count these and add empty entries in the other ranks.
@@ -434,10 +471,11 @@ struct State {
       abort();
     }
     stack_frame->end(end_time);
+    stack_root.adopt();
     auto inv_stack_root = stack_root.invert();
-#if USE_MPI
     stack_root.reduce_over_mpi();
     inv_stack_root.reduce_over_mpi();
+#if USE_MPI
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (rank == 0)
@@ -446,11 +484,11 @@ struct State {
       std::cout << "\nBEGIN KOKKOS PROFILING REPORT:\n";
       std::cout << "TOTAL TIME: " << stack_root.max_runtime << " seconds\n";
       std::cout << "TOP-DOWN TIME TREE:\n";
-      std::cout << "<average time> <percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
+      std::cout << "<average time> <percent of total time> <percent time in Kokkos> <percent MPI imbalance> <remainder> <number of calls> <name> [type]\n";
       std::cout << "=================== \n";
       stack_root.print(std::cout);
       std::cout << "BOTTOM-UP TIME TREE:\n";
-      std::cout << "<average time> <percent of total time> <percent MPI imbalance> <number of calls> <name> [type]\n";
+      std::cout << "<average time> <percent of total time> <percent time in Kokkos> <percent MPI imbalance> <number of calls> <name> [type]\n";
       std::cout << "=================== \n";
       inv_stack_root.print(std::cout);
     }

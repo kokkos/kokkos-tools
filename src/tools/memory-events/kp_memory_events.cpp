@@ -43,7 +43,7 @@
 
 
 #include<cstdio>
-#include <inttypes.h>
+#include <cinttypes>
 #include <vector>
 #include <unordered_map>
 #include <atomic>
@@ -145,6 +145,7 @@ extern "C" void kokkosp_allocate_data(const SpaceHandle space, const char* label
 
   int i=events.size();
   events.push_back(EventRecord(ptr,size,MEMOP_ALLOCATE,space_i,time,label));
+  events.back().print_record();
 }
 
 
@@ -169,5 +170,17 @@ extern "C" void kokkosp_deallocate_data(const SpaceHandle space, const char* lab
 
   int i=events.size();
   events.push_back(EventRecord(ptr,size,MEMOP_DEALLOCATE,space_i,time,label));
+}
+
+extern "C" void kokkosp_push_profile_region(const char* name) {
+  std::lock_guard<std::mutex> lock(m);
+  double time = timer.seconds();
+  events.push_back(EventRecord(nullptr,0,MEMOP_PUSH_REGION,0,time,name));
+}
+
+extern "C" void kokkosp_pop_profile_region() {
+  std::lock_guard<std::mutex> lock(m);
+  double time = timer.seconds();
+  events.push_back(EventRecord(nullptr,0,MEMOP_POP_REGION,0,time,""));
 }
 
