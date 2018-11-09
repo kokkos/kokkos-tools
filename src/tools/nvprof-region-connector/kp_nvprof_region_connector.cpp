@@ -34,30 +34,39 @@ extern "C" void kokkosp_init_library(const int loadSeq,
         const char * region_config = std::getenv("KOKKOS_REGION_CONFIG");
         std::string regionFileName = region_config;
       
-        std::ifstream fRegConf;
-        fRegConf.open(regionFileName);
-        if (fRegConf.is_open())
+        if ( regionFileName.length() > 0 )
         {
-           std::string sLine;
-           while( std::getline(fRegConf,sLine))
+           std::ifstream fRegConf;
+           fRegConf.open(regionFileName);
+           if (fRegConf.is_open())
            {
-               std::string regName;
-               std::string regFilter; 
-               std::stringstream ss(sLine);
-               if (std::getline(ss,regName,'='))
-               {
-                   if (std::getline(ss,regFilter,'='))
-                   {
-                      int filter = -1;
-                      sscanf(regFilter.c_str(), "%d", &filter);
-                      if (filter >= 0)
+              std::string sLine;
+              while( std::getline(fRegConf,sLine))
+              {
+                  if (sLine.find("#") == 0)
+                     continue;
+                  std::string regName;
+                  std::string regFilter; 
+                  std::stringstream ss(sLine);
+                  if (std::getline(ss,regName,'='))
+                  {
+                      if (std::getline(ss,regFilter,'='))
                       {
-                          regionMap[regName] = filter;  
-                          printf("Adding region to map [%s, %d] \n", regName.c_str(), filter);
+                         int filter = -1;
+                         sscanf(regFilter.c_str(), "%d", &filter);
+                         if (filter >= 0)
+                         {
+                             regionMap[regName] = filter;  
+                             printf("Adding region to map [%s, %d] \n", regName.c_str(), filter);
+                         }
                       }
-                   }
-               }
+                  }
+              }
            }
+        }
+        else
+        {
+           printf("you must specify the region config file in the environment variable KOKKOS_REGION_CONFIG \n");
         }
         cudaProfilerStart();
         cudaProfilerStop();
