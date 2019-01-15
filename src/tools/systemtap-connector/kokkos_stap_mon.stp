@@ -1,0 +1,34 @@
+// A really simple script to demonstrate how to use the systemtap connector
+// to generate prometheus monitoring data for the Kokkos parallel_scan,
+// parallel_reduce, and parallel_for.
+
+global start_t, names%
+global stats%
+
+probe process("./kp_systemtap_connector.so").mark("begin_parallel_*")
+{
+  kernid = user_int($arg3)
+  names[kernid] = user_string_quoted($arg1)
+  start_t[pid(), kernid] = gettimeofday_ns();
+}
+
+probe process("./kp_systemtap_connector.so").mark("end_parallel_*")
+{
+  kernid = $arg1
+  if ([pid(), kernid] in start_t) {
+    stats[execname(), names[kernid]] <<< gettimeofday_ns() -  start_t[pid(),kernid]
+    delete start_t[pid(), kernid]
+  }
+}
+
+global prom_arr
+
+probe prometheus
+{
+  foreach ([e, name] in stats) {
+    prom_arr[name, @count(stats[e, name]), @sum(stats[e, name])] = e
+  }
+  @prometheus_dump_array3(prom_arr, "kokkos_info", "operation", "op_count",
+			  "op_time")
+ delete prom_arr
+}
