@@ -15,8 +15,11 @@ struct SpaceHandle {
   char name[64];                                                                        
 };
 
+static uint64_t next_kernid;
+
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devid, uint64_t* kernid)
 {
+  *kernid = next_kernid++;
   if ( KOKKOS_END_PARALLEL_FOR_ENABLED()) {
     KOKKOS_BEGIN_PARALLEL_FOR(name, devid, kernid);
   }
@@ -24,6 +27,7 @@ extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devi
 
 extern "C" void kokkosp_begin_parallel_scan(const char* name, const uint32_t devid, uint64_t* kernid)
 {
+  *kernid = next_kernid++;
   if (KOKKOS_BEGIN_PARALLEL_SCAN_ENABLED()) {
     KOKKOS_BEGIN_PARALLEL_SCAN(name, devid, kernid);
   }
@@ -31,6 +35,7 @@ extern "C" void kokkosp_begin_parallel_scan(const char* name, const uint32_t dev
 
 extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devid, uint64_t* kernid)
 {
+  *kernid = next_kernid++;
   if (KOKKOS_BEGIN_PARALLEL_REDUCE_ENABLED()) {
     KOKKOS_BEGIN_PARALLEL_REDUCE(name, devid, kernid);
   }
