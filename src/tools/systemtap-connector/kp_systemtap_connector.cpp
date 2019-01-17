@@ -16,6 +16,7 @@ struct SpaceHandle {
 };
 
 static uint64_t next_kernid;
+static uint32_t next_sec_id;
 
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devid, uint64_t* kernid)
 {
@@ -128,6 +129,7 @@ extern "C" void kokkosp_end_deep_copy()
       
 extern "C" void kokkosp_create_profile_section(const char* name, uint32_t* sec_id)
 {
+  *sec_id = next_sec_id++;
   if (KOKKOS_CREATE_PROFILE_SECTION_ENABLED()) {
     KOKKOS_CREATE_PROFILE_SECTION(name, sec_id);
   }
