@@ -130,6 +130,7 @@ struct StackNode {
   double max_runtime;
   double avg_runtime;
   std::int64_t number_of_calls;
+  std::int64_t total_number_of_kernel_calls;// Counts all kernel calls (but not region calls) this node and below this node in the tree
   Now start_time;
   StackNode(StackNode* parent_in, std::string&& name_in, StackKind kind_in):
     parent(parent_in),
@@ -137,7 +138,8 @@ struct StackNode {
     kind(kind_in),
     total_runtime(0.),
     total_kokkos_runtime(0.),
-    number_of_calls(0) {
+    number_of_calls(0),
+    total_number_of_kernel_calls(0) {
   }
   StackNode* get_child(std::string&& child_name, StackKind child_kind) {
     StackNode candidate(this, std::move(child_name), child_kind);
@@ -165,6 +167,10 @@ struct StackNode {
   }
   void begin() {
     number_of_calls++;
+    
+    // Regions are not kernels, so we don't tally those
+    if(kind==STACK_FOR || kind==STACK_REDUCE || kind==STACK_SCAN || kind==STACK_COPY)
+      total_number_of_kernel_calls++;
     start_time = now();
   }
   void end(Now const& end_time) {
@@ -178,6 +184,7 @@ struct StackNode {
     for (auto& child : this->children) {
       const_cast<StackNode&>(child).adopt();
       this->total_kokkos_runtime += child.total_kokkos_runtime;
+      this->total_number_of_kernel_calls +=  child.total_number_of_kernel_calls;
     }
     assert(this->total_kokkos_runtime >= 0.);
   }
@@ -230,7 +237,8 @@ struct StackNode {
           child_runtime += child.total_runtime;
         }
         auto remainder = (1.0 - child_runtime / total_runtime) * 100.0;
-        os << percent << "% " << percent_kokkos << "% " << imbalance << "% " << remainder << "% " << number_of_calls << " " << name;
+        double kps = total_number_of_kernel_calls / avg_runtime;
+        os << percent << "% " << percent_kokkos << "% " << imbalance << "% " << remainder << "% " << std::scientific << std::setprecision(2) << kps << " " << number_of_calls << " " << name;
       }
       else
         os << percent << "% " << percent_kokkos << "% " << imbalance << "% " << "------ " << number_of_calls << " " << name;
@@ -484,7 +492,7 @@ struct State {
       std::cout << "\nBEGIN KOKKOS PROFILING REPORT:\n";
       std::cout << "TOTAL TIME: " << stack_root.max_runtime << " seconds\n";
       std::cout << "TOP-DOWN TIME TREE:\n";
-      std::cout << "<average time> <percent of total time> <percent time in Kokkos> <percent MPI imbalance> <remainder> <number of calls> <name> [type]\n";
+      std::cout << "<average time> <percent of total time> <percent time in Kokkos> <percent MPI imbalance> <remainder> <kernels per second> <number of calls> <name> [type]\n";
       std::cout << "=================== \n";
       stack_root.print(std::cout);
       std::cout << "BOTTOM-UP TIME TREE:\n";
