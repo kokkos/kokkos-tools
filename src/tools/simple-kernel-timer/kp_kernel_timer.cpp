@@ -101,7 +101,7 @@ extern "C" void kokkosp_finalize_library() {
 
 	fclose(output_data);
 
-	char* currentwd  = (char*) malloc(sizeof(char) * 256);
+	char currentwd[256];
   getcwd(currentwd, 256);
   printf("KokkosP: Kernel timing written to %s/%s \n", currentwd, fileOutput);
 
