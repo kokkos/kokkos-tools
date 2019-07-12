@@ -13,7 +13,7 @@
 #include <caliper/Annotation.h>
 #include <caliper/ChannelController.h>
 #include <caliper/cali.h>
-#include <caliper-config.h>
+#include <caliper/caliper-config.h>
 #include <map>
 
 void declareConfigError(const std::string& message){
@@ -58,6 +58,12 @@ extern "C" void kokkosp_init_library(const int loadSeq,
     declareConfigError("Requested nvprof caliper configuration, but Caliper wasn't built with NVPROF support.");
     #endif
     config = nvprof_config;
+  }
+  else if(chosenConfig=="ENV"){
+    /** this branch intentionally left blank, it lets users configure Caliper through the envioronment */
+  }
+  else{
+    declareConfigError("Invalid configuration "+chosenConfig+", options are (DEFAULT,NVPROF,ENV)");
   }
   cali::ChannelController caliperChannel("kokkos", CALI_CHANNEL_ALLOW_READ_ENV, config);
   caliperChannel.start();
