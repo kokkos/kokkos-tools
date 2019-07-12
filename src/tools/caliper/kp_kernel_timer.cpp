@@ -3,7 +3,6 @@
 #include <execinfo.h>
 #include <cstdlib>
 #include <cstring>
-#include <map>
 #include <vector>
 #include <algorithm>
 #include <string>
@@ -14,12 +13,16 @@
 #include <caliper/ChannelController.h>
 #include <caliper/cali.h>
 #include <caliper/caliper-config.h>
-#include <map>
 
+#include "kp_memory_events.hpp"
+
+
+cali::ChannelController* caliperChannel = nullptr;
 void declareConfigError(const std::string& message){
    std::cerr << message <<std::endl;
    // TODO: decide on errors exiting or falling back
 }
+
 
 extern "C" void kokkosp_init_library(const int loadSeq,
 	const uint64_t interfaceVer,
@@ -39,7 +42,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   };
   cali::config_map_t nvprof_config {
    {"CALI_RECORDER_FILENAME",fileOutput},
-   {"CALI_SERVICES_ENABLE","event:trace:nvprof"}
+   {"CALI_SERVICES_ENABLE","nvprof"}
   };
   char* chosenConfigEnvEntry = getenv("KOKKOS_CALIPER_CONFIG"); 
   std::string chosenConfig;
@@ -61,12 +64,15 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   }
   else if(chosenConfig=="ENV"){
     /** this branch intentionally left blank, it lets users configure Caliper through the envioronment */
+    /** TODO: if trace in services, set trace mode. */
+    goto caliper_kokkos_tool_cleanup;
   }
   else{
     declareConfigError("Invalid configuration "+chosenConfig+", options are (DEFAULT,NVPROF,ENV)");
   }
-  cali::ChannelController caliperChannel("kokkos", CALI_CHANNEL_ALLOW_READ_ENV, config);
-  caliperChannel.start();
+  caliperChannel = new  cali::ChannelController("kokkos", 0, config);
+  caliperChannel->start();
+  caliper_kokkos_tool_cleanup:
   free(hostname);
   free(fileOutput);
 }
