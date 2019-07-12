@@ -55,12 +55,10 @@ struct SpaceHandle {
 };
 
 struct AnnotationsForSpace {
-  void initialize(std::string name){
-    allocationAnnotation = 
-  }
-  cali::Annotation allocationAnnotation;
-  cali::Annotation deallocationAnnotation;
+  char name[64];
+  cali::Annotation* allocationAnnotation;
+  cali::Annotation* deallocationAnnotation;
 };
 
-AnnotationsForSpace space_name[16][64];
+AnnotationsForSpace space_data[16];
 

@@ -12,17 +12,42 @@
 #include <caliper/Annotation.h>
 #include <caliper/ChannelController.h>
 #include <caliper/cali.h>
+#include <caliper/common/Variant.h>
 #include <caliper/caliper-config.h>
 
 #include "kp_memory_events.hpp"
 
 
+bool caliper_kokkos_track_memory;
+bool caliper_kokkos_tracing;
 cali::ChannelController* caliperChannel = nullptr;
+int num_spaces;
+
+cali::Annotation::MetadataListType aggregatable_metadata {
+  {"class.aggregatable", cali::Variant(true) }
+};
+
 void declareConfigError(const std::string& message){
    std::cerr << message <<std::endl;
    // TODO: decide on errors exiting or falling back
 }
 
+AnnotationsForSpace& getMemoryAnnotations(const char name[64]){
+  int space_i = num_spaces;
+  for(int s = 0; s<num_spaces; s++)
+    if(strcmp(space_data[s].name,name)==0)
+      space_i = s;
+
+  if(space_i == num_spaces) {
+    strncpy(space_data[num_spaces].name,name,64);
+    std::string allocationName = std::string(name) + "#bytes_allocated";  
+    std::string deallocationName = std::string(name) + "#bytes_deallocated";  
+    space_data[num_spaces].allocationAnnotation = new cali::Annotation(allocationName.c_str(), aggregatable_metadata, CALI_ATTR_ASVALUE);
+    space_data[num_spaces].deallocationAnnotation = new cali::Annotation(deallocationName.c_str(), aggregatable_metadata, CALI_ATTR_ASVALUE);
+    num_spaces++;
+  }
+  return space_data[space_i];
+}
 
 extern "C" void kokkosp_init_library(const int loadSeq,
 	const uint64_t interfaceVer,
@@ -34,8 +59,11 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   	
 	char* fileOutput = (char*) malloc(sizeof(char) * 256);
 	sprintf(fileOutput, "%s-%d.cali", hostname, (int) getpid());
-  //cali_config_set("CALI_RECORDER_FILENAME",fileOutput);
-  //cali_config_set("CALI_SERVICES_ENABLE","timestamp:event:aggregate:recorder");
+
+  char* memoryEvents = getenv("KOKKOS_CALIPER_TRACK_MEMORY");
+  if(memoryEvents){
+    caliper_kokkos_track_memory = true;
+  }
   cali::config_map_t default_config {
    {"CALI_RECORDER_FILENAME",fileOutput},
    {"CALI_SERVICES_ENABLE","timestamp:event:aggregate:recorder"}
@@ -43,6 +71,10 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   cali::config_map_t nvprof_config {
    {"CALI_RECORDER_FILENAME",fileOutput},
    {"CALI_SERVICES_ENABLE","nvprof"}
+  };
+  cali::config_map_t trace_config {
+   {"CALI_RECORDER_FILENAME",fileOutput},
+   {"CALI_SERVICES_ENABLE","timestamp:event:trace:recorder"}
   };
   char* chosenConfigEnvEntry = getenv("KOKKOS_CALIPER_CONFIG"); 
   std::string chosenConfig;
@@ -62,6 +94,10 @@ extern "C" void kokkosp_init_library(const int loadSeq,
     #endif
     config = nvprof_config;
   }
+  else if(chosenConfig=="TRACE") {
+    caliper_kokkos_tracing = true;
+    config = trace_config;
+  }
   else if(chosenConfig=="ENV"){
     /** this branch intentionally left blank, it lets users configure Caliper through the envioronment */
     /** TODO: if trace in services, set trace mode. */
@@ -78,6 +114,30 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 }
 
 extern "C" void kokkosp_finalize_library() {
+  for(int x =0; x<num_spaces;++x){
+    free(space_data[x].allocationAnnotation);
+    free(space_data[x].deallocationAnnotation);
+  }
+}
+extern "C" void kokkosp_deallocate_data(const SpaceHandle space, const char* label, const void* const ptr, const uint64_t size) {
+  if(!caliper_kokkos_track_memory){
+    return;
+  }
+  AnnotationsForSpace& spaceAnnotations = getMemoryAnnotations(space.name);
+  spaceAnnotations.deallocationAnnotation->set((double)size);
+  if(caliper_kokkos_tracing){
+    cali::Annotation(label).end();
+  }
+}
+extern "C" void kokkosp_allocate_data(const SpaceHandle space, const char* label, const void* const ptr, const uint64_t size) {
+  if(!caliper_kokkos_track_memory){
+    return;
+  }
+  AnnotationsForSpace& spaceAnnotations = getMemoryAnnotations(space.name);
+  spaceAnnotations.allocationAnnotation->set((double)size);
+  if(caliper_kokkos_tracing){
+    cali::Annotation(label).begin();
+  }
 }
 
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
