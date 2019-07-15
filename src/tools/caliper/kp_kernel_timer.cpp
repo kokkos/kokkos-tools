@@ -14,6 +14,7 @@
 #include <caliper/cali.h>
 #include <caliper/common/Variant.h>
 #include <caliper/caliper-config.h>
+#include <caliper/cali_datatracker.h>
 
 #include "kp_memory_events.hpp"
 
@@ -59,22 +60,25 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   	
 	char* fileOutput = (char*) malloc(sizeof(char) * 256);
 	sprintf(fileOutput, "%s-%d.cali", hostname, (int) getpid());
-
+  
   char* memoryEvents = getenv("KOKKOS_CALIPER_TRACK_MEMORY");
+  std::string additional_services;
   if(memoryEvents){
     caliper_kokkos_track_memory = true;
+    additional_services+=":alloc";
   }
   cali::config_map_t default_config {
    {"CALI_RECORDER_FILENAME",fileOutput},
-   {"CALI_SERVICES_ENABLE","timestamp:event:aggregate:recorder"}
+   {"CALI_ALLOC_RECORD_ACTIVE_MEM","true"},
+   {"CALI_SERVICES_ENABLE","timestamp:event:aggregate:recorder" + additional_services}
   };
   cali::config_map_t nvprof_config {
    {"CALI_RECORDER_FILENAME",fileOutput},
-   {"CALI_SERVICES_ENABLE","nvprof"}
+   {"CALI_SERVICES_ENABLE","nvprof" + additional_services}
   };
   cali::config_map_t trace_config {
    {"CALI_RECORDER_FILENAME",fileOutput},
-   {"CALI_SERVICES_ENABLE","timestamp:event:trace:recorder"}
+   {"CALI_SERVICES_ENABLE","timestamp:event:trace:recorder" + additional_services}
   };
   char* chosenConfigEnvEntry = getenv("KOKKOS_CALIPER_CONFIG"); 
   std::string chosenConfig;
@@ -104,7 +108,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
     goto caliper_kokkos_tool_cleanup;
   }
   else{
-    declareConfigError("Invalid configuration "+chosenConfig+", options are (DEFAULT,NVPROF,ENV)");
+    declareConfigError("Invalid configuration "+chosenConfig+", options are (DEFAULT,NVPROF,TRACE,ENV)");
   }
   caliperChannel = new  cali::ChannelController("kokkos", 0, config);
   caliperChannel->start();
@@ -123,21 +127,13 @@ extern "C" void kokkosp_deallocate_data(const SpaceHandle space, const char* lab
   if(!caliper_kokkos_track_memory){
     return;
   }
-  AnnotationsForSpace& spaceAnnotations = getMemoryAnnotations(space.name);
-  spaceAnnotations.deallocationAnnotation->set((double)size);
-  if(caliper_kokkos_tracing){
-    cali::Annotation(label).end();
-  }
+  cali_datatracker_untrack(ptr);
 }
 extern "C" void kokkosp_allocate_data(const SpaceHandle space, const char* label, const void* const ptr, const uint64_t size) {
   if(!caliper_kokkos_track_memory){
     return;
   }
-  AnnotationsForSpace& spaceAnnotations = getMemoryAnnotations(space.name);
-  spaceAnnotations.allocationAnnotation->set((double)size);
-  if(caliper_kokkos_tracing){
-    cali::Annotation(label).begin();
-  }
+  cali_datatracker_track(ptr, label, size);
 }
 
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
