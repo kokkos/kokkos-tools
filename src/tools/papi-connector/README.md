@@ -2,11 +2,16 @@
 
 To use the PAPI connector you have to compile it against the latest PAPI version that includes the new high-level API.
 
+Details about PAPI's new high-level API can be found here:  
+https://bitbucket.org/icl/papi/wiki/Home
+
 #### Install PAPI (from version 6.0) or latest git version
 
 ```console
 git clone https://bitbucket.org/icl/papi.git
 ```   
+Installation instructions can be found here:  
+https://icl.utk.edu/papi/software/index.html
 
 #### Install the PAPI connector
 ```console
