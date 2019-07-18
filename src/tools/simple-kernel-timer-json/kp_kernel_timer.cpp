@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <string>
 #include <sys/time.h>
-#include <cxxabi.h>
+
 #include <unistd.h>
 #include "kp_kernel_info.h"
 

@@ -1,2 +1,3 @@
+*~
 *.so
 /src/tools/simple-kernel-timer/kp_reader

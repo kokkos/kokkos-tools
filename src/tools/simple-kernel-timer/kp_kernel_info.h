@@ -5,9 +5,28 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <cstring>
+
+#if defined(__GXX_ABI_VERSION)
+#define HAVE_GCC_ABI_DEMANGLE
+#endif
+
 #if defined(HAVE_GCC_ABI_DEMANGLE)
 #include <cxxabi.h>
-#endif
+#endif // HAVE_GCC_ABI_DEMANGLE
+
+char* demangleName(char* kernelName)
+{
+#if defined(HAVE_GCC_ABI_DEMANGLE)
+	int status = -1;
+	char* demangledKernelName = abi::__cxa_demangle(kernelName, NULL, NULL, &status);
+	if (status==0) {
+		free(kernelName);
+		kernelName = demangledKernelName;
+	}
+#endif // HAVE_GCC_ABI_DEMANGLE
+	return kernelName;
+}
+
 double seconds() {
 	struct timeval now;
 	gettimeofday(&now, NULL);
@@ -101,16 +120,9 @@ class KernelPerformanceInfo {
 			kernelName = (char*) malloc( sizeof(char) * (kernelNameLength + 1));
 			copy(kernelName, &entry[nextIndex], kernelNameLength);
 			kernelName[kernelNameLength] = '\0';
-#if defined(HAVE_GCC_ABI_DEMANGLE)
-			{
-				int status = -1;
-				char* demangledKernelName = abi::__cxa_demangle(kernelName, NULL, NULL, &status);
-				if (status==0) {
-					free(kernelName);
-					kernelName = demangledKernelName;
-				}
-			}
-#endif // HAVE_GCC_ABI_DEMANGLE
+
+			kernelName = demangleName(kernelName);
+
 			nextIndex += kernelNameLength;
 
 			copy((char*) &callCount, &entry[nextIndex], sizeof(callCount));
