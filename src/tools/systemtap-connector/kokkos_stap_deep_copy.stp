@@ -1,0 +1,25 @@
+global start_t
+global stats
+
+probe process("./kp_systemtap_connector.so").mark("begin_deep_copy")
+{
+  start_t[pid()] = gettimeofday_ns();
+}
+
+probe process("./kp_systemtap_connector.so").mark("end_deep_copy")
+{
+  id = pid()
+  if (id in start_t) {
+     stats[id] <<< gettimeofday_ns() -  start_t[id]
+     delete start_t[id]
+  }
+}
+
+probe end
+{
+  printf("\n\n")
+  foreach ([id] in stats) {
+    printf ("%s, %d \n", "", id)
+    print (@hist_log(stats[id]))
+  }
+}
