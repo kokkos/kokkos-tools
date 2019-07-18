@@ -22,7 +22,7 @@ Before executing the Kokkos application you have to set the environment variable
 export KOKKOS_PROFILE_LIBRARY=kp_papi_connector.so
 ```
 
-As implemented in PAPI’s high-level API, default PAPI events are measured if you have not specified any specific events. You can specify arbitrary events using the environment variable PAPI\_EVENTS.
+As implemented in PAPI’s high-level API, default PAPI events are measured if you have not specified any specific events. You can specify arbitrary events using the environment variable `PAPI\_EVENTS`.
 
 ```console
 export PAPI_EVENTS="PAPI_TOT_INS,PAPI_TOT_CYC"
@@ -33,7 +33,8 @@ Note that all environment variables that are used by PAPI can be set as well, se
 #### Analyze PAPI output
 During the finalization phase of a Kokkos application, an output file is generated automatically. The output format is JSON and lists several PAPI events for each parallel construct or profile section. If not specified by the user, the output file will be located in the current working directory in the "papi" folder.
 
-PAPI also offers a Python script which enhances the outputby creating some derived metrics, like IPC, MFlops/s, and MFlips/s as well as real and processor time in case the corresponding PAPI events have been recorded. 
+PAPI also offers a Python script which enhances the output
+by creating some derived metrics, like IPC, MFlops/s, and MFlips/s as well as real and processor time in case the corresponding PAPI events have been recorded. 
 
 ```console
 papi_hl_output_writer.py --source papi
