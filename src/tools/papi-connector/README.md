@@ -16,7 +16,7 @@ make
 This will generate a dynamic library "kp\_papi\_connector.so".
 
 #### Run kokkos application with PAPI recording enabled
-Before executing the Kokkos application you have to set the environment variable KOKKOS\_PROFILE\_LIBRARY to point to the dynamic libary.
+Before executing the Kokkos application you have to set the environment variable `KOKKOS\_PROFILE\_LIBRARY` to point to the dynamic library.
 
 ```console
 export KOKKOS_PROFILE_LIBRARY=kp_papi_connector.so
