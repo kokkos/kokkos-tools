@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
 	printf("-------------------------------------------------------------------------\n");
 	printf("Summary:\n");
 	printf("\n");
-	printf("Total Execution Time (incl. Kokkos + Non-Kokkos:       %20.5f seconds\n", totalExecuteTime);
+	printf("Total Execution Time (incl. Kokkos + non-Kokkos):      %20.5f seconds\n", totalExecuteTime);
 	printf("Total Time in Kokkos kernels:                          %20.5f seconds\n", totalKernelsTime);
 	printf("   -> Time outside Kokkos kernels:                     %20.5f seconds\n",
 		(totalExecuteTime - totalKernelsTime));
