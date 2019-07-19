@@ -18,7 +18,7 @@ https://icl.utk.edu/papi/software/index.html
 export PAPI_ROOT=<Path of PAPI>  
 make
 ```
-This will generate a dynamic library `kp\_papi\_connector.so`.
+This will generate a dynamic library `kp_papi_connector.so`.
 
 #### Run kokkos application with PAPI recording enabled
 Before executing the Kokkos application you have to set the environment variable `KOKKOS\_PROFILE\_LIBRARY` to point to the dynamic library.
