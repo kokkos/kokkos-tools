@@ -1,0 +1,27 @@
+global start_t, names%
+global stats%
+
+probe process("./kp_systemtap_connector.so").mark("begin_parallel_*")
+{
+  kernid = user_int($arg3)
+  names[kernid] = user_string_quoted($arg1)
+  start_t[pid(), kernid] = gettimeofday_ns();
+}
+
+probe process("./kp_systemtap_connector.so").mark("end_parallel_*")
+{
+  kernid = $arg1
+  if ([pid(), kernid] in start_t) {
+    stats[execname(), pn(), names[kernid]] <<< gettimeofday_ns() -  start_t[pid(),kernid]
+    delete start_t[pid(), kernid]
+  }
+}
+
+probe end
+{
+  printf("\n\n")
+  foreach ([e, op, name] in stats) {
+    printf ("execname:%s op:%s name:%s \n", e, op, name)
+    print (@hist_log(stats[e, op, name]))
+  }
+}
