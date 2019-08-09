@@ -21,10 +21,11 @@ make
 This will generate a dynamic library `kp_papi_connector.so`.
 
 #### Run kokkos application with PAPI recording enabled
-Before executing the Kokkos application you have to set the environment variable `KOKKOS_PROFILE_LIBRARY` to point to the dynamic library.
+Before executing the Kokkos application you have to set the environment variable `KOKKOS_PROFILE_LIBRARY` to point to the dynamic library. Also add the library path of PAPI and PAPI connector to `LD_LIBRARY_PATH`.
 
 ```console
 export KOKKOS_PROFILE_LIBRARY=kp_papi_connector.so
+export LD_LIBRARY_PATH=<PAPI-LIB-PATH>:<PAPI-CONNECTOR-LIB-PATH>:$LD_LIBRARY_PATH
 ```
 
 As implemented in PAPI’s high-level API, default PAPI events are measured if you have not specified any specific events. You can specify arbitrary events using the environment variable `PAPI_EVENTS`.
