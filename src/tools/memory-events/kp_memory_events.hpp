@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// // 
+// //
 // //                        Kokkos v. 2.0
 // //              Copyright (2014) Sandia Corporation
-// // 
+// //
 // // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // // the U.S. Government retains certain rights in this software.
-// // 
+// //
 // // Redistribution and use in source and binary forms, with or without
 // // modification, are permitted provided that the following conditions are
 // // met:
@@ -36,7 +36,7 @@
 // // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // //
 // // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// // 
+// //
 // // ************************************************************************
 // //@HEADER
 // */
@@ -83,9 +83,6 @@ struct EventRecord {
       fprintf(ofile,"%lf PushRegion %s {\n",time,name);
     if(operation == MEMOP_POP_REGION)
       fprintf(ofile,"%lf } PopRegion %s\n",time,name);
-  }
-  void print_record() const {
-    print_record(stdout);
   }
 };
 

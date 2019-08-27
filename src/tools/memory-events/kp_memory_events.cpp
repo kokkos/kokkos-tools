@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// // 
+// //
 // //                        Kokkos v. 2.0
 // //              Copyright (2014) Sandia Corporation
-// // 
+// //
 // // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // // the U.S. Government retains certain rights in this software.
-// // 
+// //
 // // Redistribution and use in source and binary forms, with or without
 // // modification, are permitted provided that the following conditions are
 // // met:
@@ -36,13 +36,13 @@
 // // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // //
 // // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// // 
+// //
 // // ************************************************************************
 // //@HEADER
 // */
 
 
-#include<cstdio>
+#include <cstdio>
 #include <cinttypes>
 #include <vector>
 #include <unordered_map>
@@ -66,21 +66,21 @@ static std::mutex m;
 Kokkos::Timer timer;
 
 double max_mem_usage() {
-    struct rusage app_info;
-    getrusage(RUSAGE_SELF, &app_info);
-    const double max_rssKB = app_info.ru_maxrss;
-    return max_rssKB*1024;
+  struct rusage app_info;
+  getrusage(RUSAGE_SELF, &app_info);
+  const double max_rssKB = app_info.ru_maxrss;
+  return max_rssKB*1024;
 }
 
 extern "C" void kokkosp_init_library(const int loadSeq,
-  const uint64_t interfaceVer,
-  const uint32_t devInfoCount,
-  void* deviceInfo) {
+                                     const uint64_t interfaceVer,
+                                     const uint32_t devInfoCount,
+                                     void* deviceInfo) {
 
   num_spaces = 0;
   for(int i=0; i<16; i++)
     space_size[i] = 0;
-  
+
   timer.reset();
 }
 
@@ -103,7 +103,7 @@ extern "C" void kokkosp_finalize_library() {
     fclose(ofile);
   }
 
-  for(int s = 0; s<num_spaces; s++) {	
+  for(int s = 0; s<num_spaces; s++) {
     char* fileOutput = (char*) malloc(sizeof(char) * 256);
     sprintf(fileOutput, "%s-%d-%s.memspace_usage", hostname, pid, space_name[s]);
 
@@ -121,16 +121,16 @@ extern "C" void kokkosp_finalize_library() {
               1.0*maxvalue/1024/1024,
               1.0*std::get<2>(space_size_track[s][i])/1024/1024);
     }
-    fclose(ofile); 
+    fclose(ofile);
  }
   free(hostname);
 }
 
 extern "C" void kokkosp_allocate_data(const SpaceHandle space, const char* label, const void* const ptr, const uint64_t size) {
   std::lock_guard<std::mutex> lock(m);
- 
+
   double time = timer.seconds();
-  
+
   int space_i = num_spaces;
   for(int s = 0; s<num_spaces; s++)
     if(strcmp(space_name[s],space.name)==0)
@@ -145,7 +145,6 @@ extern "C" void kokkosp_allocate_data(const SpaceHandle space, const char* label
 
   int i=events.size();
   events.push_back(EventRecord(ptr,size,MEMOP_ALLOCATE,space_i,time,label));
-  events.back().print_record();
 }
 
 
