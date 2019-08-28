@@ -57,13 +57,11 @@ class Timer {
   Timer& operator=(const Timer&);
 
  public:
-  inline void reset() { m_old = std::chrono::high_resolution_clock::now(); }
+  void reset() { m_old = std::chrono::high_resolution_clock::now(); }
 
-  inline ~Timer() {}
+  Timer() { reset(); }
 
-  inline Timer() { reset(); }
-
-  inline double seconds() const {
+  double seconds() const {
     std::chrono::high_resolution_clock::time_point m_new =
         std::chrono::high_resolution_clock::now();
     return std::chrono::duration_cast<std::chrono::duration<double>>(m_new -
