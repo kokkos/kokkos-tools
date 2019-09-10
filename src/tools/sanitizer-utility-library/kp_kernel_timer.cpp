@@ -168,7 +168,6 @@ extern "C" const char** parallel_runtime_get_callstack() {
 
   const char** stack = (const char**)malloc(sizeof(const char*) * (kokkos_stack.size() + 1));
   for(int i=0;i<kokkos_stack.size();++i){
-    std::cout << "Kokkos frame: "<<kokkos_stack[i] << std::endl;
     stack[i] = kokkos_stack[i].c_str();
   }
   stack[kokkos_stack.size()] = nullptr;
