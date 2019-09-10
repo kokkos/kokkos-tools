@@ -83,32 +83,28 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 extern "C" void kokkosp_finalize_library() {
 }
 
+
+
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
+  std::cout << "Running kernel on device "<<devID<<std::endl;
   kokkos_stack.push_back(name);
-  const char* iter = nullptr;
-  iter = strstr(name,"Host");
-  if(iter != nullptr) {
+  if(devID == 0) {
     poisonSpace("HBW");
   }
-  else{
-    iter = strstr(name,"Device");
-    if(iter!=nullptr){
+  else if (devID==1){
       poisonSpace("Host");
-    }
   }
+  *kID = devID;
 }
 
 extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
+  uint64_t devID = kID;
   std::string name = kokkos_stack.back();
-  auto iter = name.find("Host");
-  if(iter != std::string::npos) {
+  if(devID == 0) {
     unpoisonSpace("HBW");
   }
-  else{
-    iter = name.find("Device");
-    if(iter!=std::string::npos){
-      unpoisonSpace("Host");
-    }
+  else if (devID==1){
+    unpoisonSpace("Host");
   }
 	kokkos_stack.pop_back();
 }
@@ -139,31 +135,27 @@ extern "C" void kokkosp_pop_profile_region() {
 
 extern "C" void kokkosp_deallocate_data(const SpaceHandle space, const char* label, const void* const ptr_raw, const uint64_t size) {
   auto ptr = reinterpret_cast<std::uintptr_t>(ptr_raw);
-  //unpoisonFunction((void*)ptr, size);
   auto key = NamedPointer{ptr};
   tracked_pointers.erase(key);
-  std::string lazy_hack = space.name;
-  auto iter = space_map.find(lazy_hack);
+  std::string space_name_as_string = space.name;
+  auto iter = space_map.find(space_name_as_string);
   if(iter != space_map.end()){
-    space_map[lazy_hack] = std::set<NamedPointer>();
+    space_map[space_name_as_string] = std::set<NamedPointer>();
   }
-  space_map[lazy_hack].erase(key);
+  space_map[space_name_as_string].erase(key);
 }
 
 extern "C" void kokkosp_allocate_data(const SpaceHandle space, const char* label, const void* const ptr_raw, const uint64_t size) {
   auto ptr = reinterpret_cast<std::uintptr_t>(ptr_raw);
   std::size_t length = strlen(label);
-  char* name = (char*)malloc(sizeof(char) * (length+1));
-  strncpy(name, label, length+1);
-  auto key = NamedPointer { ptr, name, size, space };
+  auto key = NamedPointer { ptr, label, size, space };
   tracked_pointers.insert(key);
-  std::string lazy_hack = space.name;
-  auto iter = space_map.find(lazy_hack);
+  std::string space_name_as_string = space.name;
+  auto iter = space_map.find(space_name_as_string);
   if(iter != space_map.end()){
-    space_map[lazy_hack] = std::set<NamedPointer>();
+    space_map[space_name_as_string] = std::set<NamedPointer>();
   }
-  space_map[lazy_hack].insert(key);
-  // poisonFunction((void*)ptr, size);
+  space_map[space_name_as_string].insert(key);
 }
 
 extern "C" const char* parallel_runtime_get_pointer_name(const void* ptr_raw){
