@@ -46,14 +46,7 @@ set_target_properties(kp_timemory PROPERTIES
 install(TARGETS kp_timemory DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(BUILD_SAMPLE)
-    # add library with symbols that can overridden
-    add_library(kp_timemory_stub SHARED sample/kp_timemory_stub.cpp)
-    set_target_properties(kp_timemory_stub PROPERTIES
-        OUTPUT_NAME kp_timemory
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/stubs)
-
     # create test executable
     add_executable(sample sample/sample.cpp)
-    # link to stub so symbols can be overridden with LD_PRELOAD
-    target_link_libraries(sample kp_timemory_stub timemory-threading)
+    target_link_libraries(sample kp_timemory)
 endif()

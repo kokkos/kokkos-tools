@@ -5,6 +5,7 @@
 #include <string>
 #include <timemory/timemory.hpp>
 #include <vector>
+#include <cstdlib>
 
 extern "C"
 {
@@ -54,9 +55,38 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     char* hostname = (char*) malloc(sizeof(char) * 256);
     gethostname(hostname, 256);
 
+    bool use_roofline = tim::get_env<bool>("KOKKOS_ROOFLINE", false);
+
     std::stringstream folder;
-    folder << hostname << "_" << ((int) getpid());
+    if(!use_roofline)
+        folder << hostname << "_" << ((int) getpid());
+    else
+    {
+        std::stringstream tmp;
+        tmp << hostname << "_roofline";
+        folder << tim::get_env<std::string>("TIMEMORY_OUTPUT_PATH", tmp.str());
+        tim::settings::output_path() = folder.str();
+        printf("%s\n[%s]> KOKKOS_ROOFLINE is enabled. Output directory: \"%s\"\n%s\n",
+               spacer.c_str(), "timemory-connector", folder.str().c_str(), spacer.c_str());
+    }
+    // eventually, use below for roofline but will require updates to timemory
+    //  folder << hostname << "_" << ((int) getpid());
+
     free(hostname);
+
+    // reference: http://man7.org/linux/man-pages/man3/setenv.3.html
+#if _POSIX_C_SOURCE >= 200112L
+    auto papi_events = tim::get_env<std::string>("PAPI_EVENTS", "");
+    setenv("TIMEMORY_PAPI_EVENTS", papi_events.c_str(), 0);
+    if(papi_events.length() > 0)
+    {
+        printf("%s\n[timemory-connector]> Detected PAPI_EVENTS... Enabling papi_array in %s\n%s\n",
+               spacer.c_str(), "TIMEMORY_COMPONENT_LIST_INIT", spacer.c_str());
+        auto comp_list = tim::get_env<std::string>("TIMEMORY_COMPONENT_LIST_INIT", "");
+        comp_list = TIMEMORY_JOIN(";", comp_list, "papi_array");
+        setenv("TIMEMORY_COMPONENT_LIST_INIT", comp_list.c_str(), 1);
+    }
+#endif
 
     tim::settings::auto_output() = true;   // print when destructing
     tim::settings::cout_output() = true;   // print to stdout

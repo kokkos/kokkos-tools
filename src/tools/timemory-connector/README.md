@@ -1,7 +1,21 @@
 # timemory KokkosP Profiling Tool
 
-[timemory](https://github.com/NERSC/timemory) (timing + memory + hardware counters + roofline) is a C++11 template library
-for recording performance analysis metrics.
+[timemory](https://github.com/NERSC/timemory) is a C++11 performance analysis library designed around a CRTP base class
+and variadic template wrappers that enables arbitrary bundling of tools, measurements, and external APIs into
+a single `start()` and `stop()` over the entire bundle.
+
+- Timing
+- Memory
+- Resource Usage
+- Hardware Counters
+- [Roofline Performance Model](https://docs.nersc.gov/programming/performance-debugging-tools/roofline/)
+
+## Relevant Links
+
+- [GitHub](https://github.com/NERSC/timemory)
+- [Documentation](https://timemory.readthedocs.io/en/latest/)
+    - [Supported Components](https://timemory.readthedocs.io/en/latest/components/supported/)
+- [Doxygen](https://timemory.readthedocs.io/en/latest/doxygen-docs/)
 
 ## timemory Install Requirements
 
@@ -10,17 +24,23 @@ for recording performance analysis metrics.
   - If you don't have a more recent CMake installation but have `conda`, this will provide a quick installation:
     - `conda create -n cmake -c conda-forge cmake`
     - `source activate cmake`
+- [Installation Documentation](https://timemory.readthedocs.io/en/latest/installation/)
+
 
 ## Quick Start for Kokkos
+
+### Installing timemory
 
 In a separate location, clone timemory and install to a designated prefix. Here, `/opt/timemory` is the installation prefix:
 
 ```bash
 git clone https://github.com/NERSC/timemory.git timemory
 mkdir build-timemory && cd build-timemory
-cmake -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_PYTHON=OFF -DCMAKE_INSTALL_PREFIX=/opt/timemory ../timemory
+cmake -DTIMEMORY_BUILD_C=OFF -DCMAKE_INSTALL_PREFIX=/opt/timemory ../timemory
 make install -j8
 ```
+
+### Building timemory-connector
 
 From the folder of this document, it is recommended to build with CMake but a Makefile is provided:
 
@@ -28,13 +48,122 @@ From the folder of this document, it is recommended to build with CMake but a Ma
 mkdir build && cd build
 cmake -Dtimemory_DIR=/opt/timemory ..
 make
-export LD_PRELOAD=${PWD}/kp_timemory.so
 ```
 
-## timemory Components
+## Run kokkos application with timemory enabled
 
-HW counters, Roofline, [Caliper](https://github.com/LLNL/Caliper), timers (wall-clock, cpu-clock, etc.), memory, and many others.
-See [supported components documentation](https://timemory.readthedocs.io/en/latest/components/supported/).
+Before executing the Kokkos application you have to set the environment variable `KOKKOS_PROFILE_LIBRARY` to point to the name of the dynamic library. Also add the library path of PAPI and PAPI connector to `LD_LIBRARY_PATH`.
+
+```console
+export KOKKOS_PROFILE_LIBRARY=kp_timemory.so
+export LD_LIBRARY_PATH=<TIMEMORY-LIB-PATH>:<TIMEMORY-CONNECTOR-LIB-PATH>:$LD_LIBRARY_PATH
+```
+
+timemory can enable measurments of several different metrics ("components") simulatenously.
+Configure the `TIMEMORY_COMPONENTS` environment variable to set an exact specification of the desired components.
+
+```console
+export TIMEMORY_COMPONENTS="wall_clock,peak_rss"
+```
+
+Refer to the [supported components documentation](https://timemory.readthedocs.io/en/latest/components/supported/)
+for the full list of components. By default `TIMEMORY_COMPONENTS` records:
+
+| Metric         | Description                                              |
+| -------------- | -------------------------------------------------------- |
+| `wall_clock`   | Wall-clock runtime                                       |
+| `system_clock` | CPU timer spent in kernel-mode                           |
+| `user_clock`   | CPU time spent in user-mode                              |
+| `cpu_util`     | CPU utilization                                          |
+| `page_rss`     | High-water (allocated) memory mark in region             |
+| `peak_rss`     | High-water (used) memory mark in region (excluding swap) |
+
+### Appending components
+
+Other components in addition to those specified by `TIMEMORY_COMPONENTS`
+can be enabled at runtime via the `TIMEMORY_COMPONENT_LIST_INIT` environment variable.
+These components may include:
+
+| Metric                  | Description                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `caliper`               | Enable [Caliper toolkit](https://github.com/LLNL/Caliper)                          |
+| `papi_array`            | Enable PAPI hardware counters                                                      |
+| `cpu_roofline_sp_flops` | Enable single-precision floating-point roofline on CPU                             |
+| `cpu_roofline_dp_flops` | Enable single-precision floating-point roofline on CPU                             |
+| `gperf_cpu_profiler`    | Enable gperftools CPU profiler (sampler)                                           |
+| `gperf_heap_profiler`   | Enable gperftools heap profiler                                                    |
+| `cuda_event`            | Enable `cudaEvent_t` for approximate kernel runtimes                               |
+| `nvtx_marker`           | Enable NVTX markers                                                                |
+| `cupti_activity`        | Enable CUPTI runtime tracing on NVIDIA GPUs                                        |
+| `cupti_counters`        | Enable CUPTI hardware counters on NVIDIA GPUs                                      |
+| `gpu_roofline_flops`    | Enable half-, single-, and double-precision floating-point roofline on NVIDIA GPUs |
+| `gpu_roofline_hp_flops` | Enable half-precision floating-point roofline on NVIDIA GPUs                       |
+| `gpu_roofline_sp_flops` | Enable single-precision floating-point roofline on NVIDIA GPUs                     |
+| `gpu_roofline_dp_flops` | Enable double-precision floating-point roofline on NVIDIA GPUs                     |
+
+Some components will conflict with each other and should not be enabled simulatenously. Such combinations include:
+
+- `papi_array` and `cpu_roofline` types
+- `cupti_activity` and `cupti_counters`
+- `cupti_activity`/`cupti_counters` and `gpu_roofline` types
+- Any hardware counters + `caliper` (when Caliper is also configured to collect hardware counters)
+
+```console
+export TIMEMORY_COMPONENT_LIST_INIT="cupti_activity,papi_array"
+```
+
+## Run kokkos application with PAPI recording enabled
+
+When timemory was installed with PAPI support, assuming `CMAKE_INSTALL_RPATH_USE_LINK_PATH=ON`, the timemory
+library will know the location of the PAPI library. However, if this is not the case, add the path to the PAPI
+library to `LD_LIBRARY_PATH`.
+
+Internally, timemory uses the `TIMEMORY_PAPI_EVENTS` environment variable for specifying arbitrary events.
+However, this library will attempt to read `PAPI_EVENTS` and set `TIMEMORY_PAPI_EVENTS` before the PAPI
+component is initialized, if using `PAPI_EVENTS` does not provide the desired events, use `TIMEMORY_PAPI_EVENTS`.
+
+Example enabling (1) total instructions, (2) total cycles, (3) total load/stores
+
+```console
+export PAPI_EVENTS="PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_LST_INS"
+export TIMEMORY_PAPI_EVENTS="PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_LST_INS"
+```
+
+## Run kokkos application with Roofline recording enabled
+
+[Roofline Performance Model](https://docs.nersc.gov/programming/performance-debugging-tools/roofline/)
+
+On both the CPU and GPU, calculating the roofline requires two passes.
+It is recommended to use the timemory python interface to generate the roofline because
+the `timemory.roofline` submodule provides a mode that will handle executing the application
+twice and generating the plot. For advanced usage, see the
+[timemory Roofline Documentation](https://timemory.readthedocs.io/en/latest/getting_started/roofline/).
+
+
+1. Set environment variable `KOKKOS_ROOFLINE=ON`
+    - This configures output to __*always*__ output to `${TIMEMORY_OUTPUT_PATH}` (default: `timemory-output/`)
+2. Set environment variable `TIMEMORY_OUTPUT_PATH` as desired
+3. Execute application with `python -m timemory.roofline <OPTIONS> -- <COMMAND>`
+    - `OPTIONS` are the roofline module options
+        - `-d` : display plot immediately
+        - `-k` : ignore exit code of applicaiton
+        - `-n` : number of threads
+            - *IMPORTANT*: this will set the appropriate timemory environment variable to ensure the empirical peak
+              for the hardware is calculated properly
+        - `-f` : image format
+        - `-t` : type of the roofline to plot
+            - CPU and GPU rooflines can both be enabled but only one plot will be generated
+    - `COMMAND` is the command and arguments for the application
+        - `python -m timemory.roofline --help` : provides help for arguments when output is already generated
+        - `python -m timemory.roofline --help -- <COMMAND>` : provides help for executing an application
+
+```console
+export KOKKOS_ROOFLINE=ON
+export TIMEMORY_OUTPUT_PATH=${HOSTNAME}_roofline
+export OMP_NUM_THREADS=4
+export TIMEMORY_COMPONENT_LIST_INIT="cpu_roofline_dp_flops"
+python -m timemory.roofline -n 4 -f png -t cpu_roofline -- ./sample
+```
 
 ## Included Multithreaded Sample
 
