@@ -4,12 +4,14 @@
 #include <cstdlib>
 #include <cstring>
 #include <unordered_map>
+#include <deque>
 #include <string>
 #include <iostream>
 
 #include "nvToolsExt.h"
 
 static std::unordered_map<uint64_t, nvtxRangeId_t> range_map;
+static std::deque<nvtxRangeId_t> region_range_stack;
 static uint64_t nextKernelID;
 
 extern "C" void kokkosp_init_library(const int loadSeq,
@@ -88,3 +90,18 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
 	}
 }
 
+extern "C" void kokkosp_push_profile_region(char* regionName) {
+	nvtxRangeId_t kernelRangeMarker = nvtxRangeStartA(regionName);
+	region_range_stack.push_back( kernelRangeMarker );
+}
+
+extern "C" void kokkosp_pop_profile_region() {
+    if(region_range_stack.empty()){
+		std::cerr << "KokkosP: Error - popped region with no active regions pushed. " << std::endl;
+    }
+    else{
+      auto stack_top = region_range_stack.back();
+      nvtxRangeEnd(stack_top);
+      region_range_stack.pop_back();
+    }
+}
