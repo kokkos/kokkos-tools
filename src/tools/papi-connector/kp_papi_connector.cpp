@@ -22,7 +22,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
    printf("KokkosP: PAPI Connector (sequence is %d, version: %llu)\n", loadSeq, interfaceVer);
    printf("-----------------------------------------------------------\n");
 
-   PAPI_hl_init();
+   //PAPI_hl_init();
    /* set default values from kokkos if KOKKOS_PAPI_EVENTS is not set */
    //PAPI_hl_set_events("perf::TASK-CLOCK,PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_FP_OPS");
 }
@@ -30,8 +30,8 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 extern "C" void kokkosp_finalize_library()
 {
 
-   PAPI_hl_print_output();
-   PAPI_hl_finalize();
+   //PAPI_hl_print_output();
+   //PAPI_hl_finalize();
 
    printf("-----------------------------------------------------------\n");
    printf("KokkosP: Finalization of PAPI Connector. Complete.\n");
