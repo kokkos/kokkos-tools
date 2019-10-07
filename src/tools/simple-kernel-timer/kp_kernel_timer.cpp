@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <string>
 #include <sys/time.h>
-#include <cxxabi.h>
+
 #include <unistd.h>
 #include "kp_kernel_info.h"
 
@@ -80,13 +80,13 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 extern "C" void kokkosp_finalize_library() {
 	double finishTime = seconds();
 	double kernelTimes = 0;
-	
+
 	char* hostname = (char*) malloc(sizeof(char) * 256);
 	gethostname(hostname, 256);
-	
+
 	char* fileOutput = (char*) malloc(sizeof(char) * 256);
 	sprintf(fileOutput, "%s-%d.dat", hostname, (int) getpid());
-	
+
 	free(hostname);
 	FILE* output_data = fopen(fileOutput, "wb");
 
@@ -216,8 +216,8 @@ extern "C" void kokkosp_finalize_library() {
 	if(NULL != outputDelimiter) {
 		free(outputDelimiter);
 	}*/
-	
-	
+
+
 }
 
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
@@ -273,4 +273,3 @@ extern "C" void kokkosp_pop_profile_region() {
         current_region_level--;
         regions[current_region_level]->addFromTimer();
 }
-

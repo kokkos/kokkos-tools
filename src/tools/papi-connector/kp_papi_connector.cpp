@@ -22,16 +22,24 @@ extern "C" void kokkosp_init_library(const int loadSeq,
    printf("KokkosP: PAPI Connector (sequence is %d, version: %llu)\n", loadSeq, interfaceVer);
    printf("-----------------------------------------------------------\n");
 
-   PAPI_hl_init();
-   /* set default values from kokkos if KOKKOS_PAPI_EVENTS is not set */
+   /* The following advanced functions of PAPI's high-level API are not part
+    * of the official release. But they might be introduced in later PAPI releases.
+    * PAPI_hl_init is now called from the first PAPI_hl_region_begin call.
+    * /
+   //PAPI_hl_init();
+   /* set default values */
    //PAPI_hl_set_events("perf::TASK-CLOCK,PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_FP_OPS");
 }
 
 extern "C" void kokkosp_finalize_library()
 {
-
-   PAPI_hl_print_output();
-   PAPI_hl_finalize();
+   /* The following advanced functions of PAPI's high-level API are not part
+    * of the official release. But they might be introduced in later PAPI releases.
+    * PAPI_hl_print_output is registered by the "atexit" function and will be called
+    * at process termination, see http://man7.org/linux/man-pages/man3/atexit.3.html.
+    * /
+   //PAPI_hl_print_output();
+   //PAPI_hl_finalize();
 
    printf("-----------------------------------------------------------\n");
    printf("KokkosP: Finalization of PAPI Connector. Complete.\n");
