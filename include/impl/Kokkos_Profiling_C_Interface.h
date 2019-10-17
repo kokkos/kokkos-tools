@@ -77,11 +77,13 @@ struct Kokkos_Tuning_VariableValue {
 
 
 struct Kokkos_Tuning_ValueSet {
-  int size;
+  size_t id;
+  size_t size;
   struct Kokkos_Tuning_VariableValue* values;
 };
 
 struct Kokkos_Tuning_ValueRange {
+  size_t id;
   Kokkos_Tuning_VariableValue lower;
   Kokkos_Tuning_VariableValue upper;
   bool openLower;
