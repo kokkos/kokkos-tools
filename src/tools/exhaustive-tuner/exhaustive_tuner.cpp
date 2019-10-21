@@ -21,6 +21,44 @@ using SetType = std::set<Args...>;
 
 static MapType<size_t, Kokkos::Tuning::ValueType> var_info;
 
+//from https://github.com/LLNL/Caliper/blob/5be39c5de6cba3806d96fe26ae1923a95fca3f54/src/common/util/format_util.cpp
+
+const char whitespace[80 + 1] =
+    "                                        "
+    "                                        ";
+
+std::ostream& pad_right(std::ostream& os, const std::string& str,
+                              std::size_t width) {
+  os << str;
+
+  if (str.size() > width)
+    os << ' ';
+  else {
+    std::size_t s = 1 + width - str.size();
+
+    for (; s > 80; s -= 80) os << whitespace;
+
+    os << whitespace + (80 - s);
+  }
+
+  return os;
+}
+
+std::ostream& pad_left(std::ostream& os, const std::string& str,
+                             std::size_t width) {
+  if (str.size() < width) {
+    std::size_t s = width - str.size();
+
+    for (; s > 80; s -= 80) os << whitespace;
+
+    os << whitespace + (80 - s);
+  }
+
+  os << str << ' ';
+
+  return os;
+}
+
 namespace std {
 template <>
 struct less<Kokkos::Tuning::VariableValue> {
@@ -29,11 +67,14 @@ struct less<Kokkos::Tuning::VariableValue> {
     assert(var_info[l.id] == var_info[r.id]);
     switch (var_info[l.id]) {
       case kokkos_value_boolean: return l.value.bool_value < r.value.bool_value;
-      case kokkos_value_integer: return l.value.int_value < r.value.int_value;
+      case kokkos_value_integer:
+        return l.value.int_value <
+               r.value.int_value;  // TODO DZP: should this be (difference >
+                                   // threshold)?
       case kokkos_value_floating_point:
         return l.value.double_value < r.value.double_value;
       case kokkos_value_text:
-        return strncmp(l.value.string_value, r.value.string_value, 1024);
+        return strncmp(l.value.string_value, r.value.string_value, 1024) < 0;
     }
   }
 };
@@ -51,10 +92,6 @@ extern "C" void kokkosp_init_library(const int loadSeq,
       "version: %lu)\n",
       loadSeq, interfaceVer);
   uniqID = 0;
-}
-
-extern "C" void kokkosp_finalize_library() {
-  printf("KokkosP: Kokkos library finalization called.\n");
 }
 
 extern "C" void kokkosp_begin_parallel_for(const char* name,
@@ -183,6 +220,7 @@ struct FeatureValues {
   const size_t count;
   const size_t* ids;
   Kokkos::Tuning::VariableValue* values;
+  static std::less<Kokkos::Tuning::VariableValue> comp;
   bool operator<(const FeatureValues& other) const {
     if (count < other.count) {
       return true;
@@ -190,11 +228,10 @@ struct FeatureValues {
       return false;
     } else {
       for (int x = 0; x < count; ++x) {
-        if (Kokkos_Value_Less(ids[x], values[x], other.ids[x],
-                              other.values[x])) {
+        // TODO DZP: port over to user operator<
+        if (comp(values[x], other.values[x])) {
           return true;
-        } else if (Kokkos_Value_Less(other.ids[x], other.values[x], ids[x],
-                                     values[x])) {
+        } else if (comp(other.values[x], values[x])) {
           return false;
         }
       }
@@ -207,6 +244,7 @@ struct TuningResults {
   std::priority_queue<TuningParameterValues> candidates;
   bool done;
   TuningParameterValues ideal;
+  ~TuningResults(){} // TODO DZP: make this work, segfault on exit is terrible
 };
 
 MapType<TuningParameterSet,
@@ -216,7 +254,7 @@ MapType<TuningParameterSet,
 MapType<size_t, SetType<Kokkos::Tuning::VariableValue>> candidate_values;
 MapType<size_t, bool> candidate_is_set;  // TODO DZP: rewrite all these to be
                                          // one size_t -> VariableInfo map
-
+MapType<size_t, char*> variable_names;
 Kokkos::Tuning::SetOrRange copy_candidate_values(
     const Kokkos::Tuning::SetOrRange& in, bool isSet) {
   Kokkos::Tuning::SetOrRange ret;
@@ -235,6 +273,8 @@ extern "C" void kokkosp_declare_tuning_variable(
   printf("New variable named %s with id %zu\n", name, id);
   var_info[id]         = info.type;
   candidate_is_set[id] = info.valueQuantity == kokkos_value_set;
+  variable_names[id]   = (char*)malloc(sizeof(char) * 1024);
+  strncpy(variable_names[id], name, 1024);
   // candidate_values[id] = copy_candidate_values(candidate_value,
   // (info.valueQuantity == kokkos_value_set));
 }
@@ -244,6 +284,8 @@ extern "C" void kokkosp_declare_context_variable(
   printf("New variable named %s with id %zu\n", name, id);
   var_info[id]         = info.type;
   candidate_is_set[id] = info.valueQuantity == kokkos_value_set;
+  variable_names[id]   = (char*)malloc(sizeof(char) * 1024);
+  strncpy(variable_names[id], name, 1024);
 }
 
 template <typename... Args>
@@ -254,14 +296,14 @@ using WorkingSet = VectorType<VectorType<Kokkos::Tuning::VariableValue>>;
 WorkingSet make_tuning_set_impl(WorkingSet& in, WorkingSet& add,
                                 int debug = 0) {
   if (add.empty()) {
-    //std::cout << "[mtsi] add_nothing {in.size=" << in.size() << "}\n";
+    // std::cout << "[mtsi] add_nothing {in.size=" << in.size() << "}\n";
     return in;
   }
   if (in.empty()) {
     std::vector<std::vector<Kokkos::Tuning::VariableValue>> start_set;
     std::copy(add.begin(), add.end(), std::back_inserter(start_set));
     add.erase(add.begin());
-    //std::cout << "[mtsi] in_nothing {start_set.size=" << start_set.size()
+    // std::cout << "[mtsi] in_nothing {start_set.size=" << start_set.size()
     //          << "}\n";
     // int foo = *start_set;
     WorkingSet working;
@@ -269,11 +311,11 @@ WorkingSet make_tuning_set_impl(WorkingSet& in, WorkingSet& add,
       working.push_back(std::vector<Kokkos::Tuning::VariableValue>{item});
     }
     const auto& x = make_tuning_set_impl(working, add, debug + 1);
-    //std::cout << "[mtsi] in_nothing {return_size=" << x.size() << "}\n";
+    // std::cout << "[mtsi] in_nothing {return_size=" << x.size() << "}\n";
 
     return x;
   }
-  //std::cout << "[mtsi] merging\n";
+  // std::cout << "[mtsi] merging\n";
   WorkingSet working;
   std::vector<Kokkos::Tuning::VariableValue>& features =
       *add.erase(add.begin());
@@ -320,24 +362,55 @@ std::priority_queue<TuningParameterValues> make_tuning_set(const size_t count,
     auto candidate_values_for_feature = candidate_values[ids[x]];
     int debug                         = 0;
     auto feature_vector = make_feature_vector(candidate_values_for_feature);
-    //std::cout << "[mts] candidate_values for {" << ids[x]
-    //          << "}, number of values {" << candidate_values_for_feature.size()
+    // std::cout << "[mts] candidate_values for {" << ids[x]
+    //          << "}, number of values {" <<
+    //          candidate_values_for_feature.size()
     //          << "}, features in each vector {}\n";
     in.push_back(feature_vector);
   }
   WorkingSet temp;  // TODO DZP: refactor
-  //std::cout << "[mts] def not about to segault\n";
+  // std::cout << "[mts] def not about to segault\n";
   for (auto candidate : make_tuning_set_impl(temp, in)) {
-   // std::cout << "[mts] inserting candidate of size " << candidate.size()
-   //           << "\n";
+    // std::cout << "[mts] inserting candidate of size " << candidate.size()
+    //           << "\n";
 
     ret.push(makeTuningParameters(candidate));
   }
-  //std::cout << "[mts] see, didn't segfault\n";
+  // std::cout << "[mts] see, didn't segfault\n";
 
   return ret;
 }
-MapType<size_t, std::vector<std::pair<std::reference_wrapper<TuningResults>,TuningParameterValues>>> live_values;
+Kokkos::Tuning::VariableValue copy_variable_value(
+    const Kokkos::Tuning::VariableValue& in) {
+  Kokkos::Tuning::VariableValue ret;
+  switch (var_info[in.id]) {
+    case kokkos_value_boolean:
+    case kokkos_value_integer:
+    case kokkos_value_floating_point: ret = in; break;
+    case kokkos_value_text:
+      ret.id                 = in.id;
+      std::string* temp      = new std::string(in.value.string_value);
+      ret.value.string_value = temp->c_str();
+      break;
+  }
+  return ret;
+}
+MapType<size_t, std::vector<std::pair<std::reference_wrapper<TuningResults>,
+                                      TuningParameterValues>>>
+    live_values;
+TuningParameterValues getIdeal(std::priority_queue<TuningParameterValues>& in){
+  TuningParameterValues ideal;
+  ideal = in.top();
+  in.pop();
+  while(!in.empty()){
+    auto candidate = in.top();
+    if(candidate.time_value < ideal.time_value){
+      ideal = candidate;
+    }
+    in.pop();
+  }
+  return ideal;
+}
 MapType<size_t, decltype(std::chrono::system_clock::now())> running_timers;
 extern "C" void kokkosp_request_tuning_variable_values(
     const size_t contextId, const size_t numContextVariables,
@@ -346,17 +419,31 @@ extern "C" void kokkosp_request_tuning_variable_values(
     const size_t numTuningVariables, const size_t* tuningVariableIds,
     Kokkos::Tuning::VariableValue* tuningVariableValues,
     Kokkos::Tuning::SetOrRange* request_candidate_values) {
+  // TODO DZP: only make copies when you're inserting into a map, this is slow
+  // and leaky
+  auto tuningVariableIds_copy = new size_t[numTuningVariables];
+  std::copy(tuningVariableIds, tuningVariableIds + numTuningVariables,
+            tuningVariableIds_copy);
+  auto contextVariableIds_copy = new size_t[numContextVariables];
+  std::copy(contextVariableIds, contextVariableIds + numContextVariables,
+            contextVariableIds_copy);
   TuningParameterSet request_parameters = {numTuningVariables,
-                                           tuningVariableIds};
-  FeatureSet features  = {numContextVariables, contextVariableIds};
-  FeatureValues values = {numTuningVariables, tuningVariableIds,
-                          tuningVariableValues};
+                                           tuningVariableIds_copy};
+  FeatureSet features = {numContextVariables, contextVariableIds_copy};
+  auto relevantVariableValues_copy =
+      new Kokkos::Tuning::VariableValue[numContextVariables];
+  for (int x = 0; x < numContextVariables; ++x) {
+    relevantVariableValues_copy[x] =
+        copy_variable_value(contextVariableValues[x]);
+  }
+  FeatureValues values = {numContextVariables, contextVariableIds_copy,
+                          relevantVariableValues_copy};
   for (int x = 0; x < numTuningVariables; ++x) {
-    //printf("Have value for context variable %zu, value is %s\n",
+    // printf("Have value for context variable %zu, value is %s\n",
     //       contextVariableIds[x], getName(contextVariableValues[x]).c_str());
   }
   for (int x = 0; x < numTuningVariables; ++x) {
-    //printf("Getting value for tuning variable %zu, value is %s\n",
+    // printf("Getting value for tuning variable %zu, value is %s\n",
     //       tuningVariableIds[x], getName(tuningVariableValues[x]).c_str());
   }
   for (int x = 0; x < numTuningVariables; ++x) {
@@ -367,11 +454,11 @@ extern "C" void kokkosp_request_tuning_variable_values(
            iter < request_candidate_values[x].set.values +
                       request_candidate_values[x].set.size;
            ++iter) {
-        //std::cout << "Inserting into map with id " << iter->id << std::endl;
+        // std::cout << "Inserting into map with id " << iter->id << std::endl;
         auto insert_result = candidate_values[variableId].insert(
             Kokkos::Tuning::VariableValue{iter->id, iter->value});
         newResults |= insert_result.second;
-        //std::cout << "[rtvv] insert on {" << variableId << "}\n";
+        // std::cout << "[rtvv] insert on {" << variableId << "}\n";
       }  // TODO DZP: if newResults, add in the new values to
          // the training set
       if (newResults) {
@@ -399,20 +486,29 @@ extern "C" void kokkosp_request_tuning_variable_values(
     }
   } else {
     auto& candidate = tuning_set.candidates.top();
-    //std::cout << "Testing new values with " << candidate.count
+    if(candidate.times_encountered > num_samples){
+      tuning_set.done = true;
+      tuning_set.ideal = getIdeal(tuning_set.candidates);
+      std::cout << "Ideal value: ";
+      for(auto x =0; x<tuning_set.ideal.count;++x) {
+        std::cout << getName(tuning_set.ideal.values[x]) << std::endl;
+      }
+    }
+    // std::cout << "Testing new values with " << candidate.count
     //          << " chosen features\n";
     for (int k = 0; k < candidate.count; ++k) {
-      //std::cout << "Searching for match on id " << candidate.values[k].id
+      // std::cout << "Searching for match on id " << candidate.values[k].id
       //          << "\n";
       for (int x = 0; x < numTuningVariables; ++x) {
         if (tuningVariableIds[x] == candidate.values[k].id) {
-          //std::cout << "For varible with id " << tuningVariableIds[x]
+          // std::cout << "For varible with id " << tuningVariableIds[x]
           //          << ", trying value " << getName(candidate.values[k])
           //          << "\n";
           tuningVariableValues[x] = candidate.values[k];
           if (running_timers.find(contextId) == running_timers.end()) {
             running_timers[contextId] = std::chrono::system_clock::now();
-            live_values[contextId].push_back(std::make_pair(std::ref(tuning_set), candidate));
+            live_values[contextId].push_back(
+                std::make_pair(std::ref(tuning_set), candidate));
           }
         }
       }
@@ -422,21 +518,78 @@ extern "C" void kokkosp_request_tuning_variable_values(
 }
 
 extern "C" void kokkosp_end_context(const size_t contextId) {
-   if(running_timers.find(contextId)!=running_timers.end()) {
-     auto now = std::chrono::system_clock::now();
-     size_t elapsed =
-      std::chrono::duration_cast<std::chrono::seconds>(now - now).count();
-     for(auto tuning_values : live_values[contextId]){
-       auto& tuningResults = tuning_values.first;  
-       auto values = tuning_values.second;
-       values.time_value += elapsed;// TODO DZP: some overflow handling
-       values.times_encountered += 1;
-       //std::cout << "I've seen this value("<<getName(values.values[0])<<")"<<values.times_encountered<<" times \n";
-       tuningResults.get().candidates.push(values);
-       //std::cout << "Size is "<<tuningResults.get().candidates.size() << "\n";
-     }
-     live_values[contextId].clear();
-   }
-   running_timers.erase(contextId);
+  if (running_timers.find(contextId) != running_timers.end()) {
+    auto now = std::chrono::system_clock::now();
+    size_t elapsed =
+        std::chrono::duration_cast<std::chrono::seconds>(now - now).count();
+    for (auto tuning_values : live_values[contextId]) {
+      auto& tuningResults = tuning_values.first;
+      if(tuningResults.get().done){
+        return;
+      }
+      auto values         = tuning_values.second;
+      values.time_value += elapsed;  // TODO DZP: some overflow handling
+      values.times_encountered += 1;
+      // std::cout << "I've seen this value(" << getName(values.values[0]) <<
+      // ")"
+      //          << values.times_encountered << " times \n";
+    }
+    live_values[contextId].clear();
+  }
+  running_timers.erase(contextId);
+}
+
+template <typename Iterable, typename Functor>
+void for_all_variables(const Iterable& in, const Functor& func) {
+  for (int x = 0; x < in.count; ++x) {
+    func(in.ids[x]);
+  }
+}
+
+template <typename Iterable, typename Functor>
+void for_all_values(const Iterable& in, const Functor& func) {
+  for (int x = 0; x < in.count; ++x) {
+    func(in.values[x]);
+  }
+}
+
+extern "C" void kokkosp_finalize_library() {
+  printf("KokkosP: Kokkos library finalization called.\n");
+  for (auto& kv : performance_data) {
+    auto& tuning_parameters = kv.first;
+    std::cout << "Tuning Parameter Set\n";
+    for_all_variables(tuning_parameters, [&](const size_t id) {
+      std::cout << variable_names[id] << ", ";
+    });
+    std::cout << std::endl;
+    for (auto& kv2 : kv.second) {
+      auto& features = kv2.first;
+      std::cout << "  Feature set\n";
+      std::cout << "  ";
+      for_all_variables(features, [&](const size_t id) {
+        // std::cout << std::cout.width(24) << std::cout.fill(' ') <<std::left<<
+        // variable_names[id] << std::cout.width(0)<<", ";
+        pad_right(std::cout,std::string(variable_names[id]) + ",",24)  ;
+      });
+      std::cout << "\n";
+      for (auto& kv3 : kv2.second) {
+        auto& feature_values = kv3.first;
+        auto& tuning_results = kv3.second;
+        std::cout << "  ";
+        for_all_values(
+            feature_values,
+            [&](const Kokkos::Tuning::VariableValue& in) {
+              pad_right(std::cout,std::string(getName(in)) + ",",24)  ;
+            });
+        std::cout << "\n";
+        std::cout << "    Best results\n"; // TODO DZP: implement ideal in TuningResults
+        std::cout << "    ";
+        for_all_values(tuning_results.ideal,[&](const Kokkos::Tuning::VariableValue& in){
+          pad_left(std::cout, std::string(getName(in))+", ", 24);
+        });
+        std::cout << std::endl;
+      }
+    }
+  }
 }
 
