@@ -23,6 +23,13 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 	printf("KokkosP: Example Library Initialized (sequence is %d, version: %llu)\n", loadSeq, interfaceVer);
 }
 
+// darwin report rusage.ru_maxrss in bytes
+#if defined(__APPLE__) || defined(__MACH__)
+#    define RU_MAXRSS_UNITS 1024
+#else
+#    define RU_MAXRSS_UNITS 1
+#endif
+
 extern "C" void kokkosp_finalize_library() {
 	printf("\n");
 	printf("KokkosP: Finalization of profiling library.\n");
@@ -30,7 +37,7 @@ extern "C" void kokkosp_finalize_library() {
 	struct rusage sys_resources;
 	getrusage(RUSAGE_SELF, &sys_resources);
 
-	printf("KokkosP: High water mark memory consumption: %d kB\n",
-		sys_resources.ru_maxrss);
+	printf("KokkosP: High water mark memory consumption: %li kB\n",
+		(long) sys_resources.ru_maxrss * RU_MAXRSS_UNITS);
 	printf("\n");
 }
