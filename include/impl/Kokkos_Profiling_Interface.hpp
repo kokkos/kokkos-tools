@@ -55,8 +55,7 @@
 #include <impl/Kokkos_Profiling_DeviceInfo.hpp>
 #include <impl/Kokkos_Profiling_C_Interface.h>
 #include <impl/Kokkos_Profiling_C_Interface.h>
-#define KOKKOS_ENABLE_TUNING  // TODO DZP: this needs to be a proper build
-                              // system option
+
 namespace Kokkos {
 namespace Profiling {
 
@@ -120,59 +119,4 @@ using contextEndFunction           = Kokkos_Tuning_contextEndFunction;
 
 }  // namespace Kokkos
 
-#if 0  // TODO DZP: reimplement or set on fire
-namespace Kokkos {
-namespace Profiling {
-
-struct SpaceHandle {
-  SpaceHandle(const char* space_name);
-  char name[64];
-};
-
-bool profileLibraryLoaded();
-
-void beginParallelFor(const std::string&, const uint32_t, uint64_t*);
-void endParallelFor(const uint64_t);
-void beginParallelScan(const std::string&, const uint32_t, uint64_t*);
-void endParallelScan(const uint64_t);
-void beginParallelReduce(const std::string&, const uint32_t, uint64_t*);
-void endParallelReduce(const uint64_t);
-
-void pushRegion(const std::string&);
-void popRegion();
-void createProfileSection(const std::string&, uint32_t*);
-void startSection(const uint32_t);
-void stopSection(const uint32_t);
-void destroyProfileSection(const uint32_t);
-
-void markEvent(const std::string&);
-
-void allocateData(const SpaceHandle, const std::string, const void*,
-                  const uint64_t);
-void deallocateData(const SpaceHandle, const std::string, const void*,
-                    const uint64_t);
-
-void beginDeepCopy(const SpaceHandle, const std::string, const void*,
-                   const SpaceHandle, const std::string, const void*,
-                   const uint64_t);
-void endDeepCopy();
-
-void initialize();
-void finalize();
-
-} // end namespace Profiling
-namespace Tuning  {
-void declareTuningVariable(const std::string& variableName, int uniqID, VariableInfo info); 
-
-void declareContextVariable(const std::string& variableName, int uniqID, VariableInfo info); 
-
-void declareContextVariableValues(int contextId, int count, int* uniqIds, VariableValue* values);
-
-void endContext(int contextId);
-
-void requestTuningVariableValues(int count, int* uniqIds, VariableValue* values);
-
-} // end namespace Tuning
-} // end namespace Kokkos
-#endif
 #endif

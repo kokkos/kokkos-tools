@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cinttypes>
 #include <cstdio>
+#include <algorithm>
 #include <cstring>
 #include <utility>
 #include <functional>
@@ -14,6 +15,8 @@
 #include <tuple>
 #include <impl/Kokkos_Profiling_Interface.hpp>
 
+#define TUNING_TOOL_SAVE_STATISTICS  // TODO DZP make build system option
+
 template <typename... Args>
 using MapType = std::map<Args...>;
 template <typename... Args>
@@ -21,14 +24,15 @@ using SetType = std::set<Args...>;
 
 static MapType<size_t, Kokkos::Tuning::ValueType> var_info;
 
-//from https://github.com/LLNL/Caliper/blob/5be39c5de6cba3806d96fe26ae1923a95fca3f54/src/common/util/format_util.cpp
+// from
+// https://github.com/LLNL/Caliper/blob/5be39c5de6cba3806d96fe26ae1923a95fca3f54/src/common/util/format_util.cpp
 
 const char whitespace[80 + 1] =
     "                                        "
     "                                        ";
 
 std::ostream& pad_right(std::ostream& os, const std::string& str,
-                              std::size_t width) {
+                        std::size_t width) {
   os << str;
 
   if (str.size() > width)
@@ -45,7 +49,7 @@ std::ostream& pad_right(std::ostream& os, const std::string& str,
 }
 
 std::ostream& pad_left(std::ostream& os, const std::string& str,
-                             std::size_t width) {
+                       std::size_t width) {
   if (str.size() < width) {
     std::size_t s = width - str.size();
 
@@ -244,7 +248,7 @@ struct TuningResults {
   std::priority_queue<TuningParameterValues> candidates;
   bool done;
   TuningParameterValues ideal;
-  ~TuningResults(){} // TODO DZP: make this work, segfault on exit is terrible
+  ~TuningResults() {}  // TODO DZP: make this work, segfault on exit is terrible
 };
 
 MapType<TuningParameterSet,
@@ -329,7 +333,7 @@ WorkingSet make_tuning_set_impl(WorkingSet& in, WorkingSet& add,
   return make_tuning_set_impl(working, add, debug + 1);
 }
 
-constexpr int num_samples = 5;
+constexpr int num_samples = 3;
 
 // TODO DZP: this function is much truncated, is it still necessary?
 std::vector<Kokkos::Tuning::VariableValue> make_feature_vector(
@@ -398,15 +402,28 @@ Kokkos::Tuning::VariableValue copy_variable_value(
 MapType<size_t, std::vector<std::pair<std::reference_wrapper<TuningResults>,
                                       TuningParameterValues>>>
     live_values;
-TuningParameterValues getIdeal(std::priority_queue<TuningParameterValues>& in){
+#ifdef TUNING_TOOL_SAVE_STATISTICS
+struct TuningData {
+  size_t count;
+  Kokkos::Tuning::VariableValue* values;
+  size_t time;
+};
+static MapType<FeatureValues, std::vector<TuningData>> full_performance_results;
+#endif
+TuningParameterValues getIdeal(FeatureValues& context, TuningResults& results) {
+  auto& in = results.candidates;
   TuningParameterValues ideal;
   ideal = in.top();
   in.pop();
-  while(!in.empty()){
+  while (!in.empty()) {
     auto candidate = in.top();
-    if(candidate.time_value < ideal.time_value){
+    if (candidate.time_value < ideal.time_value) {
       ideal = candidate;
     }
+#ifdef TUNING_TOOL_SAVE_STATISTICS
+    full_performance_results[context].push_back(
+        TuningData{candidate.count, candidate.values, candidate.time_value});
+#endif
     in.pop();
   }
   return ideal;
@@ -438,14 +455,6 @@ extern "C" void kokkosp_request_tuning_variable_values(
   }
   FeatureValues values = {numContextVariables, contextVariableIds_copy,
                           relevantVariableValues_copy};
-  for (int x = 0; x < numTuningVariables; ++x) {
-    // printf("Have value for context variable %zu, value is %s\n",
-    //       contextVariableIds[x], getName(contextVariableValues[x]).c_str());
-  }
-  for (int x = 0; x < numTuningVariables; ++x) {
-    // printf("Getting value for tuning variable %zu, value is %s\n",
-    //       tuningVariableIds[x], getName(tuningVariableValues[x]).c_str());
-  }
   for (int x = 0; x < numTuningVariables; ++x) {
     const size_t variableId = tuningVariableIds[x];
     if (candidate_is_set[variableId]) {
@@ -484,26 +493,20 @@ extern "C" void kokkosp_request_tuning_variable_values(
         }
       }
     }
+    return;
   } else {
     auto& candidate = tuning_set.candidates.top();
-    if(candidate.times_encountered > num_samples){
-      tuning_set.done = true;
-      tuning_set.ideal = getIdeal(tuning_set.candidates);
+    if (candidate.times_encountered > num_samples) {
+      tuning_set.done  = true;
+      tuning_set.ideal = getIdeal(values, tuning_set);
       std::cout << "Ideal value: ";
-      for(auto x =0; x<tuning_set.ideal.count;++x) {
+      for (auto x = 0; x < tuning_set.ideal.count; ++x) {
         std::cout << getName(tuning_set.ideal.values[x]) << std::endl;
       }
     }
-    // std::cout << "Testing new values with " << candidate.count
-    //          << " chosen features\n";
     for (int k = 0; k < candidate.count; ++k) {
-      // std::cout << "Searching for match on id " << candidate.values[k].id
-      //          << "\n";
       for (int x = 0; x < numTuningVariables; ++x) {
         if (tuningVariableIds[x] == candidate.values[k].id) {
-          // std::cout << "For varible with id " << tuningVariableIds[x]
-          //          << ", trying value " << getName(candidate.values[k])
-          //          << "\n";
           tuningVariableValues[x] = candidate.values[k];
           if (running_timers.find(contextId) == running_timers.end()) {
             running_timers[contextId] = std::chrono::system_clock::now();
@@ -519,20 +522,22 @@ extern "C" void kokkosp_request_tuning_variable_values(
 
 extern "C" void kokkosp_end_context(const size_t contextId) {
   if (running_timers.find(contextId) != running_timers.end()) {
-    auto now = std::chrono::system_clock::now();
-    size_t elapsed =
-        std::chrono::duration_cast<std::chrono::seconds>(now - now).count();
-    for (auto tuning_values : live_values[contextId]) {
+    auto now       = std::chrono::system_clock::now();
+    size_t elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
+                         now - running_timers[contextId])
+                         .count();
+    for (auto& tuning_values : live_values[contextId]) {
       auto& tuningResults = tuning_values.first;
-      if(tuningResults.get().done){
+      if (tuningResults.get().done) {
         return;
       }
-      auto values         = tuning_values.second;
+      auto values = tuning_values.second;
       values.time_value += elapsed;  // TODO DZP: some overflow handling
       values.times_encountered += 1;
       // std::cout << "I've seen this value(" << getName(values.values[0]) <<
-      // ")"
-      //          << values.times_encountered << " times \n";
+      //")"
+      //         << values.times_encountered << " times \n";
+      tuningResults.get().candidates.push(values);
     }
     live_values[contextId].clear();
   }
@@ -569,7 +574,7 @@ extern "C" void kokkosp_finalize_library() {
       for_all_variables(features, [&](const size_t id) {
         // std::cout << std::cout.width(24) << std::cout.fill(' ') <<std::left<<
         // variable_names[id] << std::cout.width(0)<<", ";
-        pad_right(std::cout,std::string(variable_names[id]) + ",",24)  ;
+        pad_right(std::cout, std::string(variable_names[id]) + ",", 24);
       });
       std::cout << "\n";
       for (auto& kv3 : kv2.second) {
@@ -577,17 +582,40 @@ extern "C" void kokkosp_finalize_library() {
         auto& tuning_results = kv3.second;
         std::cout << "  ";
         for_all_values(
-            feature_values,
-            [&](const Kokkos::Tuning::VariableValue& in) {
-              pad_right(std::cout,std::string(getName(in)) + ",",24)  ;
+            feature_values, [&](const Kokkos::Tuning::VariableValue& in) {
+              pad_right(std::cout, std::string(getName(in)) + ",", 24);
             });
         std::cout << "\n";
-        std::cout << "    Best results\n"; // TODO DZP: implement ideal in TuningResults
+        if (!tuning_results.done) {
+          std::cout << "    Not enough samples to converge (common for "
+                       "internal foralls)\n";
+          continue;
+        }
+        std::cout << "    Best results\n";  // TODO DZP: implement ideal in
+                                            // TuningResults
         std::cout << "    ";
-        for_all_values(tuning_results.ideal,[&](const Kokkos::Tuning::VariableValue& in){
-          pad_left(std::cout, std::string(getName(in))+", ", 24);
-        });
+        for_all_values(
+            tuning_results.ideal, [&](const Kokkos::Tuning::VariableValue& in) {
+              pad_right(std::cout, std::string(getName(in)) + ", ", 24);
+            });
+        std::cout << " {time in us: "
+                  << tuning_results.ideal.time_value / num_samples << "}";
         std::cout << std::endl;
+#ifdef TUNING_TOOL_SAVE_STATISTICS
+std::sort(full_performance_results[feature_values].begin(), full_performance_results[feature_values].end(), [&](const TuningData& l, const TuningData& r ) { return l.time < r.time;});
+        for (const auto& alternate : full_performance_results[feature_values] ) {
+          std::cout << "      Other results\n";  // TODO DZP: implement ideal in
+                                               // TuningResults
+          std::cout << "      ";
+          for_all_values(
+              alternate, [&](const Kokkos::Tuning::VariableValue& in) {
+                pad_right(std::cout, std::string(getName(in)) + ", ", 24);
+              });
+        std::cout << " {time in us: "
+                  << alternate.time / num_samples << "}";
+        std::cout << std::endl;
+        }
+#endif
       }
     }
   }
