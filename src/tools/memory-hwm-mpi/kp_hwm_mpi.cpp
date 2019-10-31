@@ -8,6 +8,13 @@
 static int world_rank = 0;
 static int world_size = 1;
 
+// darwin report rusage.ru_maxrss in bytes
+#if defined(__APPLE__) || defined(__MACH__)
+#    define RU_MAXRSS_UNITS 1024
+#else
+#    define RU_MAXRSS_UNITS 1
+#endif
+
 extern "C" void kokkosp_init_library(const int loadSeq,
   const uint64_t interfaceVer,
   const uint32_t devInfoCount,
@@ -35,7 +42,7 @@ extern "C" void kokkosp_finalize_library() {
 
   struct rusage sys_resources;
   getrusage(RUSAGE_SELF, &sys_resources);
-  long hwm = sys_resources.ru_maxrss;
+  long hwm = sys_resources.ru_maxrss * RU_MAXRSS_UNITS;
 
   // Max
   long hwm_max;
