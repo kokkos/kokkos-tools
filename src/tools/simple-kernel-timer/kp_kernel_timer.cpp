@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <string>
 #include <sys/time.h>
+#include <iostream>
 
 #include <unistd.h>
 #include "kp_kernel_info.h"
@@ -71,6 +72,9 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 		outputDelimiter = (char*) malloc(sizeof(char) * (strlen(output_delim_env) + 1));
 		sprintf(outputDelimiter, "%s", output_delim_env);
 	}
+
+	// initialize regions to 0s so we know if there is an object there
+	memset(&regions[0], 0, 512 * sizeof(KernelPerformanceInfo*));
 
 	printf("KokkosP: Example Library Initialized (sequence is %d, version: %llu)\n", loadSeq, interfaceVer);
 
@@ -271,5 +275,30 @@ extern "C" void kokkosp_push_profile_region(char* regionName) {
 
 extern "C" void kokkosp_pop_profile_region() {
         current_region_level--;
-        regions[current_region_level]->addFromTimer();
+        
+        // current_region_level is out of bounds, inform the user they 
+        // called popRegion too many times.
+        if (current_region_level < 0) {
+           current_region_level = 0;
+           std::cerr << "WARNING:: Kokkos::Profiling::popRegion() called outside " <<
+                   " of an actve region. Previous regions: ";
+
+          /* This code block will walk back through the non-null regions 
+           * pointers and print the names.  This takes advantage of a slight
+           * issue with regions logic: we never actually delete the 
+           * KernelPerformanceInfo objects.  If that ever changes this needs
+           * to be updated. 
+           */
+           for (int i = 0; i < 5; i++) {
+              if (regions[i] != 0 ) {
+                 std::cerr << (i == 0 ? " " : ";") << regions[i]->getName();
+              } else {
+                 break;
+              }
+           }
+           std::cerr << "\n";
+        } else {
+           // don't call addFromTimer if we are outside an active region
+           regions[current_region_level]->addFromTimer();
+        }
 }
