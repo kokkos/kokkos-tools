@@ -1,54 +1,158 @@
 # timemory KokkosP Profiling Tool
 
-[timemory](https://github.com/NERSC/timemory) is a C++11 performance analysis library designed around a CRTP base class
-and variadic template wrappers that enables arbitrary bundling of tools, measurements, and external APIs into
-a single `start()` and `stop()` over the entire bundle.
+[timemory](https://github.com/NERSC/timemory) is a __modular__ performance measurement and analysis library.
 
-- Timing
-- Memory
-- Resource Usage
-- Hardware Counters
-- [Roofline Performance Model](https://docs.nersc.gov/programming/performance-debugging-tools/roofline/)
+Several components are built-in but you can create you own components within this code and provide your
+own measurements or analysis.
+
+## Overview of Features
+
+- Several Components are built-in
+    - Timing
+        - wall-clock, cpu-clock, thread-cpu-clock, cpu-utilization, and more
+    - Memory
+        - peak resident set size, page resident set size
+    - Resource Usage
+        - page faults, bytes written, bytes read, context switches, etc.
+    - Hardware Counters
+        - PAPI for CPUs
+        - CUPTI for NVIDIA GPUs
+    - [Roofline Performance Model](https://docs.nersc.gov/programming/performance-debugging-tools/roofline/)
+        - Requires PAPI for CPUs
+        - Requires CUPTI for NVIDIA GPUs
+    - TAU instrumentation
+    - NVTX instrumentation
+    - LIKWID instrumentation
+    - VTune instrumentation
+    - Caliper instrumentation
+    - gperftools instrumentation
+- Custom Performance Measurements and Analysis methods can be easily created
+    - See [Creating Custom Components](#creating-custom-components)
+    - Includes GOTCHA capabilities for non-Kokkos functions
+
 
 ## Relevant Links
 
 - [GitHub](https://github.com/NERSC/timemory)
 - [Documentation](https://timemory.readthedocs.io/en/latest/)
-    - [Supported Components](https://timemory.readthedocs.io/en/latest/components/supported/)
 - [Doxygen](https://timemory.readthedocs.io/en/latest/doxygen-docs/)
 
-## timemory Install Requirements
+## timemory Install
+
+timemory uses a standard CMake installation system. There are a lot of external (optional) packages so pay
+attention to the summary at the end of the CMake configuration if a component in particular is desired.
+
+There are two summaries: a configuration variable summary and an interface library summary. The interface
+library summary will provide the easiest method of determining which feature should be added.
+
+### Sample Installation
+
+```console
+git clone https://github.com/NERSC/timemory.git timemory
+mkdir build-timemory
+cd build-timemory
+cmake -DCMAKE_INSTALL_PREFIX=/path/to/install ../timemory
+make -j8
+make -j8 install
+```
+
+### Requirements
 
 - C++ compiler (gcc, clang, Intel)
-- CMake v3.10 or higher
+- CMake v3.11 or higher
   - If you don't have a more recent CMake installation but have `conda`, this will provide a quick installation:
     - `conda create -n cmake -c conda-forge cmake`
     - `source activate cmake`
 - [Installation Documentation](https://timemory.readthedocs.io/en/latest/installation/)
 
-
 ## Quick Start for Kokkos
-
-### Installing timemory
-
-In a separate location, clone timemory and install to a designated prefix. Here, `/opt/timemory` is the installation prefix:
-
-```bash
-git clone https://github.com/NERSC/timemory.git timemory
-mkdir build-timemory && cd build-timemory
-cmake -DTIMEMORY_BUILD_C=OFF -DCMAKE_INSTALL_PREFIX=/opt/timemory ../timemory
-make install -j8
-```
 
 ### Building timemory-connector
 
-From the folder of this document, it is recommended to build with CMake but a Makefile is provided:
+From the folder of this document, it is recommended to build with CMake. A Makefile is provided but
+it will require a lot of configuration. Be sure to use `ccmake` or `cmake-gui` to view all the available
+options when configurating the connector. The installation of timemory itself configures several interface
+libraries that are not automatically imported into this build -- you may need to toggle some CMake
+options in this configuration to actually enable them.
 
 ```bash
 mkdir build && cd build
-cmake -Dtimemory_DIR=/opt/timemory ..
+cmake -DENABLE_ROOFLINE=ON -Dtimemory_DIR=/opt/timemory ..
 make
 ```
+
+In general, if you do `ENABLE_<FEATURE>` and it cannot be enabled, CMake will fail.
+
+### Using Different Components
+
+Use the command-line tool provided by timemory to find the alias for the tool desired. Use `-d` to get a
+description of the tool or `-h` to see all options. Once the desired components have been identified, place
+the components in a comma-delimited list in the environment variable `KOKKOS_TIMEMORY_COMPONENTS`, e.g.
+
+```console
+export KOKKOS_TIMEMORY_COMPONENTS="wall_clock, peak_rss, cpu_roofline_dp_flops"
+```
+
+#### Example
+
+```console
+timemory-avail -a
+```
+
+| COMPONENT                                  | AVAILABLE | C++ ALIAS / PYTHON ENUMERATION |
+| ------------------------------------------ | --------- | ------------------------------ |
+| `caliper`                                  | true      | `caliper`                      |
+| `cpu_clock`                                | true      | `cpu_clock`                    |
+| `cpu_roofline<double>`                     | true      | `cpu_roofline_dp_flops`        |
+| `cpu_roofline<float, double>`              | true      | `cpu_roofline_flops`           |
+| `cpu_roofline<float>`                      | true      | `cpu_roofline_sp_flops`        |
+| `cpu_util`                                 | true      | `cpu_util`                     |
+| `cuda_event`                               | false     | `cuda_event`                   |
+| `cuda_profiler`                            | false     | `cuda_profiler`                |
+| `cupti_activity`                           | false     | `cupti_activity`               |
+| `cupti_counters`                           | false     | `cupti_counters`               |
+| `data_rss`                                 | true      | `data_rss`                     |
+| `gperf_cpu_profiler`                       | false     | `gperf_cpu_profiler`           |
+| `gperf_heap_profiler`                      | false     | `gperf_heap_profiler`          |
+| `gpu_roofline<double>`                     | false     | `gpu_roofline_dp_flops`        |
+| `gpu_roofline<cuda::half2, float, double>` | false     | `gpu_roofline_flops`           |
+| `gpu_roofline<cuda::half2>`                | false     | `gpu_roofline_hp_flops`        |
+| `gpu_roofline<float>`                      | false     | `gpu_roofline_sp_flops`        |
+| `likwid_nvmon`                             | false     | `likwid_nvmon`                 |
+| `likwid_perfmon`                           | true      | `likwid_perfmon`               |
+| `monotonic_clock`                          | true      | `monotonic_clock`              |
+| `monotonic_raw_clock`                      | true      | `monotonic_raw_clock`          |
+| `num_io_in`                                | true      | `num_io_in`                    |
+| `num_io_out`                               | true      | `num_io_out`                   |
+| `num_major_page_faults`                    | true      | `num_major_page_faults`        |
+| `num_minor_page_faults`                    | true      | `num_minor_page_faults`        |
+| `num_msg_recv`                             | true      | `num_msg_recv`                 |
+| `num_msg_sent`                             | true      | `num_msg_sent`                 |
+| `num_signals`                              | true      | `num_signals`                  |
+| `num_swap`                                 | true      | `num_swap`                     |
+| `nvtx_marker`                              | false     | `nvtx_marker`                  |
+| `page_rss`                                 | true      | `page_rss`                     |
+| `papi_array<8ul>`                          | true      | `papi_array_t`                 |
+| `peak_rss`                                 | true      | `peak_rss`                     |
+| `priority_context_switch`                  | true      | `priority_context_switch`      |
+| `process_cpu_clock`                        | true      | `process_cpu_clock`            |
+| `process_cpu_util`                         | true      | `process_cpu_util`             |
+| `read_bytes`                               | true      | `read_bytes`                   |
+| `stack_rss`                                | true      | `stack_rss`                    |
+| `system_clock`                             | true      | `system_clock`                 |
+| `tau_marker`                               | true      | `tau_marker`                   |
+| `thread_cpu_clock`                         | true      | `thread_cpu_clock`             |
+| `thread_cpu_util`                          | true      | `thread_cpu_util`              |
+| `trip_count`                               | true      | `trip_count`                   |
+| `user_bundle<10101ul, native_tag>`         | true      | `user_tuple_bundle`            |
+| `user_bundle<11011ul, native_tag>`         | true      | `user_list_bundle`             |
+| `user_clock`                               | true      | `user_clock`                   |
+| `virtual_memory`                           | true      | `virtual_memory`               |
+| `voluntary_context_switch`                 | true      | `voluntary_context_switch`     |
+| `vtune_event`                              | false     | `vtune_event`                  |
+| `vtune_frame`                              | false     | `vtune_frame`                  |
+| `wall_clock`                               | true      | `wall_clock`                   |
+| `written_bytes`                            | true      | `written_bytes`                |
 
 ## Run kokkos application with timemory enabled
 
@@ -56,67 +160,9 @@ Before executing the Kokkos application you have to set the environment variable
 
 ```console
 export KOKKOS_PROFILE_LIBRARY=kp_timemory.so
-export LD_LIBRARY_PATH=<TIMEMORY-LIB-PATH>:<TIMEMORY-CONNECTOR-LIB-PATH>:$LD_LIBRARY_PATH
-```
-
-timemory can enable measurments of several different metrics ("components") simulatenously.
-Configure the `TIMEMORY_COMPONENTS` environment variable to set an exact specification of the desired components.
-
-```console
-export TIMEMORY_COMPONENTS="wall_clock,peak_rss"
-```
-
-Refer to the [supported components documentation](https://timemory.readthedocs.io/en/latest/components/supported/)
-for the full list of components. By default `TIMEMORY_COMPONENTS` records:
-
-| Metric         | Description                                              |
-| -------------- | -------------------------------------------------------- |
-| `wall_clock`   | Wall-clock runtime                                       |
-| `system_clock` | CPU timer spent in kernel-mode                           |
-| `user_clock`   | CPU time spent in user-mode                              |
-| `cpu_util`     | CPU utilization                                          |
-| `page_rss`     | High-water (allocated) memory mark in region             |
-| `peak_rss`     | High-water (used) memory mark in region (excluding swap) |
-
-### Appending components
-
-Other components in addition to those specified by `TIMEMORY_COMPONENTS`
-can be enabled at runtime via the `TIMEMORY_COMPONENT_LIST_INIT` environment variable.
-These components may include:
-
-| Metric                  | Description                                                                        |
-| ----------------------- | ---------------------------------------------------------------------------------- |
-| `caliper`               | Enable [Caliper toolkit](https://github.com/LLNL/Caliper)                          |
-| `papi_array`            | Enable PAPI hardware counters                                                      |
-| `cpu_roofline_sp_flops` | Enable single-precision floating-point roofline on CPU                             |
-| `cpu_roofline_dp_flops` | Enable single-precision floating-point roofline on CPU                             |
-| `gperf_cpu_profiler`    | Enable gperftools CPU profiler (sampler)                                           |
-| `gperf_heap_profiler`   | Enable gperftools heap profiler                                                    |
-| `cuda_event`            | Enable `cudaEvent_t` for approximate kernel runtimes                               |
-| `nvtx_marker`           | Enable NVTX markers                                                                |
-| `cupti_activity`        | Enable CUPTI runtime tracing on NVIDIA GPUs                                        |
-| `cupti_counters`        | Enable CUPTI hardware counters on NVIDIA GPUs                                      |
-| `gpu_roofline_flops`    | Enable half-, single-, and double-precision floating-point roofline on NVIDIA GPUs |
-| `gpu_roofline_hp_flops` | Enable half-precision floating-point roofline on NVIDIA GPUs                       |
-| `gpu_roofline_sp_flops` | Enable single-precision floating-point roofline on NVIDIA GPUs                     |
-| `gpu_roofline_dp_flops` | Enable double-precision floating-point roofline on NVIDIA GPUs                     |
-
-Some components will conflict with each other and should not be enabled simulatenously. Such combinations include:
-
-- `papi_array` and `cpu_roofline` types
-- `cupti_activity` and `cupti_counters`
-- `cupti_activity`/`cupti_counters` and `gpu_roofline` types
-- Any hardware counters + `caliper` (when Caliper is also configured to collect hardware counters)
-
-```console
-export TIMEMORY_COMPONENT_LIST_INIT="cupti_activity,papi_array"
 ```
 
 ## Run kokkos application with PAPI recording enabled
-
-When timemory was installed with PAPI support, assuming `CMAKE_INSTALL_RPATH_USE_LINK_PATH=ON`, the timemory
-library will know the location of the PAPI library. However, if this is not the case, add the path to the PAPI
-library to `LD_LIBRARY_PATH`.
 
 Internally, timemory uses the `TIMEMORY_PAPI_EVENTS` environment variable for specifying arbitrary events.
 However, this library will attempt to read `PAPI_EVENTS` and set `TIMEMORY_PAPI_EVENTS` before the PAPI
@@ -133,272 +179,186 @@ export TIMEMORY_PAPI_EVENTS="PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_LST_INS"
 
 [Roofline Performance Model](https://docs.nersc.gov/programming/performance-debugging-tools/roofline/)
 
-On both the CPU and GPU, calculating the roofline requires two passes.
+On both the CPU and GPU, calculating the roofline requires two executions of the application.
 It is recommended to use the timemory python interface to generate the roofline because
 the `timemory.roofline` submodule provides a mode that will handle executing the application
 twice and generating the plot. For advanced usage, see the
 [timemory Roofline Documentation](https://timemory.readthedocs.io/en/latest/getting_started/roofline/).
 
-
-1. Set environment variable `KOKKOS_ROOFLINE=ON`
-    - This configures output to __*always*__ output to `${TIMEMORY_OUTPUT_PATH}` (default: `timemory-output/`)
-2. Set environment variable `TIMEMORY_OUTPUT_PATH` as desired
-3. Execute application with `python -m timemory.roofline <OPTIONS> -- <COMMAND>`
-    - `OPTIONS` are the roofline module options
-        - `-d` : display plot immediately
-        - `-k` : ignore exit code of applicaiton
-        - `-n` : number of threads
-            - *IMPORTANT*: this will set the appropriate timemory environment variable to ensure the empirical peak
-              for the hardware is calculated properly
-        - `-f` : image format
-        - `-t` : type of the roofline to plot
-            - CPU and GPU rooflines can both be enabled but only one plot will be generated
-    - `COMMAND` is the command and arguments for the application
-        - `python -m timemory.roofline --help` : provides help for arguments when output is already generated
-        - `python -m timemory.roofline --help -- <COMMAND>` : provides help for executing an application
-
 ```console
 export KOKKOS_ROOFLINE=ON
-export TIMEMORY_OUTPUT_PATH=${HOSTNAME}_roofline
 export OMP_NUM_THREADS=4
-export TIMEMORY_COMPONENT_LIST_INIT="cpu_roofline_dp_flops"
-python -m timemory.roofline -n 4 -f png -t cpu_roofline -- ./sample
+export KOKKOS_TIMEMORY_COMPONENTS="cpu_roofline_dp_flops"
+timemory-roofline -n 4 -t cpu_roofline -- ./sample
 ```
 
-## Included Multithreaded Sample
-
-### Building Sample
+## Building Sample
 
 ```shell
 cmake -DBUILD_SAMPLE=ON ..
 make -j2
 ```
 
-### Running Sample
+## Sample Output
 
-#### Command
+```console
+#---------------------------------------------------------------------------#
+# KokkosP: TiMemory Connector (sequence is 0, version: 0)
+#---------------------------------------------------------------------------#
 
-```shell
-$ export TIMEMORY_JSON_OUTPUT=ON
-$ export TIMEMORY_COMPONENTS="wall_clock,peak_rss,page_rss,thread_cpu_clock,thread_cpu_util,cpu_clock,cpu_util"
-$ export LD_PRELOAD=${PWD}/kp_timemory.so
-$ time ./sample
+#--------------------- tim::manager initialized [0][0] ---------------------#
+
+fibonacci(47) = 2971215073
+fibonacci(47) = 2971215073
+fibonacci(47) = 2971215073
+fibonacci(47) = 2971215073
+fibonacci(47) = 2971215073
+fibonacci(47) = 2971215073
+fibonacci(47) = 2971215073
+fibonacci(47) = 2971215073
+fibonacci(47) = 2971215073
+fibonacci(47) = 2971215073
+
+#---------------------------------------------------------------------------#
+KokkosP: Finalization of TiMemory Connector. Complete.
+#---------------------------------------------------------------------------#
+
+
+[peak_rss]|0> Outputting 'docker-desktop_26927/peak_rss.json'...
+[peak_rss]|0> Outputting 'docker-desktop_26927/peak_rss.txt'...
+
+>>> sample                              :  214.9 MB peak_rss,  1 laps, depth 0
+>>> |_kokkos/dev0/thread_creation       :    0.3 MB peak_rss,  1 laps, depth 1
+>>> |_kokkos/dev0/fibonacci             : 2142.2 MB peak_rss, 10 laps, depth 1 (exclusive:  39.8%)
+>>>   |_kokkos/dev0/fibonacci_runtime_0 :  209.8 MB peak_rss,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_1 :  202.7 MB peak_rss,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_2 :  191.2 MB peak_rss,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_3 :  175.8 MB peak_rss,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_4 :  156.3 MB peak_rss,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_5 :  133.0 MB peak_rss,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_6 :  105.8 MB peak_rss,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_7 :   74.7 MB peak_rss,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_8 :   39.7 MB peak_rss,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_9 :    0.8 MB peak_rss,  1 laps, depth 2
+
+[wall]|0> Outputting 'docker-desktop_26927/wall.json'...
+[wall]|0> Outputting 'docker-desktop_26927/wall.txt'...
+
+>>> sample                              :   21.612 sec wall,  1 laps, depth 0
+>>> |_kokkos/dev0/thread_creation       :    0.007 sec wall,  1 laps, depth 1
+>>> |_kokkos/dev0/fibonacci             :  200.820 sec wall, 10 laps, depth 1 (exclusive:   2.8%)
+>>>   |_kokkos/dev0/fibonacci_runtime_0 :   19.136 sec wall,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_1 :   19.368 sec wall,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_2 :   19.497 sec wall,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_3 :   19.537 sec wall,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_4 :   19.555 sec wall,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_5 :   19.621 sec wall,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_6 :   19.650 sec wall,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_7 :   19.621 sec wall,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_8 :   19.621 sec wall,  1 laps, depth 2
+>>>   |_kokkos/dev0/fibonacci_runtime_9 :   19.558 sec wall,  1 laps, depth 2
+
+[metadata::manager::finalize]> Outputting 'docker-desktop_26927/metadata.json'...
+
+
+#---------------------- tim::manager destroyed [0][0] ----------------------#
 ```
 
-#### Notes
+## Creating Custom Components
 
-- `[0] fibonacci_8` and all subsequent measurements are scoped as such because
-  `[0] thread_creation` completed the thread creation and ended before those threads were launched
-- `[0]` designates the device number if provided to connector (parallel_for/parallel_reduce/parallel_scan)
-- `time` is used to demonstrate that the top-level `real_clock`/`wall_clock` timer produces a correct execution time
-  for the entire application.
+### Simple Trip Counter
 
-#### Output
+This tool currently uses `component::user_bundle<size_t, T>` within a variadic collection of tools
+`component_tuple<T...>`. The `user_bundle` is relatively heavyweight component that is capable
+of activating any of the built-in components to timemory. If new analysis is required, define
+the component, insert (or replace) the new component inside the template parameters of
+`component_tuple`, recompile, and use the tool.
 
-```shell
-#-------------------------------------------------------------------------#
-KokkosP: TiMemory Connector (sequence is 0, version: 0)
-#-------------------------------------------------------------------------#
+```cpp
+using profile_entry_t  = tim::component_tuple<KokkosUserBundle>;
+```
 
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
+with the definition of your component and either add it to the template parameters
+of `profile_entry_t` or make it the exclusive template parameter:
 
-#-------------------------------------------------------------------------#
-KokkosP: Finalization of TiMemory Connector. Complete.
-#-------------------------------------------------------------------------#
+```cpp
+namespace tim { namespace component {
 
+struct MyTripCount : public base<trip_count, int64_t>
+{
+    using value_type = int64_t;
+    using this_type  = MyTripCount;
+    using base_type  = base<this_type, value_type>;
 
-[thread_cpu_util]> Outputting 'docker-desktop_41392/thread_cpu_util.txt'... Done
-[thread_cpu_util]> Outputting 'docker-desktop_41392/thread_cpu_util.json'... Done
+    static std::string label() { return "trip_count"; }
+    static std::string description() { return "trip counts"; }
+    static value_type  record() { return 1; }
 
-> [cxx] sample                      :    0.0 % thread_cpu_util, 1 laps, depth 0
-> [cxx] |_[0] thread_creation       :   46.9 % thread_cpu_util, 1 laps, depth 1
-> [cxx]   |_[0] fibonacci_0         :   98.5 % thread_cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :   99.4 % thread_cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_1         :   97.9 % thread_cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :   99.7 % thread_cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_4         :   95.5 % thread_cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :   99.7 % thread_cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_3         :   96.3 % thread_cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :   99.7 % thread_cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_2         :   97.0 % thread_cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :   99.6 % thread_cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_5         :   94.2 % thread_cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :   99.2 % thread_cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_7         :   93.0 % thread_cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :   99.5 % thread_cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_6         :   93.4 % thread_cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :   99.2 % thread_cpu_util, 1 laps, depth 3
-> [cxx] |_[0] fibonacci_8           :   92.1 % thread_cpu_util, 1 laps, depth 1
-> [cxx]   |_[0] fibonacci_runtime   :   99.5 % thread_cpu_util, 1 laps, depth 2
-> [cxx] |_[0] fibonacci_9           :   91.6 % thread_cpu_util, 1 laps, depth 1
-> [cxx]   |_[0] fibonacci_runtime   :   99.8 % thread_cpu_util, 1 laps, depth 2
+    value_type get() const { return accum; }
+    value_type get_display() const { return get(); }
 
-[thread_cpu]> Outputting 'docker-desktop_41392/thread_cpu.txt'... Done
-[thread_cpu]> Outputting 'docker-desktop_41392/thread_cpu.json'... Done
+    void start()
+    {
+        set_started();
+        value = record();
+    }
 
-> [cxx] sample                      :    0.003 sec thread_cpu, 1 laps, depth 0
-> [cxx] |_[0] thread_creation       :    0.002 sec thread_cpu, 1 laps, depth 1
-> [cxx]   |_[0] fibonacci_0         :   11.124 sec thread_cpu, 1 laps, depth 2 (exclusive:   0.0%)
-> [cxx]     |_[0] fibonacci_runtime :   11.121 sec thread_cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_1         :   11.059 sec thread_cpu, 1 laps, depth 2 (exclusive:   0.0%)
-> [cxx]     |_[0] fibonacci_runtime :   11.056 sec thread_cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_4         :   11.395 sec thread_cpu, 1 laps, depth 2 (exclusive:   0.1%)
-> [cxx]     |_[0] fibonacci_runtime :   11.388 sec thread_cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_3         :   11.306 sec thread_cpu, 1 laps, depth 2 (exclusive:   0.0%)
-> [cxx]     |_[0] fibonacci_runtime :   11.300 sec thread_cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_2         :   11.243 sec thread_cpu, 1 laps, depth 2 (exclusive:   0.0%)
-> [cxx]     |_[0] fibonacci_runtime :   11.239 sec thread_cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_5         :   11.170 sec thread_cpu, 1 laps, depth 2 (exclusive:   0.1%)
-> [cxx]     |_[0] fibonacci_runtime :   11.162 sec thread_cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_7         :   11.354 sec thread_cpu, 1 laps, depth 2 (exclusive:   0.1%)
-> [cxx]     |_[0] fibonacci_runtime :   11.344 sec thread_cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_6         :   11.225 sec thread_cpu, 1 laps, depth 2 (exclusive:   0.1%)
-> [cxx]     |_[0] fibonacci_runtime :   11.213 sec thread_cpu, 1 laps, depth 3
-> [cxx] |_[0] fibonacci_8           :   11.277 sec thread_cpu, 1 laps, depth 1 (exclusive:   0.1%)
-> [cxx]   |_[0] fibonacci_runtime   :   11.264 sec thread_cpu, 1 laps, depth 2
-> [cxx] |_[0] fibonacci_9           :   11.245 sec thread_cpu, 1 laps, depth 1 (exclusive:   0.1%)
-> [cxx]   |_[0] fibonacci_runtime   :   11.229 sec thread_cpu, 1 laps, depth 2
+    void stop()
+    {
+        accum += value;
+        set_stopped();
+    }
 
-[real]> Outputting 'docker-desktop_41392/real.txt'... Done
-[real]> Outputting 'docker-desktop_41392/real.json'... Done
+}; } }
 
-> [cxx] sample                      :   13.280 sec real, 1 laps, depth 0
-> [cxx] |_[0] thread_creation       :    0.004 sec real, 1 laps, depth 1
-> [cxx]   |_[0] fibonacci_0         :   11.296 sec real, 1 laps, depth 2 (exclusive:   0.9%)
-> [cxx]     |_[0] fibonacci_runtime :   11.193 sec real, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_1         :   11.298 sec real, 1 laps, depth 2 (exclusive:   1.8%)
-> [cxx]     |_[0] fibonacci_runtime :   11.095 sec real, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_4         :   11.934 sec real, 1 laps, depth 2 (exclusive:   4.3%)
-> [cxx]     |_[0] fibonacci_runtime :   11.427 sec real, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_3         :   11.746 sec real, 1 laps, depth 2 (exclusive:   3.5%)
-> [cxx]     |_[0] fibonacci_runtime :   11.339 sec real, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_2         :   11.591 sec real, 1 laps, depth 2 (exclusive:   2.6%)
-> [cxx]     |_[0] fibonacci_runtime :   11.286 sec real, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_5         :   11.861 sec real, 1 laps, depth 2 (exclusive:   5.1%)
-> [cxx]     |_[0] fibonacci_runtime :   11.252 sec real, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_7         :   12.215 sec real, 1 laps, depth 2 (exclusive:   6.6%)
-> [cxx]     |_[0] fibonacci_runtime :   11.404 sec real, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_6         :   12.014 sec real, 1 laps, depth 2 (exclusive:   5.9%)
-> [cxx]     |_[0] fibonacci_runtime :   11.302 sec real, 1 laps, depth 3
-> [cxx] |_[0] fibonacci_8           :   12.238 sec real, 1 laps, depth 1 (exclusive:   7.5%)
-> [cxx]   |_[0] fibonacci_runtime   :   11.323 sec real, 1 laps, depth 2
-> [cxx] |_[0] fibonacci_9           :   12.273 sec real, 1 laps, depth 1 (exclusive:   8.3%)
-> [cxx]   |_[0] fibonacci_runtime   :   11.256 sec real, 1 laps, depth 2
+using profile_entry_t  = tim::component_tuple<MyTripCount>;
+```
 
-[peak_rss]> Outputting 'docker-desktop_41392/peak_rss.txt'... Done
-[peak_rss]> Outputting 'docker-desktop_41392/peak_rss.json'... Done
+### Simple GOTCHA replacement for exp
 
-> [cxx] sample                      : 216.3 MB peak_rss, 1 laps, depth 0
-> [cxx] |_[0] thread_creation       :   1.9 MB peak_rss, 1 laps, depth 1
-> [cxx]   |_[0] fibonacci_0         : 215.7 MB peak_rss, 1 laps, depth 2 (exclusive:   2.6%)
-> [cxx]     |_[0] fibonacci_runtime : 210.1 MB peak_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_1         : 216.0 MB peak_rss, 1 laps, depth 2 (exclusive:   6.1%)
-> [cxx]     |_[0] fibonacci_runtime : 202.8 MB peak_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_4         : 214.4 MB peak_rss, 1 laps, depth 2 (exclusive:  27.1%)
-> [cxx]     |_[0] fibonacci_runtime : 156.4 MB peak_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_3         : 214.4 MB peak_rss, 1 laps, depth 2 (exclusive:  18.0%)
-> [cxx]     |_[0] fibonacci_runtime : 175.9 MB peak_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_2         : 214.3 MB peak_rss, 1 laps, depth 2 (exclusive:  10.7%)
-> [cxx]     |_[0] fibonacci_runtime : 191.3 MB peak_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_5         : 214.4 MB peak_rss, 1 laps, depth 2 (exclusive:  37.9%)
-> [cxx]     |_[0] fibonacci_runtime : 133.1 MB peak_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_7         : 214.4 MB peak_rss, 1 laps, depth 2 (exclusive:  65.1%)
-> [cxx]     |_[0] fibonacci_runtime :  74.8 MB peak_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_6         : 214.4 MB peak_rss, 1 laps, depth 2 (exclusive:  50.6%)
-> [cxx]     |_[0] fibonacci_runtime : 106.0 MB peak_rss, 1 laps, depth 3
-> [cxx] |_[0] fibonacci_8           : 214.4 MB peak_rss, 1 laps, depth 1 (exclusive:  81.5%)
-> [cxx]   |_[0] fibonacci_runtime   :  39.7 MB peak_rss, 1 laps, depth 2
-> [cxx] |_[0] fibonacci_9           : 214.4 MB peak_rss, 1 laps, depth 1 (exclusive:  99.7%)
-> [cxx]   |_[0] fibonacci_runtime   :   0.6 MB peak_rss, 1 laps, depth 2
+Components can also be used to implement GOTCHAs to either
+instrument the original function call or as a whole-sale replacement
+for the function call.
 
-[page_rss]> Outputting 'docker-desktop_41392/page_rss.txt'... Done
-[page_rss]> Outputting 'docker-desktop_41392/page_rss.json'... Done
+```cpp
+namespace tim { namespace component {
 
-> [cxx] sample                      : 174.2 MB page_rss, 1 laps, depth 0
-> [cxx] |_[0] thread_creation       :   1.9 MB page_rss, 1 laps, depth 1
-> [cxx]   |_[0] fibonacci_0         : 220.8 MB page_rss, 1 laps, depth 2 (exclusive:   2.6%)
-> [cxx]     |_[0] fibonacci_runtime : 215.2 MB page_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_1         : 221.1 MB page_rss, 1 laps, depth 2 (exclusive:   6.1%)
-> [cxx]     |_[0] fibonacci_runtime : 207.6 MB page_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_4         : 205.8 MB page_rss, 1 laps, depth 2 (exclusive:  29.8%)
-> [cxx]     |_[0] fibonacci_runtime : 144.5 MB page_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_3         : 219.6 MB page_rss, 1 laps, depth 2 (exclusive:  18.0%)
-> [cxx]     |_[0] fibonacci_runtime : 180.1 MB page_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_2         : 219.4 MB page_rss, 1 laps, depth 2 (exclusive:  10.7%)
-> [cxx]     |_[0] fibonacci_runtime : 195.9 MB page_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_5         : 203.7 MB page_rss, 1 laps, depth 2 (exclusive:  40.9%)
-> [cxx]     |_[0] fibonacci_runtime : 120.4 MB page_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_7         : 204.2 MB page_rss, 1 laps, depth 2 (exclusive:  70.0%)
-> [cxx]     |_[0] fibonacci_runtime :  61.2 MB page_rss, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_6         : 204.0 MB page_rss, 1 laps, depth 2 (exclusive:  54.5%)
-> [cxx]     |_[0] fibonacci_runtime :  92.9 MB page_rss, 1 laps, depth 3
-> [cxx] |_[0] fibonacci_8           : 172.3 MB page_rss, 1 laps, depth 1 (exclusive: 100.0%)
-> [cxx]   |_[0] fibonacci_runtime   :   0.0 MB page_rss, 1 laps, depth 2
-> [cxx] |_[0] fibonacci_9           : 172.3 MB page_rss, 1 laps, depth 1 (exclusive: 100.0%)
-> [cxx]   |_[0] fibonacci_runtime   :   0.0 MB page_rss, 1 laps, depth 2
+struct exp_intercept : public base<exp_intercept, void>
+{
+    // replaces 'double exp(double)' with 'double expf(float)'
+    double operator()(double val)
+    {
+        return expf(static_cast<float>(val));
+    }
 
-[cpu_util]> Outputting 'docker-desktop_41392/cpu_util.txt'... Done
-[cpu_util]> Outputting 'docker-desktop_41392/cpu_util.json'... Done
+}; } }
 
-> [cxx] sample                      :  846.6 % cpu_util, 1 laps, depth 0
-> [cxx] |_[0] thread_creation       :    0.0 % cpu_util, 1 laps, depth 1 (exclusive:   0.0%)
-> [cxx]   |_[0] fibonacci_0         :  946.7 % cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :  955.3 % cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_1         :  947.0 % cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :  963.5 % cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_4         :  933.2 % cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :  966.0 % cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_3         :  939.2 % cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :  967.5 % cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_2         :  942.6 % cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :  965.5 % cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_5         :  936.0 % cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :  973.3 % cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_7         :  919.3 % cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :  960.0 % cpu_util, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_6         :  929.6 % cpu_util, 1 laps, depth 2
-> [cxx]     |_[0] fibonacci_runtime :  969.5 % cpu_util, 1 laps, depth 3
-> [cxx] |_[0] fibonacci_8           :  918.2 % cpu_util, 1 laps, depth 1
-> [cxx]   |_[0] fibonacci_runtime   :  960.5 % cpu_util, 1 laps, depth 2
-> [cxx] |_[0] fibonacci_9           :  915.9 % cpu_util, 1 laps, depth 1
-> [cxx]   |_[0] fibonacci_runtime   :  957.7 % cpu_util, 1 laps, depth 2
+// for component to implement operator() in lieu of wrapper, must define empty component tuple
+using exp_dummy_t      = tim::component_tuple<>;
+using exp_gotcha_t     = tim::component::gotcha<1, exp_dummy_t, exp_intercept>;
 
-[cpu]> Outputting 'docker-desktop_41392/cpu.txt'... Done
-[cpu]> Outputting 'docker-desktop_41392/cpu.json'... Done
+extern "C" void
+kokkosp_init_library(...)
+{
+    // ...
+    // add below macro to generate and activate the gotcha
+    TIMEMORY_C_GOTCHA(exp_gotcha_t, 0, exp);
+}
+```
 
-> [cxx] sample                      :  112.420 sec cpu, 1 laps, depth 0
-> [cxx] |_[0] thread_creation       :    0.000 sec cpu, 1 laps, depth 1 (exclusive:   0.0%)
-> [cxx]   |_[0] fibonacci_0         :  106.930 sec cpu, 1 laps, depth 2 (exclusive:   0.0%)
-> [cxx]     |_[0] fibonacci_runtime :  106.930 sec cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_1         :  107.000 sec cpu, 1 laps, depth 2 (exclusive:   0.1%)
-> [cxx]     |_[0] fibonacci_runtime :  106.900 sec cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_4         :  111.370 sec cpu, 1 laps, depth 2 (exclusive:   0.9%)
-> [cxx]     |_[0] fibonacci_runtime :  110.380 sec cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_3         :  110.310 sec cpu, 1 laps, depth 2 (exclusive:   0.5%)
-> [cxx]     |_[0] fibonacci_runtime :  109.710 sec cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_2         :  109.260 sec cpu, 1 laps, depth 2 (exclusive:   0.3%)
-> [cxx]     |_[0] fibonacci_runtime :  108.960 sec cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_5         :  111.020 sec cpu, 1 laps, depth 2 (exclusive:   1.4%)
-> [cxx]     |_[0] fibonacci_runtime :  109.510 sec cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_7         :  112.300 sec cpu, 1 laps, depth 2 (exclusive:   2.5%)
-> [cxx]     |_[0] fibonacci_runtime :  109.480 sec cpu, 1 laps, depth 3
-> [cxx]   |_[0] fibonacci_6         :  111.690 sec cpu, 1 laps, depth 2 (exclusive:   1.9%)
-> [cxx]     |_[0] fibonacci_runtime :  109.570 sec cpu, 1 laps, depth 3
-> [cxx] |_[0] fibonacci_8           :  112.370 sec cpu, 1 laps, depth 1 (exclusive:   3.2%)
-> [cxx]   |_[0] fibonacci_runtime   :  108.760 sec cpu, 1 laps, depth 2
-> [cxx] |_[0] fibonacci_9           :  112.410 sec cpu, 1 laps, depth 1 (exclusive:   4.1%)
-> [cxx]   |_[0] fibonacci_runtime   :  107.800 sec cpu, 1 laps, depth 2
+### Simple GOTCHA timer for cos
 
-real	0m13.748s
-user	1m52.270s
-sys	    0m0.190s
+```cpp
+// for component to implement operator() in lieu of wrapper, must define empty component tuple
+using tim::component::wall_clock;
+using cos_timer_t      = tim::component_tuple<wall_clock>;
+using cos_gotcha_t     = tim::component::gotcha<1, cos_timer_t>;
+
+extern "C" void
+kokkosp_init_library(...)
+{
+    // ...
+    // add below macro to generate and activate the gotcha
+    TIMEMORY_C_GOTCHA(cos_gotcha_t, 0, cos);
+}
 ```

@@ -4,24 +4,28 @@
 #include <execinfo.h>
 #include <iostream>
 #include <string>
-#include <timemory/timemory.hpp>
 #include <vector>
 
-extern "C"
+#include <timemory/runtime/configure.hpp>
+#include <timemory/timemory.hpp>
+
+static std::string spacer =
+    "#---------------------------------------------------------------------------#";
+
+// this just differentiates Kokkos from other user_bundles
+struct KokkosProfiler
 {
-    void timemory_init_library(int, char**);
-    void timemory_finalize_library();
-    void timemory_begin_record(const char*, uint64_t*);
-    void timemory_end_record(uint64_t);
-}
+};
 
-static std::vector<uint64_t> regions;
-static std::string           spacer =
-    "#-------------------------------------------------------------------------#";
+using KokkosUserBundle = tim::component::user_bundle<0, KokkosProfiler>;
+using profile_entry_t  = tim::component_tuple<KokkosUserBundle>;
 
-using section_entry_t   = std::tuple<std::string, uint64_t>;
-using section_map_t     = std::unordered_map<uint64_t, section_entry_t>;
-using section_map_ptr_t = std::unique_ptr<section_map_t>;
+using section_entry_t = std::tuple<std::string, profile_entry_t>;
+using profile_stack_t = std::vector<profile_entry_t>;
+using profile_map_t   = std::unordered_map<uint64_t, profile_entry_t>;
+using section_map_t   = std::unordered_map<uint64_t, section_entry_t>;
+
+//--------------------------------------------------------------------------------------//
 
 static uint64_t
 get_unique_id()
@@ -30,25 +34,87 @@ get_unique_id()
     return _instance++;
 }
 
-static section_map_t*
-get_section_map()
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+_Tp&
+get_tl_static()
 {
-    static thread_local section_map_ptr_t _instance(new section_map_t);
-    return _instance.get();
+    static thread_local _Tp _instance;
+    return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
+
+static profile_map_t&
+get_profile_map()
+{
+    return get_tl_static<profile_map_t>();
+}
+
+//--------------------------------------------------------------------------------------//
+
+static section_map_t&
+get_section_map()
+{
+    return get_tl_static<section_map_t>();
+}
+
+//--------------------------------------------------------------------------------------//
+
+static profile_stack_t&
+get_profile_stack()
+{
+    return get_tl_static<profile_stack_t>();
+}
+
+//--------------------------------------------------------------------------------------//
+
+static void
+create_profiler(const std::string& pname, uint64_t kernid)
+{
+    get_profile_map().insert(std::make_pair(kernid, profile_entry_t(pname)));
+}
+
+//--------------------------------------------------------------------------------------//
+
+static void
+destroy_profiler(uint64_t kernid)
+{
+    if(get_profile_map().find(kernid) != get_profile_map().end())
+        get_profile_map().erase(kernid);
+}
+
+//--------------------------------------------------------------------------------------//
+
+static void
+start_profiler(uint64_t kernid)
+{
+    if(get_profile_map().find(kernid) != get_profile_map().end())
+        get_profile_map().at(kernid).start();
+}
+
+//--------------------------------------------------------------------------------------//
+
+static void
+stop_profiler(uint64_t kernid)
+{
+    if(get_profile_map().find(kernid) != get_profile_map().end())
+        get_profile_map().at(kernid).stop();
+}
+
+//======================================================================================//
 //
 //      Kokkos symbols
 //
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
 
 extern "C" void
 kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                      const uint32_t devInfoCount, void* deviceInfo)
 {
     printf("%s\n", spacer.c_str());
-    printf("KokkosP: TiMemory Connector (sequence is %d, version: %llu)\n", loadSeq,
+    printf("# KokkosP: timemory Connector (sequence is %d, version: %llu)\n", loadSeq,
            (long long int) interfaceVer);
     printf("%s\n\n", spacer.c_str());
 
@@ -75,142 +141,152 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
     free(hostname);
 
-    // reference: http://man7.org/linux/man-pages/man3/setenv.3.html
-#if _POSIX_C_SOURCE >= 200112L
-    auto papi_events = tim::get_env<std::string>("PAPI_EVENTS", "");
-    setenv("TIMEMORY_PAPI_EVENTS", papi_events.c_str(), 0);
-    if(papi_events.length() > 0)
-    {
-        printf(
-            "%s\n[timemory-connector]> Detected PAPI_EVENTS... Enabling papi_array in "
-            "%s\n%s\n",
-            spacer.c_str(), "TIMEMORY_COMPONENT_LIST_INIT", spacer.c_str());
-        auto comp_list = tim::get_env<std::string>("TIMEMORY_COMPONENT_LIST_INIT", "");
-        comp_list      = TIMEMORY_JOIN(";", comp_list, "papi_array");
-        setenv("TIMEMORY_COMPONENT_LIST_INIT", comp_list.c_str(), 1);
-    }
-#endif
-
-    tim::settings::auto_output() = true;   // print when destructing
-    tim::settings::cout_output() = true;   // print to stdout
-    tim::settings::text_output() = true;   // print text files
-    tim::settings::json_output() = true;   // print to json
-    tim::settings::banner()      = false;  // suppress banner
+    auto papi_events              = tim::get_env<std::string>("PAPI_EVENTS", "");
+    tim::settings::papi_events()  = papi_events;
+    tim::settings::auto_output()  = true;   // print when destructing
+    tim::settings::cout_output()  = true;   // print to stdout
+    tim::settings::text_output()  = true;   // print text files
+    tim::settings::json_output()  = true;   // print to json
+    tim::settings::banner()       = true;   // suppress banner
+    tim::settings::mpi_finalize() = false;  // don't finalize MPI during timemory_finalize
 
     std::stringstream ss;
     ss << loadSeq << "_" << interfaceVer << "_" << devInfoCount;
     auto cstr = const_cast<char*>(ss.str().c_str());
-    timemory_init_library(1, &cstr);
     tim::timemory_init(1, &cstr, "", "");
     tim::settings::output_path() = folder.str();
+
+    // the environment variable to configure components
+    std::string env_var = "KOKKOS_TIMEMORY_COMPONENTS";
+    // if roofline is enabled, provide nothing by default
+    // if roofline is not enabled, profile wall-clock by default
+    std::string components = (use_roofline) ? "" : "wall_clock;peak_rss";
+    // query the environment
+    auto env_result = tim::get_env(env_var, components);
+    std::transform(env_result.begin(), env_result.end(), env_result.begin(),
+                   [](unsigned char c) -> unsigned char { return std::tolower(c); });
+    // if a roofline component is not set in the environment, then add both the
+    // cpu and gpu roofline
+    if(use_roofline && env_result.find("roofline") == std::string::npos)
+        env_result = TIMEMORY_JOIN(";", env_result, "gpu_roofline_flops", "cpu_roofline");
+    // configure the bundle to use these components
+    tim::configure<KokkosUserBundle>(tim::enumerate_components(tim::delimit(env_result)));
 }
 
 extern "C" void
 kokkosp_finalize_library()
 {
     printf("\n%s\n", spacer.c_str());
-    printf("KokkosP: Finalization of TiMemory Connector. Complete.\n");
+    printf("KokkosP: Finalization of timemory Connector. Complete.\n");
     printf("%s\n\n", spacer.c_str());
 
-    timemory_finalize_library();
+    for(auto& itr : get_profile_map())
+        itr.second.stop();
+    get_profile_map().clear();
+
+    tim::timemory_finalize();
 }
+
+//--------------------------------------------------------------------------------------//
 
 extern "C" void
 kokkosp_begin_parallel_for(const char* name, uint32_t devid, uint64_t* kernid)
 {
-    auto tname = TIMEMORY_JOIN(" ", TIMEMORY_JOIN("", "[", devid, "]"), name);
-    timemory_begin_record(tname.c_str(), kernid);
+    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+    *kernid    = get_unique_id();
+    create_profiler(pname, *kernid);
+    start_profiler(*kernid);
 }
 
 extern "C" void
 kokkosp_end_parallel_for(uint64_t kernid)
 {
-    timemory_end_record(kernid);
+    stop_profiler(kernid);
+    destroy_profiler(kernid);
 }
+
+//--------------------------------------------------------------------------------------//
 
 extern "C" void
 kokkosp_begin_parallel_reduce(const char* name, uint32_t devid, uint64_t* kernid)
 {
-    auto tname = TIMEMORY_JOIN(" ", TIMEMORY_JOIN("", "[", devid, "]"), name);
-    timemory_begin_record(tname.c_str(), kernid);
+    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+    *kernid    = get_unique_id();
+    create_profiler(pname, *kernid);
+    start_profiler(*kernid);
 }
 
 extern "C" void
 kokkosp_end_parallel_reduce(uint64_t kernid)
 {
-    timemory_end_record(kernid);
+    stop_profiler(kernid);
+    destroy_profiler(kernid);
 }
+
+//--------------------------------------------------------------------------------------//
 
 extern "C" void
 kokkosp_begin_parallel_scan(const char* name, uint32_t devid, uint64_t* kernid)
 {
-    auto tname = TIMEMORY_JOIN(" ", TIMEMORY_JOIN("", "[", devid, "]"), name);
-    timemory_begin_record(tname.c_str(), kernid);
+    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+    *kernid    = get_unique_id();
+    create_profiler(pname, *kernid);
+    start_profiler(*kernid);
 }
 
 extern "C" void
 kokkosp_end_parallel_scan(uint64_t kernid)
 {
-    timemory_end_record(kernid);
+    stop_profiler(kernid);
+    destroy_profiler(kernid);
 }
+
+//--------------------------------------------------------------------------------------//
 
 extern "C" void
 kokkosp_push_profile_region(const char* name)
 {
-    uint64_t regid = 0;
-    timemory_begin_record(name, &regid);
-    regions.push_back(regid);
+    get_profile_stack().push_back(profile_entry_t(name));
+    get_profile_stack().back().start();
 }
 
 extern "C" void
 kokkosp_pop_profile_region()
 {
-    timemory_end_record(regions.back());
-    regions.pop_back();
+    if(get_profile_stack().empty())
+        return;
+    get_profile_stack().back().stop();
+    get_profile_stack().pop_back();
 }
 
-/*
-extern "C" void
-kokkosp_profile_event(const char* name)
-{
-}
-*/
+//--------------------------------------------------------------------------------------//
 
 extern "C" void
-kokkosp_create_profile_section(const char* name, uint32_t* sec_id)
+kokkosp_create_profile_section(const char* name, uint32_t* secid)
 {
-    *sec_id = get_unique_id();
-    auto tname =
-        TIMEMORY_JOIN("_", "section", *sec_id, TIMEMORY_JOIN("", "[", name, "]"));
-    auto* _sections = get_section_map();
-    assert(_sections);
-    (*_sections)[*sec_id] = section_entry_t(tname, 0);
+    *secid     = get_unique_id();
+    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "section", secid), name);
+    create_profiler(pname, *secid);
 }
 
 extern "C" void
-kokkosp_destroy_profile_section(uint32_t sec_id)
+kokkosp_destroy_profile_section(uint32_t secid)
 {
-    auto* _sections = get_section_map();
-    assert(_sections);
-    if(_sections->find(sec_id) != _sections->end())
-        _sections->erase(sec_id);
+    destroy_profiler(secid);
+}
+
+//--------------------------------------------------------------------------------------//
+
+extern "C" void
+kokkosp_start_profile_section(uint32_t secid)
+{
+    start_profiler(secid);
 }
 
 extern "C" void
-kokkosp_start_profile_section(uint32_t sec_id)
+kokkosp_stop_profile_section(uint32_t secid)
 {
-    auto* _psections = get_section_map();
-    assert(_psections);
-    auto& _sections = *_psections;
-    if(_sections.find(sec_id) != _sections.end())
-        timemory_begin_record(std::get<0>(_sections[sec_id]).c_str(),
-                              &std::get<1>(_sections[sec_id]));
+    start_profiler(secid);
 }
 
-extern "C" void
-kokkosp_stop_profile_section(uint32_t sec_id)
-{
-    auto* _sections = get_section_map();
-    if(_sections->find(sec_id) != _sections->end())
-        timemory_end_record(std::get<1>((*_sections)[sec_id]));
-}
+//--------------------------------------------------------------------------------------//

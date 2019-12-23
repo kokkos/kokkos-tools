@@ -79,9 +79,8 @@ main(int argc, char** argv)
         kokkosp_create_profile_section("memory_section", &psec_id);
 
         auto _function = [&](int i) {
-            auto     label = std::string("fibonacci_") + std::to_string(i);
-            uint64_t id    = 0;
-            kokkosp_begin_parallel_for(label.c_str(), 0, &id);
+            uint64_t id = 0;
+            kokkosp_begin_parallel_for("fibonacci", 0, &id);
 
             // vary the time slightly
             std::this_thread::sleep_for(std::chrono::milliseconds(100 * (i + 1)));
@@ -103,7 +102,8 @@ main(int argc, char** argv)
 
             uint64_t s_id;
             // start the collection
-            kokkosp_begin_parallel_scan("fibonacci_runtime", 0, &s_id);
+            auto label = std::string("fibonacci_runtime_") + std::to_string(i);
+            kokkosp_begin_parallel_scan(label.c_str(), 0, &s_id);
             auto ret = fibonacci(cfib);
             // end the collection
             kokkosp_end_parallel_scan(s_id);
