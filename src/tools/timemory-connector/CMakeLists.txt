@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(STATUS "Error! Building from the source directory may overwrite Makefile")
-    message(STATUS "Remove 'CMakeCache.txt' and 'CMakeFiles' and build is separate directory")
+    message(STATUS "Remove 'CMakeCache.txt' and 'CMakeFiles' and build in separate directory")
     message(FATAL_ERROR "In-source build")
 endif()
 
