@@ -153,30 +153,15 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
            (long long int) interfaceVer);
     printf("%s\n\n", spacer.c_str());
 
-    char* hostname = (char*) malloc(sizeof(char) * 256);
-    gethostname(hostname, 256);
-
+    // if using roofline, we want to suppress time_output which
+    // would result in the second pass (required by roofline) to end
+    // up in a different directory
     bool use_roofline = tim::get_env<bool>("KOKKOS_ROOFLINE", false);
-
-    std::stringstream folder;
-    if(!use_roofline)
-        folder << hostname << "_" << ((int) getpid());
-    else
-    {
-        std::stringstream tmp;
-        tmp << hostname << "_roofline";
-        folder << tim::get_env<std::string>("TIMEMORY_OUTPUT_PATH", tmp.str());
-        tim::settings::output_path() = folder.str();
-        printf("%s\n[%s]> KOKKOS_ROOFLINE is enabled. Output directory: \"%s\"\n%s\n",
-               spacer.c_str(), "timemory-connector", folder.str().c_str(),
-               spacer.c_str());
-    }
-    // eventually, use below for roofline but will require updates to timemory
-    //  folder << hostname << "_" << ((int) getpid());
-
-    free(hostname);
+    // store this for later
+    std::string folder = tim::settings::output_path();
 
     auto papi_events              = tim::get_env<std::string>("PAPI_EVENTS", "");
+    tim::settings::time_output()  = use_roofline; // output in sub-dir with time
     tim::settings::papi_events()  = papi_events;
     tim::settings::auto_output()  = true;   // print when destructing
     tim::settings::cout_output()  = true;   // print to stdout
@@ -185,11 +170,14 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     tim::settings::banner()       = true;   // suppress banner
     tim::settings::mpi_finalize() = false;  // don't finalize MPI during timemory_finalize
 
+    // timemory_init is expecting some args so generate some
     std::stringstream ss;
     ss << loadSeq << "_" << interfaceVer << "_" << devInfoCount;
     auto cstr = const_cast<char*>(ss.str().c_str());
     tim::timemory_init(1, &cstr, "", "");
-    tim::settings::output_path() = folder.str();
+    // over-ride the output path set by timemory_init to the
+    // original setting
+    tim::settings::output_path() = folder;
 
     // the environment variable to configure components
     std::string env_var = "KOKKOS_TIMEMORY_COMPONENTS";
