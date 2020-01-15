@@ -131,7 +131,7 @@ function(ADD_CONNECTOR_CONFIG _NAME)
     message(STATUS "Building 'kp_timemory_${_NAME}' with '${_COMPONENTS}'...")
 
     add_library(kp_timemory_${_NAME} SHARED kp_timemory.cpp kp_timemory.hpp)
-    target_link_libraries(kp_timemory_${_NAME} PRIVATE ${CONNECTOR_TARGETS})
+    target_link_libraries(kp_timemory_${_NAME} PRIVATE timemory::timemory-headers ${CONNECTOR_TARGETS})
     target_compile_definitions(kp_timemory_${_NAME} PRIVATE KP_COMPONENTS=${_COMPONENTS})
     set_target_properties(kp_timemory_${_NAME} PROPERTIES PREFIX "" LINKER_LANGUAGE ${LINKER_LANGUAGE})
     install(TARGETS kp_timemory_${_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/kokkos-tools)
