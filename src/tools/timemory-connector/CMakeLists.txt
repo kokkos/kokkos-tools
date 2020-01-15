@@ -98,6 +98,11 @@ endif()
 #   Build the configurations
 #
 
+if(USE_ROOFLINE AND USE_CUDA)
+    configure_file(${PROJECT_SOURCE_DIR}/kp_timemory.cpp
+        ${PROJECT_BINARY_DIR}/kp_timemory.cu COPYONLY)
+endif()
+    
 option(BUILD_CONFIG "Build various connector configurations" OFF)
 set(BUILD_CONNECTORS "all" CACHE STRING "List of connector configurations to build")
 
@@ -114,7 +119,7 @@ message(STATUS "    '-DUSER_CONNECTOR_TYPES=\"...\"'  --> semi-colon delimited l
 message(STATUS "")
 
 function(ADD_CONNECTOR_CONFIG _NAME)
-    cmake_parse_arguments(CONNECTOR "" "" "COMPONENTS;TARGETS" ${ARGN})
+    cmake_parse_arguments(CONNECTOR "GPU" "" "COMPONENTS;TARGETS" ${ARGN})
     if(NOT BUILD_CONFIG)
         return()
     endif()
@@ -127,15 +132,20 @@ function(ADD_CONNECTOR_CONFIG _NAME)
         return()
     endif()
 
+    set(SOURCE_FILE kp_timemory.cpp)
+    if(CONNECTOR_GPU)
+        set(SOURCE_FILE ${PROJECT_BINARY_DIR}/kp_timemory.cu)
+    endif()
+      
     string(REPLACE ";" "," _COMPONENTS "${CONNECTOR_COMPONENTS}")
     message(STATUS "Building 'kp_timemory_${_NAME}' with '${_COMPONENTS}'...")
 
-    add_library(kp_timemory_${_NAME} SHARED kp_timemory.cpp kp_timemory.hpp)
+    add_library(kp_timemory_${_NAME} SHARED ${SOURCE_FILE} kp_timemory.hpp)
+    target_include_directories(kp_timemory_${_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
     target_link_libraries(kp_timemory_${_NAME} PRIVATE timemory::timemory-headers ${CONNECTOR_TARGETS})
     target_compile_definitions(kp_timemory_${_NAME} PRIVATE KP_COMPONENTS=${_COMPONENTS})
     set_target_properties(kp_timemory_${_NAME} PROPERTIES PREFIX "" LINKER_LANGUAGE ${LINKER_LANGUAGE})
     install(TARGETS kp_timemory_${_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/kokkos-tools)
-
 endfunction()
 
 add_connector_config(trip_count
@@ -175,18 +185,27 @@ if(USE_GPERFTOOLS_HEAP)
 endif()
 
 if(USE_ROOFLINE)
-    add_connector_config(roofline
-        COMPONENTS roofline
-        TARGETS timemory::timemory-roofline)
+    #add_connector_config(roofline
+    #    GPU
+    #    COMPONENTS cpu_roofline_flops gpu_roofline_flops
+    #    TARGETS timemory::timemory-roofline
+    #    timemory::timemory-papi timemory::timemory-cupti
+    #    timemory::timemory-cuda)
 endif()
 
 if(USE_PAPI)
     add_connector_config(papi
-        COMPONENTS papi_array
+        COMPONENTS papi_array_t
         TARGETS timemory::timemory-papi)
     add_connector_config(cpu_roofline
         COMPONENTS cpu_roofline_flops
         TARGETS timemory::timemory-cpu-roofline)
+    add_connector_config(cpu_flops
+        COMPONENTS papi_tuple<PAPI_DP_OPS,PAPI_SP_OPS>
+        TARGETS timemory::timemory-papi)
+    add_connector_config(cpu_instructions
+        COMPONENTS papi_tuple<PAPI_TOT_INS,PAPI_LD_INS,PAPI_SR_INS>
+        TARGETS timemory::timemory-papi)
 endif()
 
 if(USE_CUDA)
@@ -206,6 +225,7 @@ if(USE_CUDA)
         COMPONENTS cupti_counters
         TARGETS timemory::timemory-cupti timemory::timemory-cuda)
     add_connector_config(gpu_roofline
+        GPU
         COMPONENTS gpu_roofline_flops
         TARGETS timemory::timemory-gpu-roofline)
 endif()

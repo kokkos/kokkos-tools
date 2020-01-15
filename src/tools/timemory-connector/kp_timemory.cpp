@@ -161,7 +161,7 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     std::string folder = tim::settings::output_path();
 
     auto papi_events              = tim::get_env<std::string>("PAPI_EVENTS", "");
-    tim::settings::time_output()  = use_roofline; // output in sub-dir with time
+    tim::settings::time_output()  = false; // output in sub-dir with time
     tim::settings::papi_events()  = papi_events;
     tim::settings::auto_output()  = true;   // print when destructing
     tim::settings::cout_output()  = true;   // print to stdout
