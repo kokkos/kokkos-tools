@@ -83,7 +83,8 @@ main(int argc, char** argv)
             kokkosp_begin_parallel_for("fibonacci", 0, &id);
 
             // vary the time slightly
-            std::this_thread::sleep_for(std::chrono::milliseconds(100 * (i + 1)));
+            if(i % 3 == 2)
+                std::this_thread::sleep_for(std::chrono::seconds((i + 1)));
 
             // create some memory and use it so it can't be optimized away
             auto                 n    = 500000 * (i + 1);

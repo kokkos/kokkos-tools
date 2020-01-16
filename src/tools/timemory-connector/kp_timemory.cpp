@@ -9,17 +9,29 @@
 #include <timemory/runtime/configure.hpp>
 #include <timemory/timemory.hpp>
 
+#include "kp_timemory.hpp"
+
+#if __cplusplus > 201402L  // C++17
+#    define if_constexpr if constexpr
+#else
+#    define if_constexpr if
+#endif
+
 static std::string spacer =
     "#---------------------------------------------------------------------------#";
 
 // this just differentiates Kokkos from other user_bundles
-struct KokkosProfiler
-{
-};
-
+struct KokkosProfiler;
 using KokkosUserBundle = tim::component::user_bundle<0, KokkosProfiler>;
-using profile_entry_t  = tim::component_tuple<KokkosUserBundle>;
 
+// set up the configuration of tools
+#if defined(KP_COMPONENTS)
+using profile_entry_t = tim::component_tuple<KP_COMPONENTS>;
+#else
+using profile_entry_t = tim::component_tuple<KokkosUserBundle>;
+#endif
+
+// various data structurs used
 using section_entry_t = std::tuple<std::string, profile_entry_t>;
 using profile_stack_t = std::vector<profile_entry_t>;
 using profile_map_t   = std::unordered_map<uint64_t, profile_entry_t>;
@@ -73,7 +85,7 @@ get_profile_stack()
 static void
 create_profiler(const std::string& pname, uint64_t kernid)
 {
-    get_profile_map().insert(std::make_pair(kernid, profile_entry_t(pname)));
+    get_profile_map().insert(std::make_pair(kernid, profile_entry_t(pname, true)));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -103,6 +115,29 @@ stop_profiler(uint64_t kernid)
         get_profile_map().at(kernid).stop();
 }
 
+//--------------------------------------------------------------------------------------//
+//  call this function if KokkosUserBundle is listed as one of the tools
+//  (long compile times)
+//
+template <typename _Tuple,
+          enable_if_t<(tim::is_one_of<KokkosUserBundle, _Tuple>::value), int> = 0>
+static void
+configure(const std::vector<TIMEMORY_COMPONENT>& components)
+{
+    tim::configure<KokkosUserBundle>(components);
+}
+
+//--------------------------------------------------------------------------------------//
+//  call this function if KokkosUserBundle is NOT listed as one of the tools
+//  (drastically reduces compile times)
+//
+template <typename _Tuple,
+          enable_if_t<!(tim::is_one_of<KokkosUserBundle, _Tuple>::value), int> = 0>
+static void
+configure(const std::vector<TIMEMORY_COMPONENT>&)
+{
+}
+
 //======================================================================================//
 //
 //      Kokkos symbols
@@ -118,30 +153,15 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
            (long long int) interfaceVer);
     printf("%s\n\n", spacer.c_str());
 
-    char* hostname = (char*) malloc(sizeof(char) * 256);
-    gethostname(hostname, 256);
-
+    // if using roofline, we want to suppress time_output which
+    // would result in the second pass (required by roofline) to end
+    // up in a different directory
     bool use_roofline = tim::get_env<bool>("KOKKOS_ROOFLINE", false);
-
-    std::stringstream folder;
-    if(!use_roofline)
-        folder << hostname << "_" << ((int) getpid());
-    else
-    {
-        std::stringstream tmp;
-        tmp << hostname << "_roofline";
-        folder << tim::get_env<std::string>("TIMEMORY_OUTPUT_PATH", tmp.str());
-        tim::settings::output_path() = folder.str();
-        printf("%s\n[%s]> KOKKOS_ROOFLINE is enabled. Output directory: \"%s\"\n%s\n",
-               spacer.c_str(), "timemory-connector", folder.str().c_str(),
-               spacer.c_str());
-    }
-    // eventually, use below for roofline but will require updates to timemory
-    //  folder << hostname << "_" << ((int) getpid());
-
-    free(hostname);
+    // store this for later
+    std::string folder = tim::settings::output_path();
 
     auto papi_events              = tim::get_env<std::string>("PAPI_EVENTS", "");
+    tim::settings::time_output()  = false; // output in sub-dir with time
     tim::settings::papi_events()  = papi_events;
     tim::settings::auto_output()  = true;   // print when destructing
     tim::settings::cout_output()  = true;   // print to stdout
@@ -150,11 +170,14 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     tim::settings::banner()       = true;   // suppress banner
     tim::settings::mpi_finalize() = false;  // don't finalize MPI during timemory_finalize
 
+    // timemory_init is expecting some args so generate some
     std::stringstream ss;
     ss << loadSeq << "_" << interfaceVer << "_" << devInfoCount;
     auto cstr = const_cast<char*>(ss.str().c_str());
     tim::timemory_init(1, &cstr, "", "");
-    tim::settings::output_path() = folder.str();
+    // over-ride the output path set by timemory_init to the
+    // original setting
+    tim::settings::output_path() = folder;
 
     // the environment variable to configure components
     std::string env_var = "KOKKOS_TIMEMORY_COMPONENTS";
@@ -170,7 +193,37 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     if(use_roofline && env_result.find("roofline") == std::string::npos)
         env_result = TIMEMORY_JOIN(";", env_result, "gpu_roofline_flops", "cpu_roofline");
     // configure the bundle to use these components
-    tim::configure<KokkosUserBundle>(tim::enumerate_components(tim::delimit(env_result)));
+    configure<profile_entry_t>(tim::enumerate_components(tim::delimit(env_result)));
+
+#if defined(TIMEMORY_USE_GOTCHA)
+    //
+    //  This is not really a general tool, especially not the GOTCHA that
+    //  intercepts the rand and srand. It is more of a demonstration
+    //  of how to use the gotcha interface
+    //
+    auto gotcha_lvl = tim::get_env("KOKKOS_GOTCHA_MODE", 0);
+    if(gotcha_lvl == 1 || gotcha_lvl > 2)
+    {
+        // when explicitly configured here, the gotcha wrappers are immediately generated
+        TIMEMORY_C_GOTCHA(rand_gotcha_t, 0, srand);
+        TIMEMORY_C_GOTCHA(rand_gotcha_t, 1, rand);
+    }
+    if(gotcha_lvl >= 2)
+    {
+        // for malloc/free specifically, we make sure the default activation
+        // of the gotcha is off. Wrapping malloc/free has the potential to include
+        // a limited number of malloc/free calls within the timemory library itself
+        misc_gotcha_t::get_default_ready() = false;
+        // when the initializer is overloaded, the gotcha is fully scoped
+        // via reference counting. When no components containing this gotcha
+        // is alive, the gotcha is disabled and all function calls use the original
+        // wrappee
+        misc_gotcha_t::get_initializer() = []() {
+            TIMEMORY_C_GOTCHA(misc_gotcha_t, 0, malloc);
+            TIMEMORY_C_GOTCHA(misc_gotcha_t, 1, free);
+        };
+    }
+#endif
 }
 
 extern "C" void
@@ -192,17 +245,23 @@ kokkosp_finalize_library()
 extern "C" void
 kokkosp_begin_parallel_for(const char* name, uint32_t devid, uint64_t* kernid)
 {
-    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
-    *kernid    = get_unique_id();
-    create_profiler(pname, *kernid);
-    start_profiler(*kernid);
+    if_constexpr(profile_entry_t::size() > 0)
+    {
+        auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+        *kernid    = get_unique_id();
+        create_profiler(pname, *kernid);
+        start_profiler(*kernid);
+    }
 }
 
 extern "C" void
 kokkosp_end_parallel_for(uint64_t kernid)
 {
-    stop_profiler(kernid);
-    destroy_profiler(kernid);
+    if_constexpr(profile_entry_t::size() > 0)
+    {
+        stop_profiler(kernid);
+        destroy_profiler(kernid);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -210,17 +269,23 @@ kokkosp_end_parallel_for(uint64_t kernid)
 extern "C" void
 kokkosp_begin_parallel_reduce(const char* name, uint32_t devid, uint64_t* kernid)
 {
-    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
-    *kernid    = get_unique_id();
-    create_profiler(pname, *kernid);
-    start_profiler(*kernid);
+    if_constexpr(profile_entry_t::size() > 0)
+    {
+        auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+        *kernid    = get_unique_id();
+        create_profiler(pname, *kernid);
+        start_profiler(*kernid);
+    }
 }
 
 extern "C" void
 kokkosp_end_parallel_reduce(uint64_t kernid)
 {
-    stop_profiler(kernid);
-    destroy_profiler(kernid);
+    if_constexpr(profile_entry_t::size() > 0)
+    {
+        stop_profiler(kernid);
+        destroy_profiler(kernid);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -228,17 +293,23 @@ kokkosp_end_parallel_reduce(uint64_t kernid)
 extern "C" void
 kokkosp_begin_parallel_scan(const char* name, uint32_t devid, uint64_t* kernid)
 {
-    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
-    *kernid    = get_unique_id();
-    create_profiler(pname, *kernid);
-    start_profiler(*kernid);
+    if_constexpr(profile_entry_t::size() > 0)
+    {
+        auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+        *kernid    = get_unique_id();
+        create_profiler(pname, *kernid);
+        start_profiler(*kernid);
+    }
 }
 
 extern "C" void
 kokkosp_end_parallel_scan(uint64_t kernid)
 {
-    stop_profiler(kernid);
-    destroy_profiler(kernid);
+    if_constexpr(profile_entry_t::size() > 0)
+    {
+        stop_profiler(kernid);
+        destroy_profiler(kernid);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -246,17 +317,23 @@ kokkosp_end_parallel_scan(uint64_t kernid)
 extern "C" void
 kokkosp_push_profile_region(const char* name)
 {
-    get_profile_stack().push_back(profile_entry_t(name));
-    get_profile_stack().back().start();
+    if_constexpr(profile_entry_t::size() > 0)
+    {
+        get_profile_stack().push_back(profile_entry_t(name, true));
+        get_profile_stack().back().start();
+    }
 }
 
 extern "C" void
 kokkosp_pop_profile_region()
 {
-    if(get_profile_stack().empty())
-        return;
-    get_profile_stack().back().stop();
-    get_profile_stack().pop_back();
+    if_constexpr(profile_entry_t::size() > 0)
+    {
+        if(get_profile_stack().empty())
+            return;
+        get_profile_stack().back().stop();
+        get_profile_stack().pop_back();
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -264,15 +341,19 @@ kokkosp_pop_profile_region()
 extern "C" void
 kokkosp_create_profile_section(const char* name, uint32_t* secid)
 {
-    *secid     = get_unique_id();
-    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "section", secid), name);
-    create_profiler(pname, *secid);
+    if_constexpr(profile_entry_t::size() > 0)
+    {
+        *secid = get_unique_id();
+        auto pname =
+            TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "section", secid), name);
+        create_profiler(pname, *secid);
+    }
 }
 
 extern "C" void
 kokkosp_destroy_profile_section(uint32_t secid)
 {
-    destroy_profiler(secid);
+    if_constexpr(profile_entry_t::size() > 0) { destroy_profiler(secid); }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -280,13 +361,13 @@ kokkosp_destroy_profile_section(uint32_t secid)
 extern "C" void
 kokkosp_start_profile_section(uint32_t secid)
 {
-    start_profiler(secid);
+    if_constexpr(profile_entry_t::size() > 0) { start_profiler(secid); }
 }
 
 extern "C" void
 kokkosp_stop_profile_section(uint32_t secid)
 {
-    start_profiler(secid);
+    if_constexpr(profile_entry_t::size() > 0) { start_profiler(secid); }
 }
 
 //--------------------------------------------------------------------------------------//
