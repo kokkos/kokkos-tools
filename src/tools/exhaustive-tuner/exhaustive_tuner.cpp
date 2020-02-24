@@ -68,7 +68,6 @@ template <>
 struct less<Kokkos::Tuning::VariableValue> {
   bool operator()(const Kokkos::Tuning::VariableValue& l,
                   const Kokkos::Tuning::VariableValue& r) {
-    assert(var_info[l.id] == var_info[r.id]);
     switch (var_info[l.id]) {
       case kokkos_value_boolean: return l.value.bool_value < r.value.bool_value;
       case kokkos_value_integer:
@@ -209,7 +208,7 @@ bool Kokkos_Value_Less(const size_t l_id,
                        const Kokkos::Tuning::VariableValue& l,
                        const size_t r_id,
                        const Kokkos::Tuning::VariableValue& r) {
-  assert(var_info[l_id] == var_info[r_id]);
+  //assert(var_info[l_id] == var_info[r_id]);
   switch (var_info[l_id]) {
     case kokkos_value_boolean: return l.value.bool_value < r.value.bool_value;
     case kokkos_value_integer: return l.value.int_value < r.value.int_value;
@@ -243,6 +242,7 @@ struct FeatureValues {
     return false;
   }
 };
+std::less<Kokkos::Tuning::VariableValue> FeatureValues::comp;
 
 struct TuningResults {
   std::priority_queue<TuningParameterValues> candidates;
@@ -431,19 +431,25 @@ TuningParameterValues getIdeal(FeatureValues& context, TuningResults& results) {
 MapType<size_t, decltype(std::chrono::system_clock::now())> running_timers;
 extern "C" void kokkosp_request_tuning_variable_values(
     const size_t contextId, const size_t numContextVariables,
-    const size_t* contextVariableIds,
+    
     const Kokkos::Tuning::VariableValue* contextVariableValues,
-    const size_t numTuningVariables, const size_t* tuningVariableIds,
+    const size_t numTuningVariables, 
     Kokkos::Tuning::VariableValue* tuningVariableValues,
     Kokkos::Tuning::SetOrRange* request_candidate_values) {
   // TODO DZP: only make copies when you're inserting into a map, this is slow
   // and leaky
   auto tuningVariableIds_copy = new size_t[numTuningVariables];
-  std::copy(tuningVariableIds, tuningVariableIds + numTuningVariables,
-            tuningVariableIds_copy);
+  //std::copy(tuningVariableIds, tuningVariableIds + numTuningVariables,
+  //          tuningVariableIds_copy);
+  for(int x =0; x < numTuningVariables;++x){
+    tuningVariableIds_copy[x] = tuningVariableValues[x].id;
+  }
   auto contextVariableIds_copy = new size_t[numContextVariables];
-  std::copy(contextVariableIds, contextVariableIds + numContextVariables,
-            contextVariableIds_copy);
+  for(int x =0; x < numContextVariables;++x){
+    contextVariableIds_copy[x] = contextVariableValues[x].id;
+  }
+  //std::copy(contextVariableIds, contextVariableIds + numContextVariables,
+  //          contextVariableIds_copy);
   TuningParameterSet request_parameters = {numTuningVariables,
                                            tuningVariableIds_copy};
   FeatureSet features = {numContextVariables, contextVariableIds_copy};
@@ -456,7 +462,7 @@ extern "C" void kokkosp_request_tuning_variable_values(
   FeatureValues values = {numContextVariables, contextVariableIds_copy,
                           relevantVariableValues_copy};
   for (int x = 0; x < numTuningVariables; ++x) {
-    const size_t variableId = tuningVariableIds[x];
+    const size_t variableId = tuningVariableIds_copy[x];
     if (candidate_is_set[variableId]) {
       bool newResults = false;
       for (auto iter = request_candidate_values[x].set.values;
@@ -464,6 +470,9 @@ extern "C" void kokkosp_request_tuning_variable_values(
                       request_candidate_values[x].set.size;
            ++iter) {
         // std::cout << "Inserting into map with id " << iter->id << std::endl;
+        if(candidate_values.find(variableId)==candidate_values.end()){
+          candidate_values[variableId] = SetType<Kokkos::Tuning::VariableValue>();
+        }
         auto insert_result = candidate_values[variableId].insert(
             Kokkos::Tuning::VariableValue{iter->id, iter->value});
         newResults |= insert_result.second;
@@ -481,14 +490,14 @@ extern "C" void kokkosp_request_tuning_variable_values(
   auto& relevant_tuning = performance_data[request_parameters][features];
   if (relevant_tuning.find(values) == relevant_tuning.end()) {
     relevant_tuning[values] = {
-        make_tuning_set(numTuningVariables, tuningVariableIds), false};
+        make_tuning_set(numTuningVariables, tuningVariableIds_copy), false};
   }
   auto& tuning_set = relevant_tuning[values];
   if (tuning_set.done) {
     auto& ideal = tuning_set.ideal;
     for (int k = 0; k < tuning_set.ideal.count; ++k) {
       for (int x = 0; x < numTuningVariables; ++x) {
-        if (tuningVariableIds[x] == tuning_set.ideal.values[k].id) {
+        if (tuningVariableIds_copy[x] == tuning_set.ideal.values[k].id) {
           tuningVariableValues[x] = tuning_set.ideal.values[k];
         }
       }
@@ -506,7 +515,7 @@ extern "C" void kokkosp_request_tuning_variable_values(
     }
     for (int k = 0; k < candidate.count; ++k) {
       for (int x = 0; x < numTuningVariables; ++x) {
-        if (tuningVariableIds[x] == candidate.values[k].id) {
+        if (tuningVariableIds_copy[x] == candidate.values[k].id) {
           tuningVariableValues[x] = candidate.values[k];
           if (running_timers.find(contextId) == running_timers.end()) {
             running_timers[contextId] = std::chrono::system_clock::now();

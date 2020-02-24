@@ -110,11 +110,11 @@ int main(int argc, char* argv[]) {
       Kokkos::Tuning::VariableValue context_value = Kokkos::Tuning::make_variable_value(
               context_variable_id, work_intensity);
       Kokkos::Tuning::declareContextVariableValues(
-          contextId, 1, &context_variable_id,
+          contextId, 1, 
           &context_value);
             
       // *Now we ask the tool to give us the value it thinks will perform best
-      Kokkos::Tuning::requestTuningVariableValues(contextId, 1, &tuning_value_id, &tuned_choice, &candidate_values); 
+      Kokkos::Tuning::requestTuningVariableValues(contextId, 1, &tuned_choice, &candidate_values); 
 
       // *Call the function with those two values
       sleep_difference(work_intensity, tuned_choice.value.int_value);

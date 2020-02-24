@@ -1,4 +1,4 @@
-CXX=g++
+CXX=clang++
 CXXFLAGS=-O2 -std=c++11 -g
 SHARED_CXXFLAGS=-shared -fPIC -I../../../include
 
