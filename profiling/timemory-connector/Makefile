@@ -6,8 +6,12 @@ SHARED_CXXFLAGS=-shared --compiler-options=-fPIC -x cu
 
 all: kp_timemory.so
 
-kp_timemory.so: kp_timemory.cpp
-	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) -o $@ kp_timemory.cpp $(LDFLAGS)
+MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
+
+CXXFLAGS+=-I${MAKEFILE_PATH}
+
+kp_timemory.so: ${MAKEFILE_PATH}kp_timemory.cpp
+	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}kp_timemory.cpp $(LDFLAGS)
 
 format:
 	clang-format -i *.hpp *.cpp

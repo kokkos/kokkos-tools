@@ -4,8 +4,12 @@ SHARED_CXXFLAGS=-shared -fPIC
 
 all: kp_memory_events.so
 
-kp_memory_events.so: kp_memory_events.cpp kp_memory_events.hpp kp_timer.hpp
-	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) -o $@ kp_memory_events.cpp
+MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
+
+CXXFLAGS+=-I${MAKEFILE_PATH}
+
+kp_memory_events.so: ${MAKEFILE_PATH}kp_memory_events.cpp ${MAKEFILE_PATH}kp_memory_events.hpp ${MAKEFILE_PATH}kp_timer.hpp
+	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}kp_memory_events.cpp
 
 clean:
 	rm *.so

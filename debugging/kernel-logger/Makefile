@@ -4,8 +4,10 @@ SHARED_CXXFLAGS=-shared -fPIC
 
 all: kp_kernel_logger.so
 
-kp_kernel_logger.so: kp_kernel_logger.cpp
-	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) -o $@ kp_kernel_logger.cpp
+MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
+
+kp_kernel_logger.so: ${MAKEFILE_PATH}kp_kernel_logger.cpp
+	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}kp_kernel_logger.cpp
 
 clean:
 	rm *.so

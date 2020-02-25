@@ -4,15 +4,19 @@ SHARED_CXXFLAGS=-shared -fPIC
 
 all: kp_systemtap_connector.so
 
-probes.h: probes.d
+probes.h: ${MAKEFILE_PATH}probes.d
 	dtrace -C -h -s $< -o $@
 
-probes.o: probes.d
+probes.o: ${MAKEFILE_PATH}probes.d
 	dtrace -C -G -s $< -o $@
 
-kp_systemtap_connector.so: kp_systemtap_connector.cpp probes.h probes.o
+MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
+
+CXXFLAGS+=-I${MAKEFILE_PATH}
+
+kp_systemtap_connector.so: ${MAKEFILE_PATH}kp_systemtap_connector.cpp ${MAKEFILE_PATH}probes.h probes.o
 	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) probes.o \
-		-o $@ kp_systemtap_connector.cpp $(LIBS)
+		-o $@ ${MAKEFILE_PATH}kp_systemtap_connector.cpp $(LIBS)
 
 clean:
 	rm -rf *.so probes.h probes.o

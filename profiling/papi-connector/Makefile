@@ -6,9 +6,13 @@ SHARED_CXXFLAGS=-shared -fPIC
 
 all: kp_papi_connector.so
 
-kp_papi_connector.so: kp_papi_connector.cpp
+MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
+
+CXXFLAGS+=-I${MAKEFILE_PATH}
+
+kp_papi_connector.so: ${MAKEFILE_PATH}kp_papi_connector.cpp
 	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) \
-		-o $@ kp_papi_connector.cpp $(LIBS)
+		-o $@ ${MAKEFILE_PATH}kp_papi_connector.cpp $(LIBS)
 
 clean:
 	rm *.so
