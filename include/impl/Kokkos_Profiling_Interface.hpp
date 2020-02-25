@@ -79,7 +79,7 @@ using OptimizationGoal    = Kokkos_Tuning_OptimzationGoal;
 using VariableValue = Kokkos_Tuning_VariableValue;
 
 VariableValue make_variable_value(size_t id, bool val);
-VariableValue make_variable_value(size_t id, int val);
+VariableValue make_variable_value(size_t id, int64_t val);
 VariableValue make_variable_value(size_t id, double val);
 VariableValue make_variable_value(size_t id, const char* val);
 
