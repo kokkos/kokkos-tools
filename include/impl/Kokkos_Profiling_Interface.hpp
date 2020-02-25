@@ -2,10 +2,11 @@
  //@HEADER
  // ************************************************************************
  //
- //                        Kokkos v. 2.0
- //              Copyright (2014) Sandia Corporation
+ //                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
  //
- // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ // Under the terms of Contract DE-NA0003525 with NTESS,
  // the U.S. Government retains certain rights in this software.
  //
  // Redistribution and use in source and binary forms, with or without
@@ -72,6 +73,7 @@ using ValueType           = Kokkos_Tuning_VariableInfo_ValueType;
 using CandidateValueType  = Kokkos_Tuning_VariableInfo_CandidateValueType;
 using SetOrRange          = Kokkos_Tuning_VariableInfo_SetOrRange;
 using VariableInfo        = Kokkos_Tuning_VariableInfo;
+using OptimizationGoal    = Kokkos_Tuning_OptimzationGoal;
 // TODO DZP: VariableInfo subclasses to automate some of this
 
 using VariableValue = Kokkos_Tuning_VariableValue;
@@ -114,6 +116,8 @@ using contextVariableDeclarationFunction =
 using tuningVariableValueFunction  = Kokkos_Tuning_tuningVariableValueFunction;
 using contextVariableValueFunction = Kokkos_Tuning_contextVariableValueFunction;
 using contextEndFunction           = Kokkos_Tuning_contextEndFunction;
+using optimizationGoalDeclarationFunction =
+    Kokkos_Tuning_optimizationGoalDeclarationFunction;
 
 }  // end namespace Tuning
 
