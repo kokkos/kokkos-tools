@@ -1,0 +1,16 @@
+make -f $1/common/kernel-filter/Makefile
+make -f $1/debugging/kernel-logger/Makefile
+make -f $1/profiling/memory-events/Makefile
+make -f $1/profiling/memory-hwm/Makefile
+make -f $1/profiling/memory-hwm-mpi/Makefile
+make -f $1/profiling/memory-usage/Makefile
+make -f $1/profiling/nvprof-connector/Makefile
+make -f $1/profiling/nvprof-focused-connector/Makefile
+make -f $1/profiling/papi-connector/Makefile
+make -f $1/profiling/simple-kernel-timer-json/Makefile
+make -f $1/profiling/simple-kernel-timer/Makefile
+make -f $1/profiling/space-time-stack/Makefile
+make -f $1/profiling/systemtap-connector/Makefile
+make -f $1/profiling/timemory-connector/Makefile
+make -f $1/profiling/vtune-connector/Makefile
+make -f $1/profiling/vtune-focused-connector/Makefile
