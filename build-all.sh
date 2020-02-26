@@ -1,16 +1,21 @@
-make -f $1/common/kernel-filter/Makefile
-make -f $1/debugging/kernel-logger/Makefile
-make -f $1/profiling/memory-events/Makefile
-make -f $1/profiling/memory-hwm/Makefile
-make -f $1/profiling/memory-hwm-mpi/Makefile
-make -f $1/profiling/memory-usage/Makefile
-make -f $1/profiling/nvprof-connector/Makefile
-make -f $1/profiling/nvprof-focused-connector/Makefile
-make -f $1/profiling/papi-connector/Makefile
-make -f $1/profiling/simple-kernel-timer-json/Makefile
-make -f $1/profiling/simple-kernel-timer/Makefile
-make -f $1/profiling/space-time-stack/Makefile
-make -f $1/profiling/systemtap-connector/Makefile
-make -f $1/profiling/timemory-connector/Makefile
-make -f $1/profiling/vtune-connector/Makefile
-make -f $1/profiling/vtune-focused-connector/Makefile
+if [ "$#" -lt 1 ]; then
+  ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+else
+  ROOT_DIR=$1
+fi
+make -f $ROOT_DIR/common/kernel-filter/Makefile
+make -f $ROOT_DIR/debugging/kernel-logger/Makefile
+make -f $ROOT_DIR/profiling/memory-events/Makefile
+make -f $ROOT_DIR/profiling/memory-hwm/Makefile
+make -f $ROOT_DIR/profiling/memory-hwm-mpi/Makefile
+make -f $ROOT_DIR/profiling/memory-usage/Makefile
+make -f $ROOT_DIR/profiling/nvprof-connector/Makefile
+make -f $ROOT_DIR/profiling/nvprof-focused-connector/Makefile
+make -f $ROOT_DIR/profiling/papi-connector/Makefile
+make -f $ROOT_DIR/profiling/simple-kernel-timer-json/Makefile
+make -f $ROOT_DIR/profiling/simple-kernel-timer/Makefile
+make -f $ROOT_DIR/profiling/space-time-stack/Makefile
+make -f $ROOT_DIR/profiling/systemtap-connector/Makefile
+make -f $ROOT_DIR/profiling/timemory-connector/Makefile
+make -f $ROOT_DIR/profiling/vtune-connector/Makefile
+make -f $ROOT_DIR/profiling/vtune-focused-connector/Makefile
