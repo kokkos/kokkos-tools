@@ -85,8 +85,5 @@ struct EventRecord {
     if(operation == MEMOP_POP_REGION)
       fprintf(ofile,"%lf } PopRegion %s\n",time,name);
   }
-  void print_record() const {
-    print_record(stdout);
-  }
 };
 

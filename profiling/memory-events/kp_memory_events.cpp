@@ -146,7 +146,6 @@ extern "C" void kokkosp_allocate_data(const SpaceHandle space, const char* label
 
   int i=events.size();
   events.push_back(EventRecord(ptr,size,MEMOP_ALLOCATE,space_i,time,label));
-  events.back().print_record();
 }
 
 
