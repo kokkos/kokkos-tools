@@ -27,6 +27,7 @@ constexpr const int max_choices = 2 << 20;
 
 int choices[max_choices];
 
+Apollo* apollo; 
 extern "C" void kokkosp_init_library(const int loadSeq,
                                      const uint64_t interfaceVer,
                                      const uint32_t devInfoCount,
@@ -35,7 +36,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   for(int x =0 ;x<max_choices;++x){
     choices[x] = x; // TODO constexpr smart blah blah
   }
-  Apollo* apollo = Apollo::instance(); 
+  apollo = Apollo::instance(); 
 }
 
 extern "C" void kokkosp_finalize_library() {
@@ -195,11 +196,14 @@ extern "C" void kokkosp_request_tuning_variable_values(size_t contextId, size_t 
       policyChoice /= set_size;
     }
   }
-  std::cout << "Request received, returning "<<variableToFloat(tuningValues[0])<<"\n";
 
   //assert(policyChoice == 1);
 }
 
 extern "C" void kokkosp_end_context(size_t contextId){
   testing_region->end();
+  static int encounter;
+  if((++encounter % 100)==0){
+    apollo->flushAllRegionMeasurements(0);
+  }
 }

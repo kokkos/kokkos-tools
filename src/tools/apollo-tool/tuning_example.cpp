@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
     tuned_choice.value.int_value = 0;
 
     // * Looping multiple times so the tool can converge
-    for(int attempt =0;attempt<3;++attempt){
+    for(int attempt =0;attempt<120;++attempt){
     for (int work_intensity = 0; work_intensity < num_iterations;
          work_intensity+=200) {
       std::cout << "Attempting a run with value "<<work_intensity<<std::endl;
