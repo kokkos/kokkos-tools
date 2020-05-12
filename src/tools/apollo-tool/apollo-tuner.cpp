@@ -173,7 +173,7 @@ extern "C" void kokkosp_request_tuning_variable_values(size_t contextId, size_t 
       choiceSpaceSize *= candidateValues[x].set.size;
     }
   }
-
+  printf("Creating the region pointer\n");
   if(testing_region == nullptr){
     testing_region = new Apollo::Region(numContextVariables, "testing_testing", choiceSpaceSize);
   }
@@ -201,6 +201,7 @@ extern "C" void kokkosp_request_tuning_variable_values(size_t contextId, size_t 
 }
 
 extern "C" void kokkosp_end_context(size_t contextId){
+  if(!testing_region){ return; }
   testing_region->end();
   static int encounter;
   if((++encounter % 100)==0){
