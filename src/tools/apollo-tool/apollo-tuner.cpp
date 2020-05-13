@@ -58,10 +58,6 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   for (int x = 0; x < max_choices; ++x) {
     choices[x] = x; // TODO constexpr smart blah blah
   }
-  // APOLLO_RETRAIN_ENABLE=1 KOKKOS_PROFILE_LIBRARY=./libapollo-tuner.so
-  // APOLLO_LOCAL_TRAINING=1 APOLLO_INIT_MODEL=Static,3
-  // APOLLO_COLLECTIVE_TRAINING=0 APOLLO_TRACE_BEST_POLICIES=1 gdb --args
-  // ./sparse_spmv -l 100 --test kk-kernels
   putenv("APOLLO_RETRAIN_ENABLE=1");
   putenv("APOLLO_LOCAL_TRAINING=1");
   putenv("APOLLO_INIT_MODEL=RoundRobin");
@@ -207,6 +203,7 @@ extern "C" void kokkosp_request_tuning_variable_values(
   if (numTuningVariables == 0) {
     return;
   }
+  static int created_regions;
   // std::cout << "Have "<<numContextVariables<<" context,
   // "<<numTuningVariables<<" tuning\n";
   int choiceSpaceSize = 1;
@@ -233,14 +230,15 @@ extern "C" void kokkosp_request_tuning_variable_values(
   tuningProblem.num_variables = numValidVariables;
   if (tuning_regions.find(tuningProblem) == tuning_regions.end()) {
     std::cout << "Testing space size is " << choiceSpaceSize << std::endl;
+    std::string name = "debug_name_"+std::to_string(created_regions);
     auto region =
-        new Apollo::Region(numContextVariables, "debug_name", choiceSpaceSize);
+        new Apollo::Region(numContextVariables, name.c_str(), choiceSpaceSize);
     tuning_regions[tuningProblem] = region;
   }
   auto region = tuning_regions[tuningProblem];
   tuned_contexts[contextId] = region;
   region->begin();
-
+  //std::cout <<"Cont: "<<numContextVariables<<std::endl;
   for (int x = 0; x < numContextVariables; ++x) {
     if (untunables.find(contextValues[x].id) == untunables.end()) {
       region->setFeature(variableToFloat(contextValues[x]));
@@ -265,10 +263,11 @@ extern "C" void kokkosp_end_context(size_t contextId) {
   if (search == tuned_contexts.end()) {
     return;
   }
+  tuned_contexts.erase(contextId);
   auto region = search->second;
   region->end();
   static int encounter;
-  if ((++encounter % 100000) == 0) {
+  if ((++encounter % 10000) == 0) {
     apollo->flushAllRegionMeasurements(0);
   }
 }
