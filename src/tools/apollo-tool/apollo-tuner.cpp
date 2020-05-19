@@ -9,7 +9,6 @@
 #include <cstring>
 #include <functional>
 #include <impl/Kokkos_Profiling_Interface.hpp>
-#include <impl/Kokkos_Tuning_Interface.hpp>
 #include <map>
 #include <queue>
 #include <set>
@@ -58,7 +57,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   for (int x = 0; x < max_choices; ++x) {
     choices[x] = x; // TODO constexpr smart blah blah
   }
-  putenv("APOLLO_RETRAIN_ENABLE=1");
+  putenv("APOLLO_RETRAIN_ENABLE=0");
   putenv("APOLLO_LOCAL_TRAINING=1");
   putenv("APOLLO_INIT_MODEL=RoundRobin");
   putenv("APOLLO_COLLECTIVE_TRAINING=0");
@@ -146,10 +145,8 @@ extern "C" void kokkosp_destroy_profile_section(uint32_t sec_id) {}
 
 extern "C" void kokkosp_profile_event(const char *name) {}
 
-std::map<size_t, Kokkos::Tools::ValueType> kokkos_type_info;
-
 extern "C" void
-kokkosp_declare_tuning_variable(const char *name, const size_t id,
+kokkosp_declare_output_type(const char *name, const size_t id,
                                 Kokkos::Tools::VariableInfo info) {
   if ((info.valueQuantity != kokkos_value_set)) {
     printf("Apollo Tuning Adaptor: won't learn %s because values are drawn "
@@ -157,12 +154,11 @@ kokkosp_declare_tuning_variable(const char *name, const size_t id,
            name);
     untunables.insert(id);
   }
-  kokkos_type_info[id] = info.type;
 }
 extern "C" void
-kokkosp_declare_context_variable(const char *name, const size_t id,
-                                 Kokkos::Tools::VariableInfo info,
-                                 Kokkos::Tools::SetOrRange candidates) {
+kokkosp_declare_input_type(const char *name, const size_t id,
+                                 Kokkos::Tools::VariableInfo info
+      ) {
   if ((info.type != kokkos_value_integer) &&
       (info.type != kokkos_value_floating_point) &&
       (info.type != kokkos_value_text)) {
@@ -170,17 +166,10 @@ kokkosp_declare_context_variable(const char *name, const size_t id,
     unlearnables.insert(id);
     return;
   }
-  kokkos_type_info[id] = info.type;
 }
 
-/**
-   (*tuningVariableValueCallback)(contextId, context_values.size(),
-                                   context_values.data(), count, values,
-                                   candidate_values);
-                                   */
-
 float variableToFloat(Kokkos::Tools::VariableValue value) {
-  switch (kokkos_type_info[value.id]) {
+  switch (value.metadata->type) {
   case kokkos_value_integer:
     return static_cast<float>(value.value.int_value);
   case kokkos_value_floating_point:
@@ -193,13 +182,34 @@ float variableToFloat(Kokkos::Tools::VariableValue value) {
   }
 }
 
+Kokkos::Tools::VariableValue mvv(size_t index, Kokkos::Tools::VariableValue reference, Kokkos::Tools::ValueSet& set){
+  Kokkos::Tools::VariableValue value;
+  value.id = reference.id;
+  value.metadata = reference.metadata;
+  switch(reference.metadata->type){
+  case Kokkos::Tools::ValueType::kokkos_value_boolean:
+    value.value.bool_value = set.values.bool_value[index];  
+  break;
+  case Kokkos::Tools::ValueType::kokkos_value_integer:
+    value.value.int_value = set.values.int_value[index];  
+  break;
+  case Kokkos::Tools::ValueType::kokkos_value_floating_point:
+    value.value.double_value = set.values.double_value[index];  
+  break;
+  case Kokkos::Tools::ValueType::kokkos_value_text:
+    value.value.string_value = set.values.string_value[index];  
+  break;
+  }
+  return value;
+}
+
 static std::map<size_t, Apollo::Region *> tuned_contexts;
 static std::map<variableSet, Apollo::Region *> tuning_regions;
-extern "C" void kokkosp_request_tuning_variable_values(
+extern "C" void kokkosp_request_values(
     size_t contextId, size_t numContextVariables,
     Kokkos::Tools::VariableValue *contextValues, size_t numTuningVariables,
-    Kokkos::Tools::VariableValue *tuningValues,
-    Kokkos::Tools::SetOrRange *candidateValues) {
+    Kokkos::Tools::VariableValue *tuningValues
+    ) {
   if (numTuningVariables == 0) {
     return;
   }
@@ -209,10 +219,10 @@ extern "C" void kokkosp_request_tuning_variable_values(
   int choiceSpaceSize = 1;
   for (int x = 0; x < numTuningVariables; ++x) {
     if (unlearnables.find(tuningValues[x].id) == unlearnables.end()) {
-      if (choiceSpaceSize > max_choices / candidateValues[x].set.size) {
+      if (choiceSpaceSize > max_choices / tuningValues[x].metadata->candidates.set.size) {
         printf("Apollo Tuner: too many choices\n");
       }
-      choiceSpaceSize *= candidateValues[x].set.size;
+      choiceSpaceSize *= tuningValues[x].metadata->candidates.set.size;
     }
   }
   variableSet tuningProblem;
@@ -249,9 +259,9 @@ extern "C" void kokkosp_request_tuning_variable_values(
 
   for (int x = 0; x < numTuningVariables; ++x) {
     if (unlearnables.find(tuningValues[x].id) == unlearnables.end()) {
-      int set_size = candidateValues[x].set.size;
+      int set_size = tuningValues[x].metadata->candidates.set.size;
       int local_policy_choice = policyChoice % set_size;
-      tuningValues[x] = candidateValues[x].set.values[local_policy_choice];
+      tuningValues[x] = mvv(local_policy_choice, tuningValues[x], tuningValues[x].metadata->candidates.set);
       policyChoice /= set_size;
     }
   }
@@ -267,7 +277,7 @@ extern "C" void kokkosp_end_context(size_t contextId) {
   auto region = search->second;
   region->end();
   static int encounter;
-  if ((++encounter % 10000) == 0) {
+  if ((++encounter % 664) == 0) {
     apollo->flushAllRegionMeasurements(0);
   }
 }

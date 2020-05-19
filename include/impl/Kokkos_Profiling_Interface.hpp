@@ -98,7 +98,12 @@ using SpaceHandle = Kokkos_Profiling_SpaceHandle;
 
 namespace Tools {
 
-using EventSet               = Kokkos_Profiling_EventSet;
+namespace Experimental {
+using EventSet = Kokkos_Profiling_EventSet;
+static_assert(sizeof(EventSet) / sizeof(function_pointer) == 275,
+              "sizeof EventSet has changed, this is an error on the part of a "
+              "Kokkos developer");
+}  // namespace Experimental
 using initFunction           = Kokkos_Profiling_initFunction;
 using finalizeFunction       = Kokkos_Profiling_finalizeFunction;
 using beginFunction          = Kokkos_Profiling_beginFunction;
@@ -121,6 +126,8 @@ using endDeepCopyFunction   = Kokkos_Profiling_endDeepCopyFunction;
 }  // namespace Tools
 
 }  // namespace Kokkos
+
+// Profiling
 
 namespace Kokkos {
 
@@ -158,5 +165,38 @@ using Kokkos::Tools::stopProfileSectionFunction;
 
 }  // namespace Profiling
 }  // namespace Kokkos
+
+// Tuning
+
+namespace Kokkos {
+namespace Tools {
+
+using ValueSet            = Kokkos_Tools_ValueSet;
+using ValueRange          = Kokkos_Tools_ValueRange;
+using StatisticalCategory = Kokkos_Tools_VariableInfo_StatisticalCategory;
+using ValueType           = Kokkos_Tools_VariableInfo_ValueType;
+using CandidateValueType  = Kokkos_Tools_VariableInfo_CandidateValueType;
+using SetOrRange          = Kokkos_Tools_VariableInfo_SetOrRange;
+using VariableInfo        = Kokkos_Tools_VariableInfo;
+using OptimizationGoal    = Kokkos_Tools_OptimzationGoal;
+
+using VariableValue = Kokkos_Tools_VariableValue;
+
+VariableValue make_variable_value(size_t id, bool val);
+VariableValue make_variable_value(size_t id, int64_t val);
+VariableValue make_variable_value(size_t id, double val);
+VariableValue make_variable_value(size_t id, const char* val);
+
+using outputTypeDeclarationFunction =
+    Kokkos_Tools_outputTypeDeclarationFunction;
+using inputTypeDeclarationFunction = Kokkos_Tools_inputTypeDeclarationFunction;
+using requestValueFunction         = Kokkos_Tools_requestValueFunction;
+using contextEndFunction           = Kokkos_Tools_contextEndFunction;
+using optimizationGoalDeclarationFunction =
+    Kokkos_Tools_optimizationGoalDeclarationFunction;
+
+}  // end namespace Tools
+
+}  // end namespace Kokkos
 
 #endif
