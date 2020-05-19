@@ -147,7 +147,7 @@ extern "C" void kokkosp_profile_event(const char *name) {}
 
 extern "C" void
 kokkosp_declare_output_type(const char *name, const size_t id,
-                                Kokkos::Tools::VariableInfo info) {
+                                Kokkos::Tools::Experimental::VariableInfo info) {
   if ((info.valueQuantity != kokkos_value_set)) {
     printf("Apollo Tuning Adaptor: won't learn %s because values are drawn "
            "from a range\n",
@@ -157,7 +157,7 @@ kokkosp_declare_output_type(const char *name, const size_t id,
 }
 extern "C" void
 kokkosp_declare_input_type(const char *name, const size_t id,
-                                 Kokkos::Tools::VariableInfo info
+                                 Kokkos::Tools::Experimental::VariableInfo info
       ) {
   if ((info.type != kokkos_value_integer) &&
       (info.type != kokkos_value_floating_point) &&
@@ -168,7 +168,7 @@ kokkosp_declare_input_type(const char *name, const size_t id,
   }
 }
 
-float variableToFloat(Kokkos::Tools::VariableValue value) {
+float variableToFloat(Kokkos::Tools::Experimental::VariableValue value) {
   switch (value.metadata->type) {
   case kokkos_value_integer:
     return static_cast<float>(value.value.int_value);
@@ -182,21 +182,21 @@ float variableToFloat(Kokkos::Tools::VariableValue value) {
   }
 }
 
-Kokkos::Tools::VariableValue mvv(size_t index, Kokkos::Tools::VariableValue reference, Kokkos::Tools::ValueSet& set){
-  Kokkos::Tools::VariableValue value;
+Kokkos::Tools::Experimental::VariableValue mvv(size_t index, Kokkos::Tools::Experimental::VariableValue reference, Kokkos::Tools::Experimental::ValueSet& set){
+  Kokkos::Tools::Experimental::VariableValue value;
   value.id = reference.id;
   value.metadata = reference.metadata;
   switch(reference.metadata->type){
-  case Kokkos::Tools::ValueType::kokkos_value_boolean:
+  case Kokkos::Tools::Experimental::ValueType::kokkos_value_boolean:
     value.value.bool_value = set.values.bool_value[index];  
   break;
-  case Kokkos::Tools::ValueType::kokkos_value_integer:
+  case Kokkos::Tools::Experimental::ValueType::kokkos_value_integer:
     value.value.int_value = set.values.int_value[index];  
   break;
-  case Kokkos::Tools::ValueType::kokkos_value_floating_point:
+  case Kokkos::Tools::Experimental::ValueType::kokkos_value_floating_point:
     value.value.double_value = set.values.double_value[index];  
   break;
-  case Kokkos::Tools::ValueType::kokkos_value_text:
+  case Kokkos::Tools::Experimental::ValueType::kokkos_value_text:
     value.value.string_value = set.values.string_value[index];  
   break;
   }
@@ -207,8 +207,8 @@ static std::map<size_t, Apollo::Region *> tuned_contexts;
 static std::map<variableSet, Apollo::Region *> tuning_regions;
 extern "C" void kokkosp_request_values(
     size_t contextId, size_t numContextVariables,
-    Kokkos::Tools::VariableValue *contextValues, size_t numTuningVariables,
-    Kokkos::Tools::VariableValue *tuningValues
+    Kokkos::Tools::Experimental::VariableValue *contextValues, size_t numTuningVariables,
+    Kokkos::Tools::Experimental::VariableValue *tuningValues
     ) {
   if (numTuningVariables == 0) {
     return;
