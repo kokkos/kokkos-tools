@@ -5,6 +5,26 @@
 #include <sqlite3.h>
 #include <string>
 using db_id_type = int64_t;
+constexpr const size_t max_variables = 64;
+struct variableSet {
+  size_t variable_ids[max_variables];
+  size_t num_variables;
+};
+namespace std {
+template <> struct less<variableSet> {
+  bool operator()(const variableSet &l, const variableSet &r) {
+    if (l.num_variables != r.num_variables) {
+      return l.num_variables < r.num_variables;
+    }
+    for (int x = 0; x < l.num_variables; ++x) {
+      if (l.variable_ids[x] != r.variable_ids[x]) {
+        return l.variable_ids[x] < r.variable_ids[x];
+      }
+    }
+    return false;
+  }
+};
+} // namespace std
 
 sqlite3 *tool_db;
 sqlite3_stmt *get_input_type;
@@ -181,11 +201,6 @@ int64_t id_for_category(StatisticalCategory category) {
     return 3;
   }
 }
-// "CREATE TABLE IF NOT EXISTS candidate_groups(id int PRIMARY KEY, "
-// "continuous_lower real, discrete_lower int, continuous_upper real, "
-// "discrete_upper int, continuous_step real, discrete_step int, open_lower "
-// "int NOT NULL, open_upper int NOT NULL, is_discrete int)",
-// nullptr, nullptr, const_cast<char **>(&data));
 
 void make_candidate_range(
     int64_t id, const Kokkos::Tools::Experimental::VariableInfo &info) {
@@ -332,3 +347,13 @@ kokkosp_declare_output_type(const char *name, const size_t id,
                                        std::string(name), id, info);
   info.toolProvidedInfo = new VariableDatabaseData{canonical_type};
 }
+
+using Kokkos::Tools::Experimental::VariableValue;
+
+extern "C" void kokkosp_request_output_values(size_t context_id,
+                                              size_t num_context_variables,
+                                              VariableValue *context_values,
+                                              size_t num_tuning_variables,
+                                              VariableValue *tuning_values) {}
+
+extern "C" void kokkosp_end_context(size_t context_id) {}
