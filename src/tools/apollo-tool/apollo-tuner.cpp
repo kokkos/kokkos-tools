@@ -147,7 +147,7 @@ extern "C" void kokkosp_profile_event(const char *name) {}
 
 extern "C" void
 kokkosp_declare_output_type(const char *name, const size_t id,
-                                Kokkos::Tools::Experimental::VariableInfo info) {
+                                Kokkos::Tools::Experimental::VariableInfo& info) {
   if ((info.valueQuantity != kokkos_value_set)) {
     printf("Apollo Tuning Adaptor: won't learn %s because values are drawn "
            "from a range\n",
@@ -155,15 +155,18 @@ kokkosp_declare_output_type(const char *name, const size_t id,
     untunables.insert(id);
   }
 }
+
+
 extern "C" void
 kokkosp_declare_input_type(const char *name, const size_t id,
-                                 Kokkos::Tools::Experimental::VariableInfo info
+                                 Kokkos::Tools::Experimental::VariableInfo& info
       ) {
   if ((info.type != kokkos_value_integer) &&
       (info.type != kokkos_value_floating_point) &&
       (info.type != kokkos_value_text)) {
     // TODO: error message
     unlearnables.insert(id);
+    
     return;
   }
 }
