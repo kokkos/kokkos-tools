@@ -168,6 +168,7 @@ struct Kokkos_Tools_VariableInfo {
   enum Kokkos_Tools_VariableInfo_StatisticalCategory category;
   enum Kokkos_Tools_VariableInfo_CandidateValueType valueQuantity;
   union Kokkos_Tools_VariableInfo_SetOrRange candidates;
+  void* toolProvidedInfo;
 };
 
 struct Kokkos_Tools_VariableValue {
