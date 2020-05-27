@@ -1,14 +1,44 @@
+#include <chrono>
 #include <cstddef>
 #include <cstring>
 #include <impl/Kokkos_Profiling_Interface.hpp>
 #include <iostream>
+#include <map>
+#include <set>
 #include <sqlite3.h>
 #include <string>
+#include <vector>
+struct VariableDatabaseData {
+  int64_t canonical_id;
+  int64_t candidate_set_size;
+  Kokkos::Tools::Experimental::VariableValue *candidate_values;
+};
 using db_id_type = int64_t;
 constexpr const size_t max_variables = 64;
+constexpr const int64_t slice_continuous = 100;
+constexpr const int64_t tuning_data_buffer_size = 1000;
+constexpr const double epsilon = 1E-24;
+static int64_t tuning_choice;
 struct variableSet {
-  size_t variable_ids[max_variables];
+  int64_t variable_ids[max_variables];
   size_t num_variables;
+  size_t num_input_variables;
+};
+
+using clock_type = std::chrono::steady_clock;
+using time_point = decltype(clock_type::now());
+
+struct dataSet {
+  float result;
+  Kokkos::Tools::Experimental::VariableValue values[max_variables];
+  time_point start_time;
+};
+
+struct tuningData {
+  dataSet data[tuning_data_buffer_size];
+  size_t problem_size;
+  int64_t problem_id;
+  int64_t num_trials;
 };
 namespace std {
 template <> struct less<variableSet> {
@@ -32,8 +62,15 @@ sqlite3_stmt *get_output_type;
 sqlite3_stmt *set_input_type;
 sqlite3_stmt *set_output_type;
 sqlite3_stmt *insert_candidate_set_entry;
-sqlite3_stmt *insert_candidate_group;
+sqlite3_stmt *get_search_problem;
+sqlite3_stmt *insert_search_problem;
+sqlite3_stmt *insert_problem_input;
+sqlite3_stmt *insert_problem_output;
+sqlite3_stmt *insert_trial_data;
+sqlite3_stmt *insert_trial_values;
 int64_t num_types;
+int64_t num_problems;
+int64_t num_trials;
 const char *tail = (char *)malloc(1024);
 sqlite3_stmt *prepare_statement(sqlite3 *db, std::string sql) {
   sqlite3_stmt *statement;
@@ -78,27 +115,23 @@ void create_tables(sqlite3 *db) {
                "variable_id int)",
                nullptr, nullptr, const_cast<char **>(&data));
   sqlite3_exec(db,
-               "CREATE TABLE IF NOT EXISTS trials(problem_id int, result real)",
+               "CREATE TABLE IF NOT EXISTS trials(trial_id int, problem_id "
+               "int,  result real)",
                nullptr, nullptr, const_cast<char **>(&data));
   sqlite3_exec(db,
                "CREATE TABLE IF NOT EXISTS candidate_sets(id int, "
                "continuous_value real, discrete_value int)",
                nullptr, nullptr, const_cast<char **>(&data));
-  sqlite3_exec(
-      db,
-      "CREATE TABLE IF NOT EXISTS candidate_groups(id int PRIMARY KEY, "
-      "continuous_lower real, discrete_lower int, continuous_upper real, "
-      "discrete_upper int, continuous_step real, discrete_step int, open_lower "
-      "int NOT NULL, open_upper int NOT NULL, is_discrete int)",
-      nullptr, nullptr, const_cast<char **>(&data));
   sqlite3_exec(db,
-               "CREATE TABLE IF NOT EXISTS trial_values(problem_id int, "
+               "CREATE TABLE IF NOT EXISTS trial_values(trial_id int, "
                "variable_id int, discrete_result int, real_result real)",
                nullptr, nullptr, const_cast<char **>(&data));
+  insert_trial_data =
+      prepare_statement(db, "INSERT INTO trials VALUES (?,?,?)");
+  insert_trial_values =
+      prepare_statement(db, "INSERT INTO trial_values VALUES (?,?,?,?)");
   insert_candidate_set_entry =
       prepare_statement(db, "INSERT INTO candidate_sets VALUES(?,?,?)");
-  insert_candidate_group = prepare_statement(
-      db, "INSERT INTO candidate_groups VALUES (?,?,?,?,?,?,?,?,?,?)");
   get_input_type = prepare_statement(
       db, "SELECT id FROM input_types WHERE input_types.name == ?");
   get_output_type = prepare_statement(
@@ -107,6 +140,22 @@ void create_tables(sqlite3 *db) {
       prepare_statement(db, "INSERT INTO output_types VALUES (?,?,?,?)");
   set_input_type =
       prepare_statement(db, "INSERT INTO input_types VALUES (?,?,?,?)");
+  get_search_problem = prepare_statement(
+      db,
+      "SELECT * FROM ((SELECT distinct problem_id, group_concat(variable_id) "
+      "OVER(PARTITION BY problem_id ORDER BY variable_id ROWS BETWEEN "
+      "UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS input_variables FROM "
+      "problem_inputs)) a LEFT JOIN ((SELECT distinct problem_id, "
+      "group_concat(variable_id) OVER(PARTITION BY problem_id ORDER BY "
+      "variable_id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) "
+      "AS output_variables FROM problem_outputs)) b ON a.problem_id == "
+      "b.problem_id WHERE a.input_variables==? AND b.output_variables==?");
+  insert_search_problem =
+      prepare_statement(db, "INSERT INTO problem_descriptions VALUES (?,?,?)");
+  insert_problem_input =
+      prepare_statement(db, "INSERT INTO problem_inputs VALUES (?,?)");
+  insert_problem_output =
+      prepare_statement(db, "INSERT INTO problem_outputs VALUES (?,?)");
   sqlite3_exec(
       db, "SELECT COUNT(*) FROM input_types",
       [](void *, int count, char **values, char **) {
@@ -118,6 +167,20 @@ void create_tables(sqlite3 *db) {
       db, "SELECT COUNT(*) FROM output_types",
       [](void *, int count, char **values, char **) {
         num_types += std::stoi(values[0]);
+        return 0;
+      },
+      nullptr, const_cast<char **>(&data));
+  sqlite3_exec(
+      db, "SELECT COUNT(*) FROM problem_descriptions",
+      [](void *, int count, char **values, char **) {
+        num_problems = std::stoi(values[0]);
+        return 0;
+      },
+      nullptr, const_cast<char **>(&data));
+  sqlite3_exec(
+      db, "SELECT COUNT(*) FROM trials",
+      [](void *, int count, char **values, char **) {
+        num_trials = std::stoi(values[0]);
         return 0;
       },
       nullptr, const_cast<char **>(&data));
@@ -170,6 +233,13 @@ extern "C" void kokkosp_init_library(const int,
   sqlite3_open_v2("tuning_db.db", &tool_db,
                   SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
   create_tables(tool_db);
+  char *tuning_choice_string = getenv("LABRADOR_TUNING_CHOICE");
+  if (tuning_choice_string == nullptr) {
+    tuning_choice = 0;
+  } else {
+    tuning_choice = std::stoi(std::string(tuning_choice_string));
+  }
+  srand(time(nullptr));
 }
 
 using ValueType = Kokkos::Tools::Experimental::ValueType;
@@ -202,72 +272,41 @@ int64_t id_for_category(StatisticalCategory category) {
   }
 }
 
-void make_candidate_range(
-    int64_t id, const Kokkos::Tools::Experimental::VariableInfo &info) {
-  auto range = info.candidates.range;
-  switch (info.type) {
-  case ValueType::kokkos_value_integer:
-    bind_statement(insert_candidate_group, id, std::nullptr_t{},
-                   range.lower.int_value, std::nullptr_t{},
-                   range.upper.int_value, std::nullptr_t{},
-                   range.step.int_value, range.openLower ? int64_t(1) : 0,
-                   range.openUpper ? int64_t(1) : int64_t(0), int64_t(1));
-    sqlite3_step(insert_candidate_group);
-    sqlite3_reset(insert_candidate_group);
-    break;
-  case ValueType::kokkos_value_floating_point:
-    bind_statement(insert_candidate_group, id, range.lower.double_value,
-                   std::nullptr_t{}, range.upper.double_value, std::nullptr_t{},
-                   range.step.double_value, std::nullptr_t{},
-                   range.openLower ? int64_t(1) : 0,
-                   range.openUpper ? int64_t(1) : int64_t(0),
-                   (range.step.double_value == 0) ? int64_t(1) : int64_t(0));
-    sqlite3_step(insert_candidate_group);
-    sqlite3_reset(insert_candidate_group);
-    break;
-  case ValueType::kokkos_value_boolean:
-  case ValueType::kokkos_value_text:
-    std::cerr << "The authors of this tool didn't consider the cases of ranges "
-                 "of booleans or strings. I guess we could see a range of "
-                 "strings being used by biologists, but we don't want to "
-                 "encourage that kind of behavior\n";
-  }
-}
-
 void make_candidate_set(int64_t id,
                         const Kokkos::Tools::Experimental::VariableInfo &info) {
-
-  auto set = info.candidates.set;
+  auto database_data =
+      reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo);
+  auto set = database_data->candidate_values;
   switch (info.type) {
   case ValueType::kokkos_value_integer:
-    for (int x = 0; x < set.size; ++x) {
+    for (int x = 0; x < database_data->candidate_set_size; ++x) {
       bind_statement(insert_candidate_set_entry, id, std::nullptr_t{},
-                     set.values.int_value[x]);
+                     set[x].value.int_value);
       sqlite3_step(insert_candidate_set_entry);
       sqlite3_reset(insert_candidate_set_entry);
     }
     break;
   case ValueType::kokkos_value_floating_point:
-    for (int x = 0; x < set.size; ++x) {
-      bind_statement(insert_candidate_set_entry, id, set.values.double_value[x],
+    for (int x = 0; x < database_data->candidate_set_size; ++x) {
+      bind_statement(insert_candidate_set_entry, id, set[x].value.double_value,
                      std::nullptr_t{});
       sqlite3_step(insert_candidate_set_entry);
       sqlite3_reset(insert_candidate_set_entry);
     }
     break;
   case ValueType::kokkos_value_text:
-    for (int x = 0; x < set.size; ++x) {
+    for (int x = 0; x < database_data->candidate_set_size; ++x) {
       bind_statement(insert_candidate_set_entry, id, std::nullptr_t{},
                      int64_t(std::hash<std::string>{}(
-                         std::string(set.values.string_value[x]))));
+                         std::string(set[x].value.string_value))));
       sqlite3_step(insert_candidate_set_entry);
       sqlite3_reset(insert_candidate_set_entry);
     }
     break;
   case ValueType::kokkos_value_boolean:
-    for (int x = 0; x < set.size; ++x) {
+    for (int x = 0; x < database_data->candidate_set_size; ++x) {
       bind_statement(insert_candidate_set_entry, id, std::nullptr_t{},
-                     set.values.bool_value[x] ? int64_t(1) : int64_t(0));
+                     set[x].value.bool_value ? int64_t(1) : int64_t(0));
       sqlite3_step(insert_candidate_set_entry);
       sqlite3_reset(insert_candidate_set_entry);
     }
@@ -290,8 +329,6 @@ insert_type_id(sqlite3_stmt *stmt, const std::string &name, size_t id,
   }
   switch (info.valueQuantity) {
   case CandidateValueType::kokkos_value_range:
-    make_candidate_range(type_id, info);
-    break;
   case CandidateValueType::kokkos_value_set:
     make_candidate_set(type_id, info);
     break;
@@ -328,32 +365,364 @@ db_id_type get_type_id(sqlite3_stmt *get_stmt, sqlite3_stmt *set_stmt,
   return -1;
 }
 
-struct VariableDatabaseData {
-  int64_t canonical_id;
-};
+int64_t count_range_slices(Kokkos_Tools_ValueRange &in,
+                           Kokkos::Tools::Experimental::ValueType type) {
+  switch (type) {
+  case ValueType::kokkos_value_integer:
+    return ((in.openUpper ? in.lower.int_value : (in.lower.int_value - 1)) -
+            (in.openLower ? in.lower.int_value : (in.lower.int_value + 1))) /
+           in.step.int_value;
+  case ValueType::kokkos_value_floating_point:
+    return (in.step.double_value ==
+            0.0) // intentional comparison to double value 0.0, this shouldn't
+                 // be a calculated value, but a value that has been set to the
+                 // literal 0.0
+               ? slice_continuous
+               : ((in.openUpper ? in.lower.double_value
+                                : (in.lower.double_value - epsilon)) -
+                  (in.openLower ? in.lower.double_value
+                                : (in.lower.double_value + epsilon))) /
+                     in.step.double_value;
+  case ValueType::kokkos_value_text:
+  case ValueType::kokkos_value_boolean:
+    // TODO: error mechanism?
+    return -1;
+  }
+}
+
+Kokkos::Tools::Experimental::VariableValue
+mvv(size_t id, Kokkos_Tools_VariableValue_ValueUnionSet values,
+    Kokkos::Tools::Experimental::VariableInfo &info, int index) {
+  Kokkos_Tools_VariableValue_ValueUnion holder;
+  switch (info.type) {
+  case ValueType::kokkos_value_integer:
+    holder.int_value = values.int_value[index];
+    break;
+  case ValueType::kokkos_value_floating_point:
+    holder.double_value = values.double_value[index];
+    break;
+  case ValueType::kokkos_value_boolean:
+    holder.bool_value = values.bool_value[index];
+    break;
+  case ValueType::kokkos_value_text:
+    holder.string_value = values.string_value[index];
+    break;
+  }
+  Kokkos::Tools::Experimental::VariableValue value;
+  value.id = id;
+  value.value = holder;
+  Kokkos::Tools::Experimental::VariableInfo* new_info = new Kokkos::Tools::Experimental::VariableInfo(info);
+  value.metadata = new_info;
+  return value;
+}
+
+Kokkos::Tools::Experimental::VariableValue
+mvv(size_t id, Kokkos_Tools_VariableValue_ValueUnion value,
+    Kokkos::Tools::Experimental::VariableInfo &info) {
+  Kokkos_Tools_VariableValue_ValueUnion holder;
+  switch (info.type) {
+  case ValueType::kokkos_value_integer:
+    holder.int_value = value.int_value;
+    break;
+  case ValueType::kokkos_value_floating_point:
+    holder.double_value = value.double_value;
+    break;
+  case ValueType::kokkos_value_boolean:
+    holder.bool_value = value.bool_value;
+    break;
+  case ValueType::kokkos_value_text:
+    holder.string_value = value.string_value;
+    break;
+  }
+  Kokkos::Tools::Experimental::VariableValue ret_value;
+  ret_value.id = id;
+  ret_value.value = holder;
+  ret_value.metadata = &info;
+  return ret_value;
+}
+void form_set_from_range(Kokkos::Tools::Experimental::VariableValue *fill_this,
+                         Kokkos_Tools_ValueRange with_this, int64_t num_slices,
+                         size_t id,
+                         Kokkos::Tools::Experimental::VariableInfo &info) {
+  if (info.type == ValueType::kokkos_value_integer) {
+    for (int x = 0; x < num_slices; ++x) {
+      auto lower =
+          (with_this.openLower
+               ? with_this.lower.int_value
+               : (with_this.lower.int_value + with_this.step.int_value));
+      Kokkos_Tools_VariableValue_ValueUnion value;
+      value.int_value = lower + (x * with_this.step.int_value);
+      fill_this[x] = mvv(id, value, info);
+    }
+  } else if (info.type == ValueType::kokkos_value_floating_point) {
+    for (int x = 0; x < num_slices; ++x) {
+      auto lower =
+          (with_this.openLower ? with_this.lower.double_value
+                               : (with_this.lower.double_value + epsilon));
+      Kokkos_Tools_VariableValue_ValueUnion value;
+      value.double_value = lower + (x * with_this.step.double_value);
+      fill_this[x] = mvv(id, value, info);
+    }
+  }
+}
+void associate_candidates(const size_t id,
+                          Kokkos::Tools::Experimental::VariableInfo &info) {
+  int64_t candidate_set_size = 0;
+  auto *databaseInfo =
+      reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo);
+  switch (info.valueQuantity) {
+  case CandidateValueType::kokkos_value_set:
+    candidate_set_size = info.candidates.set.size;
+    break;
+  case CandidateValueType::kokkos_value_range:
+    candidate_set_size = count_range_slices(info.candidates.range, info.type);
+    break;
+  case CandidateValueType::kokkos_value_unbounded:
+    candidate_set_size = 0;
+    break;
+  }
+  if (candidate_set_size > 0) {
+    Kokkos::Tools::Experimental::VariableValue *candidate_values =
+        new Kokkos::Tools::Experimental::VariableValue[candidate_set_size];
+    switch (info.valueQuantity) {
+    case CandidateValueType::kokkos_value_set:
+      for (int x = 0; x < candidate_set_size; ++x) {
+        candidate_values[x] = mvv(id, info.candidates.set.values, info, x);
+      }
+      break;
+    case CandidateValueType::kokkos_value_range:
+      form_set_from_range(candidate_values, info.candidates.range,
+                          candidate_set_size, id, info);
+      break;
+    case CandidateValueType::kokkos_value_unbounded:
+      candidate_set_size = 0;
+      break;
+    }
+    databaseInfo->candidate_values = candidate_values;
+  }
+  databaseInfo->candidate_set_size = candidate_set_size;
+}
 
 extern "C" void
 kokkosp_declare_input_type(const char *name, const size_t id,
                            Kokkos::Tools::Experimental::VariableInfo &info) {
+  info.toolProvidedInfo = new VariableDatabaseData{};
+  associate_candidates(id, info);
   int64_t canonical_type =
       get_type_id(get_input_type, set_input_type, std::string(name), id, info);
-  info.toolProvidedInfo = new VariableDatabaseData{canonical_type};
+  reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo)
+      ->canonical_id = canonical_type;
 }
 
 extern "C" void
 kokkosp_declare_output_type(const char *name, const size_t id,
                             Kokkos::Tools::Experimental::VariableInfo &info) {
+  info.toolProvidedInfo = new VariableDatabaseData{};
+  associate_candidates(id, info);
   int64_t canonical_type = get_type_id(get_output_type, set_output_type,
                                        std::string(name), id, info);
-  info.toolProvidedInfo = new VariableDatabaseData{canonical_type};
+  reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo)
+      ->canonical_id = canonical_type;
 }
 
 using Kokkos::Tools::Experimental::VariableValue;
 
-extern "C" void kokkosp_request_output_values(size_t context_id,
-                                              size_t num_context_variables,
-                                              VariableValue *context_values,
-                                              size_t num_tuning_variables,
-                                              VariableValue *tuning_values) {}
+struct contextDescription {
+  size_t id;
+  size_t size;
+};
 
-extern "C" void kokkosp_end_context(size_t context_id) {}
+bool operator<(const contextDescription &l, const contextDescription &r) {
+  return l.id < r.id;
+}
+
+std::set<contextDescription> context_data;
+
+int64_t make_search_problem(variableSet &variables, tuningData &data) {
+  int niv = variables.num_input_variables;
+  int nov = variables.num_variables - niv;
+  int64_t problem_id = ++num_problems;
+  bind_statement(insert_search_problem, problem_id, niv, nov);
+  sqlite3_step(insert_search_problem);
+  sqlite3_reset(insert_search_problem);
+  for (int x = 0; x < niv; ++x) {
+    bind_statement(insert_problem_input, problem_id, variables.variable_ids[x]);
+    sqlite3_step(insert_problem_input);
+    sqlite3_reset(insert_problem_input);
+    // add a problem input
+  }
+  for (int x = niv; x < variables.num_variables; ++x) {
+    bind_statement(insert_problem_output, problem_id,
+                   variables.variable_ids[x]);
+    sqlite3_step(insert_problem_output);
+    sqlite3_reset(insert_problem_output);
+    // add a problem output
+  }
+  // bind_statement(insert_search_problem, num_problems,
+  // FLAG MONDAY START HERE
+  return 0;
+}
+int64_t get_problem_id(variableSet &variables, tuningData &data) {
+  int niv = variables.num_input_variables;
+  int nov = variables.num_variables - niv;
+
+  std::string input_string;
+  std::string output_string;
+
+  for (int x = niv - 1; x >= 1; --x) {
+    input_string += std::to_string(variables.variable_ids[x]) + ",";
+  }
+  input_string += std::to_string(variables.variable_ids[0]);
+
+  for (int x = variables.num_variables - 1; x >= niv + 1; --x) {
+    output_string += std::to_string(variables.variable_ids[x]) + ",";
+  }
+  output_string += std::to_string(variables.variable_ids[niv]);
+  bind_statement(get_search_problem, input_string, output_string);
+  int status = sqlite3_step(get_search_problem);
+  if (status == SQLITE_ROW) {
+    int64_t problem_id = sqlite3_column_int64(get_search_problem, 0);
+    sqlite3_reset(get_search_problem);
+    return problem_id;
+
+  } else if (status == SQLITE_DONE) {
+    sqlite3_reset(get_search_problem);
+    auto id = make_search_problem(variables, data);
+    data.problem_id = id;
+    return id;
+  } else {
+    // std::cout << "[get_problem_id] error ["<<status<<"]\n";
+  }
+  sqlite3_reset(get_search_problem);
+  return -1;
+}
+
+// sqlite3_exec(db,
+//              "CREATE TABLE IF NOT EXISTS trial_values(trial_id int, "
+//              "variable_id int, discrete_result int, real_result real)",
+//              nullptr, nullptr, const_cast<char **>(&data));
+void flush_buffer(variableSet &variables, tuningData &buffer) {
+  for (int trial = 0; trial < buffer.num_trials; ++trial) {
+    int64_t trial_num = ++num_trials;
+    int64_t problem_id = buffer.problem_id;
+    float result = buffer.data[trial].result;
+    bind_statement(insert_trial_data, trial_num, problem_id, result);
+    sqlite3_step(insert_trial_data);
+    sqlite3_reset(insert_trial_data);
+    for (int variable = 0; variable < variables.num_variables; ++variable) {
+      switch (buffer.data[trial].values[variable].metadata->type) {
+      case ValueType::kokkos_value_floating_point:
+        bind_statement(insert_trial_values, trial_num,
+                       int64_t(buffer.data[trial].values[variable].id),
+                       std::nullptr_t{},
+                       buffer.data[trial].values[variable].value.double_value);
+        sqlite3_step(insert_trial_values);
+        sqlite3_reset(insert_trial_values);
+        break;
+      case ValueType::kokkos_value_integer:
+        bind_statement(insert_trial_values, trial_num,
+                       int64_t(buffer.data[trial].values[variable].id),
+                       buffer.data[trial].values[variable].value.int_value,
+                       std::nullptr_t{});
+        sqlite3_step(insert_trial_values);
+        sqlite3_reset(insert_trial_values);
+        break;
+      case ValueType::kokkos_value_boolean:
+        bind_statement(insert_trial_values, trial_num,
+                       int64_t(buffer.data[trial].values[variable].id),
+                       buffer.data[trial].values[variable].value.bool_value
+                           ? int64_t(1)
+                           : int64_t(0),
+                       std::nullptr_t{});
+        sqlite3_step(insert_trial_values);
+        sqlite3_reset(insert_trial_values);
+        break;
+      case ValueType::kokkos_value_text:
+        bind_statement(
+            insert_trial_values, trial_num,
+            int64_t(buffer.data[trial].values[variable].id),
+            int64_t(std::hash<std::string>{}(
+                buffer.data[trial].values[variable].value.string_value)),
+            std::nullptr_t{});
+        sqlite3_step(insert_trial_values);
+        sqlite3_reset(insert_trial_values);
+        break;
+      }
+    }
+  }
+}
+
+std::map<variableSet, tuningData> data_repo;
+std::map<size_t, dataSet *> live_contexts;
+extern "C" void kokkosp_request_values(size_t context_id,
+                                       size_t num_context_variables,
+                                       VariableValue *context_values,
+                                       size_t num_tuning_variables,
+                                       VariableValue *tuning_values) {
+
+  variableSet set;
+  set.num_variables = num_context_variables + num_tuning_variables;
+  set.num_input_variables = num_context_variables;
+  int index = 0;
+  for (int x = 0; x < num_context_variables; ++x) {
+    VariableDatabaseData *database_info =
+        reinterpret_cast<VariableDatabaseData *>(
+            context_values[x].metadata->toolProvidedInfo);
+    set.variable_ids[index++] = database_info->canonical_id;
+  }
+  for (int x = 0; x < num_tuning_variables; ++x) {
+    VariableDatabaseData *database_info =
+        reinterpret_cast<VariableDatabaseData *>(
+            tuning_values[x].metadata->toolProvidedInfo);
+    set.variable_ids[index++] = database_info->canonical_id;
+  }
+  auto &tuning_data = data_repo[set];
+  if (tuning_data.problem_size == 0) {
+    int64_t problem_size = 1;
+    for (int x = 0; x < num_tuning_variables; ++x) {
+      auto *database_info = reinterpret_cast<VariableDatabaseData *>(
+          tuning_values[x].metadata->toolProvidedInfo);
+      problem_size *= database_info->candidate_set_size;
+    }
+    tuning_data.problem_size = problem_size;
+    get_problem_id(set, tuning_data);
+  }
+
+  if (tuning_data.num_trials == tuning_data_buffer_size) {
+    flush_buffer(set, tuning_data);
+    tuning_data.num_trials = 0;
+  }
+
+  int64_t trial_num = tuning_data.num_trials++;
+
+  tuning_data.data[trial_num] = dataSet{0.0f};
+  tuning_data.data[trial_num].start_time = std::chrono::steady_clock::now();
+  for (int x = 0; x < num_context_variables; ++x) {
+    tuning_data.data[trial_num].values[x] = context_values[x];
+  }
+  int64_t tuning_choice = rand() % tuning_data.problem_size;
+  for (int x = 0; x < num_tuning_variables; ++x) {
+    auto *database_info = reinterpret_cast<VariableDatabaseData *>(
+        tuning_values[x].metadata->toolProvidedInfo);
+    int64_t local_choice = tuning_choice % database_info->candidate_set_size;
+    tuning_values[x] = database_info->candidate_values[local_choice];
+    tuning_data.data[trial_num].values[num_context_variables + x] =
+        tuning_values[x];
+    tuning_choice /= database_info->candidate_set_size;
+  }
+  live_contexts[context_id] = &tuning_data.data[trial_num];
+}
+extern "C" void kokkosp_finalize_library() {
+  for (auto &pr : data_repo) {
+    auto vars = pr.first;
+    auto data = pr.second;
+    flush_buffer(vars, data);
+  }
+}
+extern "C" void kokkosp_end_context(size_t context_id) {
+  auto *data_set = live_contexts[context_id];
+  auto end_time = clock_type::now();
+  auto time_diff = end_time - data_set->start_time;
+  data_set->result = time_diff.count();
+  live_contexts.erase(context_id);
+}
