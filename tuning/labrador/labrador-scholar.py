@@ -166,7 +166,8 @@ for problem_id,problem in problem_descriptions.items():
     print(str(variable_descriptions[variable]["search_space"].min/variable_descriptions[variable]["search_space"].max))
     merged_space = combine_spaces(merged_space, variable_descriptions[variable]["search_space"])
   for category in merged_space.categories: 
-    query_string = "SELECT trials.trial_id, trials.problem_id, trials.result, "
+    query_string = "SELECT * FROM ("
+    query_string += "SELECT trials.trial_id, trials.problem_id, trials.result, "
     num_inputs = len(problem["inputs"])
     num_outputs = len(problem["outputs"])
     for index,variable in enumerate(problem["inputs"]):
@@ -188,11 +189,13 @@ for problem_id,problem in problem_descriptions.items():
       index = num_inputs + oindex
       query_string+="LEFT JOIN (SELECT trial_id AS tid%s, %s AS value%s  FROM trial_values WHERE variable_id=%s " % (index, "discrete_result", index, variable)
       query_string += ") dv%s ON dv%s.%s = trials.trial_id " % (index, index, "tid%s" % (index))
+    query_string += ") concretized WHERE "
     for index,variable in enumerate(problem["inputs"]):
-      query_string += "WHERE variable_value NOT NULL AND " % (index)
-    query_string += " TRUE "
-    
+      query_string += "concretized.variable_value%s NOT NULL AND " % (index)
+    query_string += " (1=1) ORDER BY RESULT LIMIT 1 "
     print(query_string)
+    fetcher.execute(query_string)
+    fetcher.fetchall()
 #print(merged_space.categories)
 #
 #fetcher.execute("SELECT * FROM trials")

@@ -542,6 +542,7 @@ int64_t make_search_problem(variableSet &variables, tuningData &data) {
   int niv = variables.num_input_variables;
   int nov = variables.num_variables - niv;
   int64_t problem_id = ++num_problems;
+  data.problem_id = problem_id;
   bind_statement(insert_search_problem, problem_id, niv, nov);
   sqlite3_step(insert_search_problem);
   sqlite3_reset(insert_search_problem);
@@ -560,7 +561,7 @@ int64_t make_search_problem(variableSet &variables, tuningData &data) {
   }
   // bind_statement(insert_search_problem, num_problems,
   // FLAG MONDAY START HERE
-  return 0;
+  return problem_id;
 }
 int64_t get_problem_id(variableSet &variables, tuningData &data) {
   int niv = variables.num_input_variables;
@@ -582,6 +583,7 @@ int64_t get_problem_id(variableSet &variables, tuningData &data) {
   int status = sqlite3_step(get_search_problem);
   if (status == SQLITE_ROW) {
     int64_t problem_id = sqlite3_column_int64(get_search_problem, 0);
+    data.problem_id = problem_id;
     sqlite3_reset(get_search_problem);
     return problem_id;
 
@@ -685,7 +687,8 @@ extern "C" void kokkosp_request_values(size_t context_id,
       problem_size *= database_info->candidate_set_size;
     }
     tuning_data.problem_size = problem_size;
-    get_problem_id(set, tuning_data);
+    int64_t id = get_problem_id(set, tuning_data);
+    data_repo[set].problem_id = id;
   }
 
   if (tuning_data.num_trials == tuning_data_buffer_size) {
