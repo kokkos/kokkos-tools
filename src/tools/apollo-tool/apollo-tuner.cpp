@@ -57,9 +57,9 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   for (int x = 0; x < max_choices; ++x) {
     choices[x] = x; // TODO constexpr smart blah blah
   }
-  putenv("APOLLO_RETRAIN_ENABLE=0");
+  putenv("APOLLO_RETRAIN_ENABLE=1");
   putenv("APOLLO_LOCAL_TRAINING=1");
-  putenv("APOLLO_INIT_MODEL=RoundRobin");
+  putenv("APOLLO_INIT_MODEL=Random");
   putenv("APOLLO_COLLECTIVE_TRAINING=0");
   putenv("APOLLO_TRACE_BEST_POLICIES=1");
   apollo = Apollo::instance();
@@ -280,7 +280,7 @@ extern "C" void kokkosp_end_context(size_t contextId) {
   auto region = search->second;
   region->end();
   static int encounter;
-  if ((++encounter % 664) == 0) {
+  if ((++encounter % 2000) == 0) {
     apollo->flushAllRegionMeasurements(0);
   }
 }
