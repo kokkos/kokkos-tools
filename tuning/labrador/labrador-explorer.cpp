@@ -124,12 +124,13 @@ void create_tables(sqlite3 *db) {
                nullptr, nullptr, const_cast<char **>(&data));
   sqlite3_exec(db,
                "CREATE TABLE IF NOT EXISTS trial_values(trial_id int, "
-               "variable_id int, discrete_result int, real_result real)",
+               "variable_id int, variable_index int, discrete_result int, "
+               "real_result real)",
                nullptr, nullptr, const_cast<char **>(&data));
   insert_trial_data =
       prepare_statement(db, "INSERT INTO trials VALUES (?,?,?)");
   insert_trial_values =
-      prepare_statement(db, "INSERT INTO trial_values VALUES (?,?,?,?)");
+      prepare_statement(db, "INSERT INTO trial_values VALUES (?,?,?,?,?)");
   insert_candidate_set_entry =
       prepare_statement(db, "INSERT INTO candidate_sets VALUES(?,?,?)");
   get_input_type = prepare_statement(
@@ -411,7 +412,8 @@ mvv(size_t id, Kokkos_Tools_VariableValue_ValueUnionSet values,
   Kokkos::Tools::Experimental::VariableValue value;
   value.id = id;
   value.value = holder;
-  Kokkos::Tools::Experimental::VariableInfo* new_info = new Kokkos::Tools::Experimental::VariableInfo(info);
+  Kokkos::Tools::Experimental::VariableInfo *new_info =
+      new Kokkos::Tools::Experimental::VariableInfo(info);
   value.metadata = new_info;
   return value;
 }
@@ -616,7 +618,7 @@ void flush_buffer(variableSet &variables, tuningData &buffer) {
       case ValueType::kokkos_value_floating_point:
         bind_statement(insert_trial_values, trial_num,
                        int64_t(buffer.data[trial].values[variable].id),
-                       std::nullptr_t{},
+                       variable, std::nullptr_t{},
                        buffer.data[trial].values[variable].value.double_value);
         sqlite3_step(insert_trial_values);
         sqlite3_reset(insert_trial_values);
@@ -624,25 +626,26 @@ void flush_buffer(variableSet &variables, tuningData &buffer) {
       case ValueType::kokkos_value_integer:
         bind_statement(insert_trial_values, trial_num,
                        int64_t(buffer.data[trial].values[variable].id),
+                       variable,
                        buffer.data[trial].values[variable].value.int_value,
                        std::nullptr_t{});
         sqlite3_step(insert_trial_values);
         sqlite3_reset(insert_trial_values);
         break;
       case ValueType::kokkos_value_boolean:
-        bind_statement(insert_trial_values, trial_num,
-                       int64_t(buffer.data[trial].values[variable].id),
-                       buffer.data[trial].values[variable].value.bool_value
-                           ? int64_t(1)
-                           : int64_t(0),
-                       std::nullptr_t{});
+        bind_statement(
+            insert_trial_values, trial_num,
+            int64_t(buffer.data[trial].values[variable].id), variable,
+            buffer.data[trial].values[variable].value.bool_value ? int64_t(1)
+                                                                 : int64_t(0),
+            std::nullptr_t{});
         sqlite3_step(insert_trial_values);
         sqlite3_reset(insert_trial_values);
         break;
       case ValueType::kokkos_value_text:
         bind_statement(
             insert_trial_values, trial_num,
-            int64_t(buffer.data[trial].values[variable].id),
+            int64_t(buffer.data[trial].values[variable].id), variable,
             int64_t(std::hash<std::string>{}(
                 buffer.data[trial].values[variable].value.string_value)),
             std::nullptr_t{});

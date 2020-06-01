@@ -3,6 +3,7 @@ import itertools
 from enum import Enum
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 import math
+import os
 
 class ValueType(Enum):
   boolean        = 0 
@@ -16,10 +17,13 @@ class StatisticalCategory(Enum):
   interval    = 2
   ratio       = 3
 
-conn = sqlite3.connect("tuning_db.db")
+database_name = "tuning_db.db" if os.getenv("LABRADOR_DATABASE") is None else os.getenv("LABRADOR_DATABASE")
+conn = sqlite3.connect(database_name)
+
 class EmptySpace():
   def __init__(self):
     pass
+
 class CategoricalSpace():
     def __init__(self, initializer = []):
       self.categories = initializer
@@ -88,7 +92,7 @@ for row in input_types:
   variable_descriptions[id] = {"id": id, "name": name, "value_type" : ValueType(value_type), "statistical_category" : StatisticalCategory(statistical_category),"io":"input", "search_space" : None }
   fetcher.execute("SELECT * FROM trial_values WHERE variable_id=?",(id,))
   variable_data = fetcher.fetchall() 
-  variable_set = [x[2] if x[2] is not None else x[3] for x in variable_data]
+  variable_set = [x[3] if x[3] is not None else x[4] for x in variable_data]
   variable_descriptions[id]["search_space"] = maker_switch[statistical_category](variable_set)
 fetcher.execute("SELECT * FROM output_types")
 
@@ -160,6 +164,8 @@ def combine_spaces(space_one,space_two):
       out_categories.append(fl+fr)
   return CategoricalSpace(out_categories)
 
+answers = {}
+best_trial = {}
 for problem_id,problem in problem_descriptions.items():
   merged_space = EmptySpace()
   for variable in problem["inputs"]:
@@ -194,4 +200,10 @@ for problem_id,problem in problem_descriptions.items():
     query_string += " (1=1) ORDER BY RESULT LIMIT 1 "
     fetcher.execute(query_string)
     best_string = fetcher.fetchall()
-    print(best_string)
+    if(len(best_string) > 0):
+      best_trial[category] = best_string[0][0]
+      
+
+for problem_id,problem in problem_descriptions.items():
+  num_inputs = len(problem["inputs"])
+print(best_trial)
