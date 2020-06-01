@@ -257,6 +257,7 @@ int64_t id_for_type(ValueType type) {
   case ValueType::kokkos_value_text:
     return 3;
   }
+  return -1;
 }
 
 int64_t id_for_category(StatisticalCategory category) {
@@ -270,6 +271,7 @@ int64_t id_for_category(StatisticalCategory category) {
   case StatisticalCategory::kokkos_value_ratio:
     return 3;
   }
+  return -1;
 }
 
 void make_candidate_set(int64_t id,
@@ -364,9 +366,16 @@ db_id_type get_type_id(sqlite3_stmt *get_stmt, sqlite3_stmt *set_stmt,
   sqlite3_reset(get_stmt);
   return -1;
 }
+ 
+
+int64_t slice_helper(double upper, double lower, double step){
+  return ((upper - lower) / step);
+
+}
 
 int64_t count_range_slices(Kokkos_Tools_ValueRange &in,
                            Kokkos::Tools::Experimental::ValueType type) {
+
   switch (type) {
   case ValueType::kokkos_value_integer:
     return ((in.openUpper ? in.lower.int_value : (in.lower.int_value - 1)) -
@@ -378,16 +387,16 @@ int64_t count_range_slices(Kokkos_Tools_ValueRange &in,
                  // be a calculated value, but a value that has been set to the
                  // literal 0.0
                ? slice_continuous
-               : ((in.openUpper ? in.lower.double_value
-                                : (in.lower.double_value - epsilon)) -
-                  (in.openLower ? in.lower.double_value
-                                : (in.lower.double_value + epsilon))) /
-                     in.step.double_value;
+	       : slice_helper( in.openUpper ? in.upper.double_value : (in.upper.double_value - epsilon),
+                  in.openLower ? in.lower.double_value : (in.lower.double_value + epsilon),
+		  in.step.double_value
+			       );
   case ValueType::kokkos_value_text:
   case ValueType::kokkos_value_boolean:
     // TODO: error mechanism?
     return -1;
   }
+  return -1;
 }
 
 Kokkos::Tools::Experimental::VariableValue
@@ -476,6 +485,7 @@ void associate_candidates(const size_t id,
     break;
   case CandidateValueType::kokkos_value_range:
     candidate_set_size = count_range_slices(info.candidates.range, info.type);
+    //std::cout << "[ac] range as slices: "<<candidate_set_size<<"\n";
     break;
   case CandidateValueType::kokkos_value_unbounded:
     candidate_set_size = 0;
