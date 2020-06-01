@@ -163,7 +163,6 @@ def combine_spaces(space_one,space_two):
 for problem_id,problem in problem_descriptions.items():
   merged_space = EmptySpace()
   for variable in problem["inputs"]:
-    print(str(variable_descriptions[variable]["search_space"].min/variable_descriptions[variable]["search_space"].max))
     merged_space = combine_spaces(merged_space, variable_descriptions[variable]["search_space"])
   for category in merged_space.categories: 
     query_string = "SELECT * FROM ("
@@ -193,25 +192,6 @@ for problem_id,problem in problem_descriptions.items():
     for index,variable in enumerate(problem["inputs"]):
       query_string += "concretized.variable_value%s NOT NULL AND " % (index)
     query_string += " (1=1) ORDER BY RESULT LIMIT 1 "
-    print(query_string)
     fetcher.execute(query_string)
-    fetcher.fetchall()
-#print(merged_space.categories)
-#
-#fetcher.execute("SELECT * FROM trials")
-#trials = fetcher.fetchall()
-#
-#for trial in trials:
-#  trial_id,problem_id,result = trial
-#  fetcher.execute("SELECT * FROM trial_values WHERE trial_id = ?",(trial_id,))
-#  values = fetcher.fetchall()
-#  to_insert = {"labrador.problem.result" : result} 
-#  for value in values:
-#    _,variable_id,discrete,continuous = value
-#    to_insert[variable_id] = discrete if continuous is None else continuous  
-#  problem_descriptions[problem_id]["instances"].append(to_insert)  
-
-
-
-#print(problem_descriptions)
-#print(variable_descriptions)
+    best_string = fetcher.fetchall()
+    print(best_string)
