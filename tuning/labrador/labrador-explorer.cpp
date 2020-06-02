@@ -108,11 +108,11 @@ void create_tables(sqlite3 *db) {
                nullptr, nullptr, const_cast<char **>(&data));
   sqlite3_exec(db,
                "CREATE TABLE IF NOT EXISTS problem_inputs(problem_id int, "
-               "variable_id int)",
+               "variable_id int, variable_index int)",
                nullptr, nullptr, const_cast<char **>(&data));
   sqlite3_exec(db,
                "CREATE TABLE IF NOT EXISTS problem_outputs(problem_id int, "
-               "variable_id int)",
+               "variable_id int, variable_index int)",
                nullptr, nullptr, const_cast<char **>(&data));
   sqlite3_exec(db,
                "CREATE TABLE IF NOT EXISTS trials(trial_id int, problem_id "
@@ -124,13 +124,13 @@ void create_tables(sqlite3 *db) {
                nullptr, nullptr, const_cast<char **>(&data));
   sqlite3_exec(db,
                "CREATE TABLE IF NOT EXISTS trial_values(trial_id int, "
-               "variable_id int, variable_index int, discrete_result int, "
+               "variable_id int, discrete_result int, "
                "real_result real)",
                nullptr, nullptr, const_cast<char **>(&data));
   insert_trial_data =
       prepare_statement(db, "INSERT INTO trials VALUES (?,?,?)");
   insert_trial_values =
-      prepare_statement(db, "INSERT INTO trial_values VALUES (?,?,?,?,?)");
+      prepare_statement(db, "INSERT INTO trial_values VALUES (?,?,?,?)");
   insert_candidate_set_entry =
       prepare_statement(db, "INSERT INTO candidate_sets VALUES(?,?,?)");
   get_input_type = prepare_statement(
@@ -154,9 +154,9 @@ void create_tables(sqlite3 *db) {
   insert_search_problem =
       prepare_statement(db, "INSERT INTO problem_descriptions VALUES (?,?,?)");
   insert_problem_input =
-      prepare_statement(db, "INSERT INTO problem_inputs VALUES (?,?)");
+      prepare_statement(db, "INSERT INTO problem_inputs VALUES (?,?,?)");
   insert_problem_output =
-      prepare_statement(db, "INSERT INTO problem_outputs VALUES (?,?)");
+      prepare_statement(db, "INSERT INTO problem_outputs VALUES (?,?,?)");
   sqlite3_exec(
       db, "SELECT COUNT(*) FROM input_types",
       [](void *, int count, char **values, char **) {
@@ -549,14 +549,14 @@ int64_t make_search_problem(variableSet &variables, tuningData &data) {
   sqlite3_step(insert_search_problem);
   sqlite3_reset(insert_search_problem);
   for (int x = 0; x < niv; ++x) {
-    bind_statement(insert_problem_input, problem_id, variables.variable_ids[x]);
+    bind_statement(insert_problem_input, problem_id, variables.variable_ids[x], x);
     sqlite3_step(insert_problem_input);
     sqlite3_reset(insert_problem_input);
     // add a problem input
   }
   for (int x = niv; x < variables.num_variables; ++x) {
     bind_statement(insert_problem_output, problem_id,
-                   variables.variable_ids[x]);
+                   variables.variable_ids[x], (x-niv));
     sqlite3_step(insert_problem_output);
     sqlite3_reset(insert_problem_output);
     // add a problem output
@@ -618,7 +618,7 @@ void flush_buffer(variableSet &variables, tuningData &buffer) {
       case ValueType::kokkos_value_floating_point:
         bind_statement(insert_trial_values, trial_num,
                        int64_t(buffer.data[trial].values[variable].id),
-                       variable, std::nullptr_t{},
+                       std::nullptr_t{},
                        buffer.data[trial].values[variable].value.double_value);
         sqlite3_step(insert_trial_values);
         sqlite3_reset(insert_trial_values);
@@ -626,26 +626,26 @@ void flush_buffer(variableSet &variables, tuningData &buffer) {
       case ValueType::kokkos_value_integer:
         bind_statement(insert_trial_values, trial_num,
                        int64_t(buffer.data[trial].values[variable].id),
-                       variable,
+
                        buffer.data[trial].values[variable].value.int_value,
                        std::nullptr_t{});
         sqlite3_step(insert_trial_values);
         sqlite3_reset(insert_trial_values);
         break;
       case ValueType::kokkos_value_boolean:
-        bind_statement(
-            insert_trial_values, trial_num,
-            int64_t(buffer.data[trial].values[variable].id), variable,
-            buffer.data[trial].values[variable].value.bool_value ? int64_t(1)
-                                                                 : int64_t(0),
-            std::nullptr_t{});
+        bind_statement(insert_trial_values, trial_num,
+                       int64_t(buffer.data[trial].values[variable].id),
+                       buffer.data[trial].values[variable].value.bool_value
+                           ? int64_t(1)
+                           : int64_t(0),
+                       std::nullptr_t{});
         sqlite3_step(insert_trial_values);
         sqlite3_reset(insert_trial_values);
         break;
       case ValueType::kokkos_value_text:
         bind_statement(
             insert_trial_values, trial_num,
-            int64_t(buffer.data[trial].values[variable].id), variable,
+            int64_t(buffer.data[trial].values[variable].id),
             int64_t(std::hash<std::string>{}(
                 buffer.data[trial].values[variable].value.string_value)),
             std::nullptr_t{});
