@@ -180,13 +180,15 @@ for problem_id,problem in problem_descriptions.items():
   problem["sliced_space"] = merged_space
   for category in merged_space.categories: 
     query_string = "SELECT * FROM ("
-    query_string += "SELECT trials.trial_id, trials.problem_id, trials.result, "
+    query_string += "SELECT COUNT(),MIN(trials.trial_id), trials.problem_id, AVG(trials.result) AS avg_result, "
     num_inputs = len(problem["inputs"])
     num_outputs = len(problem["outputs"])
     for index,variable in enumerate(problem["inputs"]):
       query_string += "dv%s.%s AS variable_value%s%s" % (index, "value%s" % (index,), index, ", ")
+    group_by = ""
     for oindex,variable in enumerate(problem["outputs"]):
       index = num_inputs + oindex
+      group_by += "variable_value%s%s" % (index, "," if oindex is not (len(problem["outputs"])-1) else "")
       query_string += "dv%s.%s AS variable_value%s%s" % (index, "value%s" % (index,), index, ", " if oindex is not (num_outputs-1) else " ")
     query_string += " FROM trials "
     for index,variable in enumerate(problem["inputs"]):
@@ -202,16 +204,16 @@ for problem_id,problem in problem_descriptions.items():
       index = num_inputs + oindex
       query_string+="LEFT JOIN (SELECT trial_id AS tid%s, %s AS value%s  FROM trial_values WHERE variable_id=%s " % (index, "discrete_result", index, variable)
       query_string += ") dv%s ON dv%s.%s = trials.trial_id " % (index, index, "tid%s" % (index))
-    query_string += ") concretized WHERE "
+    query_string += " GROUP BY %s ) concretized WHERE " % (group_by,)
     for index,variable in enumerate(problem["inputs"]):
       query_string += "concretized.variable_value%s NOT NULL AND " % (index)
-    query_string += " (1=1) ORDER BY RESULT LIMIT 1 "
+    query_string += " (1=1) ORDER BY avg_result"
     fetcher.execute(query_string)
     best_string = fetcher.fetchall()
     if(len(best_string) > 0):
-      best_trial[problem_id][category] = best_string[0][0]
+      best_trial[problem_id][category] = best_string[0][1]
       #print (query_string)
-      print(best_string)
+      #print(best_string[0][1])
     else:
       best_trial[problem_id][category] = None
 import string      
@@ -396,4 +398,4 @@ code += "    }\n"
 code += "    tuning_values = result;\n" 
 code += "  }\n" 
 code+= "}"
-#print(code)
+print(code)

@@ -725,10 +725,16 @@ extern "C" void kokkosp_finalize_library() {
     flush_buffer(vars, data);
   }
 }
+int64_t min_time = 999999999999999999;
 extern "C" void kokkosp_end_context(size_t context_id) {
   auto *data_set = live_contexts[context_id];
   auto end_time = clock_type::now();
   auto time_diff = end_time - data_set->start_time;
   data_set->result = time_diff.count();
+  if(time_diff.count() < min_time){
+    min_time = time_diff.count();
+    
+    std::cout << "New min time: "<<min_time<<"," <<data_set->values[2].value.int_value<<std::endl;
+  }
   live_contexts.erase(context_id);
 }
