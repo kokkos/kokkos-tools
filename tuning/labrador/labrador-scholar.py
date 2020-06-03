@@ -26,26 +26,35 @@ class EmptySpace():
 class CategoricalSpace():
     def __init__(self, initializer = []):
       self.categories = initializer
-
+    def __repr__(self):
+      return "CategoricalSpace ( %s ) "% (self.categories,)
 class OrdinalSpace():
     def __init__(self, initializer = []):
       self.categories = initializer
+    def __repr__(self):
+      return "OrdinalSpace ( %s ) "% (self.categories,)
 
 class IntervalSpace():
     def __init__(self, minval = None, maxval= None ):
       self.min = minval
       self.max = maxval
+    def __repr__(self):
+      return "IntervalSpace ( %s , %s ) "% (self.min,self.max)
 
 class RatioSpace():
     def __init__(self, minval = None, maxval= None ):
       self.min = minval
       self.max = maxval
+    def __repr__(self):
+      return "RatioSpace ( %s , %s ) "% (self.min,self.max)
 
 
 class Sliceable():
   def __init__(self, space, slices = 10):
     self.space = space
     self.slices = slices
+  def __repr__(self):
+    return "Sliceable %s ( %s ) " %(self.slices, repr(self.space))
 fetcher = conn.cursor()
 
 fetcher.execute("SELECT id FROM problem_descriptions")
@@ -117,11 +126,12 @@ for id in problem_ids:
   for x in outputs:
     problem_descriptions[id]["outputs"].append(x[0])
 def slice_space(space):
+
   if(type(space)==Sliceable):
     return space
   else:
     space_to_slice = Sliceable(space,10)
-  if(type(space_to_slice.space) == CategoricalSpace):
+  if(type(space_to_slice.space) is CategoricalSpace):
     return space_to_slice
   if(type(space_to_slice.space) == OrdinalSpace):
     values = []
@@ -150,9 +160,11 @@ def num_slices(space):
   return len(slice_space(space).categories)
 import pdb
 def combine_spaces(space_one,space_two):
-  if (type(space_one)==EmptySpace):    
+  #print(space_one)
+  #print(space_two)
+  if (type(space_one) is EmptySpace):    
     return space_two
-  if (type(space_two)==EmptySpace):    
+  if (type(space_two) is EmptySpace):    
     return space_one
   if (type(space_one) is not CategoricalSpace):
     cs1 = slice_space(space_one)  
@@ -164,11 +176,9 @@ def combine_spaces(space_one,space_two):
     cs2 = space_two
 
   if(type(cs1) is Sliceable):
-    print("YUP1")
     cs1 = slice_space(cs1.space)
     cs1 = cs1.space
   if(type(cs2) is Sliceable):
-    print("YUP2")
     cs2 = slice_space(cs2.space)
     cs2 = cs2.space
   #return CategoricalSpace([x for x in itertools.product(cs1.categories, cs2.categories)])
@@ -208,7 +218,10 @@ for problem_id,problem in problem_descriptions.items():
       query_string += "dv%s.%s AS variable_value%s%s" % (index, "value%s" % (index,), index, ", " if oindex is not (num_outputs-1) else " ")
     query_string += " FROM trials "
     for index,variable in enumerate(problem["inputs"]):
-      higher = [x for x in slice_space(variable_descriptions[variable]["search_space"]).categories if x > category[index]]
+      search_space = slice_space(variable_descriptions[variable]["search_space"])
+      if(type(search_space) is Sliceable):
+        search_space = search_space.space
+      higher = [x for x in search_space.categories if x > category[index]]
       query_string+="LEFT JOIN (SELECT trial_id AS tid%s, %s AS value%s  FROM trial_values WHERE variable_id=%s AND " % (index, "discrete_result", index, variable)
       if higher:
         next_higher = min(higher)
@@ -258,8 +271,20 @@ code = """
 #include <cstring>
 using ValueUnion = decltype(std::declval<Kokkos::Tools::Experimental::VariableValue>().value);
 
-void warn_unseen(){
-  std::cout << "[librador_retriever] is seeing an unfamiliar value\\n";
+struct CanonicalIdHolder {
+  size_t id;
+  const char* name;
+};
+
+
+template<typename Arg1, typename Arg2>
+void warn_unseen_min(Kokkos::Tools::Experimental::VariableValue var, Arg1 held, Arg2 min){
+  std::cout << "[liblabrador_retriever] is seeing an unfamiliar value for "<< reinterpret_cast<CanonicalIdHolder*>(var.metadata->toolProvidedInfo)->name << ", provided value is "<< held <<", but minimum was "<< min <<"\\n";
+}
+
+template<typename Arg1, typename Arg2>
+void warn_unseen_max(Kokkos::Tools::Experimental::VariableValue var, Arg1 held, Arg2 max){
+  std::cout << "[liblabrador_retriever] is seeing an unfamiliar value for "<< reinterpret_cast<CanonicalIdHolder*>(var.metadata->toolProvidedInfo)->name << ", provided value is "<< held <<", but maximum was "<< max <<"\\n";
 }
 
 ValueUnion make_value_union(bool in){
@@ -283,10 +308,6 @@ ValueUnion make_value_union(const char* in){
   return ret;
 }
 
-struct CanonicalIdHolder {
-  size_t id;
-};
-
 extern "C" void
 kokkosp_declare_input_type(const char *name, const size_t id,
                            Kokkos::Tools::Experimental::VariableInfo &info) {
@@ -295,7 +316,7 @@ kokkosp_declare_input_type(const char *name, const size_t id,
 for index,variable in variable_descriptions.items():
   if variable["io"] is "input":
     code += "  if(strncmp(name,\"%s\",256)==0) {\n" % variable["name"]
-    code += "    info.toolProvidedInfo = new CanonicalIdHolder { %s };\n" % (variable["id"])
+    code += "    info.toolProvidedInfo = new CanonicalIdHolder { %s, \"%s\" };\n" % (variable["id"], variable["name"])
     code += "  }\n"
 
 code+="""
@@ -316,9 +337,12 @@ for problem_id,problem in problem_descriptions.items():
   code += "Kokkos::Tools::Experimental::VariableValue %s [][%s] = { \n" % (choice_array_name,num_outputs,)
   sizes = []
   spaces = []
+  search_space = problem["sliced_space"]
   for inp in problem["inputs"]:
     space = slice_space(variable_descriptions[inp]["search_space"])
     spaces.append(space)
+    if(type(space) is Sliceable):
+      space = space.space
     sizes.append(len(space.categories))
   num_categories = len(problem["sliced_space"].categories)
   #print(problem["sliced_space"].categories)
@@ -359,8 +383,12 @@ for problem_id,problem in problem_descriptions.items():
          maxval = sliced.categories[-1]
          step = (sliced.categories[1] - sliced.categories[0])
          code += "%s = int((%s - %s) / %s);\n" % (choice_variable, holder_variable, minval, step)
-         code += "  if((%s < 0) || (%s >= %s)) {\n" % (choice_variable, choice_variable, len(sliced.categories))
-         code += "    warn_unseen();\n"
+         code += "  if((%s < 0)) {\n" % (choice_variable, )
+         code += "    warn_unseen_min(in[%s],%s,%s);\n" % (input_index, holder_variable, minval)
+         code += "    return nullptr;\n"
+         code += "  }\n"
+         code += "  if((%s >= %s)) {\n" % (choice_variable, len(sliced.categories))
+         code += "    warn_unseen_max(in[%s],%s,%s);\n" % (input_index, holder_variable, maxval)
          code += "    return nullptr;\n"
          code += "  }\n"
          

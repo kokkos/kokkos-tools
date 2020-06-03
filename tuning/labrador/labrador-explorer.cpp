@@ -261,7 +261,13 @@ void bind_statement(sqlite3_stmt *stmt, Args... args) {
 extern "C" void kokkosp_init_library(const int,
                                      const uint64_t interface_version,
                                      const uint32_t, void *) {
-  sqlite3_open_v2("tuning_db.db", &tool_db,
+  const char* index = getenv("OMPI_COMM_WORLD_RANK");
+  std::string name = "tuning_db";
+  if(index){
+    name += std::string(index); 
+  }
+  name += ".db";
+  sqlite3_open_v2(name.c_str(), &tool_db,
                   SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
   create_tables(tool_db);
   char *tuning_choice_string = getenv("LABRADOR_TUNING_CHOICE");
