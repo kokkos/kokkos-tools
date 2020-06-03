@@ -71,13 +71,13 @@ def make_interval(input_set):
   ma = max(input_set)
   if(mi==ma):
     return CategoricalSpace([mi])
-  return IntervalSpace(mi,ma)
+  return IntervalSpace(mi,ma + 1)
 def make_ratio(input_set):
   mi = min(input_set)
   ma = max(input_set)
   if(mi==ma):
     return CategoricalSpace([mi])
-  return RatioSpace(mi,ma)
+  return RatioSpace(mi,ma + 1)
 
 maker_switch = {
   0 : make_categorical,
@@ -121,19 +121,25 @@ def slice_space(space):
     return space
   else:
     space_to_slice = Sliceable(space,10)
-  if(type(space_to_slice.space == CategoricalSpace)):
+  if(type(space_to_slice.space) == CategoricalSpace):
     return space_to_slice
-  if(type(space_to_slice.space == OrdinalSpace)):
+  if(type(space_to_slice.space) == OrdinalSpace):
     values = []
     sliced_distance = (space_to_slice.space.max - space_to_slice.space.min) / space_to_slice.slices
     for i in range(space_to_slice.slices):
       values.append(space_to_slice.space.min + (sliced_distance * i))
     return CategoricalSpace(values)
-  elif(type(space_to_slice.space == RatioSpace)):
+  elif(type(space_to_slice.space) == RatioSpace):
     values = []
     sliced_distance = (math.log(space_to_slice.space.max) - math.log(space_to_slice.space.min)) / space_to_slice.slices
     for i in range(space_to_slice.slices):
       values.append(space_to_slice.space.min * math.exp(i))
+    return CategoricalSpace(values)
+  elif(type(space_to_slice.space) == IntervalSpace):
+    values = []
+    sliced_distance = (space_to_slice.space.max - space_to_slice.space.min) / space_to_slice.slices
+    for i in range(space_to_slice.slices):
+      values.append(space_to_slice.space.min + (i * sliced_distance))
     return CategoricalSpace(values)
 
 def num_slices(space):
@@ -156,6 +162,15 @@ def combine_spaces(space_one,space_two):
     cs2 = slice_space(space_two)  
   else:
     cs2 = space_two
+
+  if(type(cs1) is Sliceable):
+    print("YUP1")
+    cs1 = slice_space(cs1.space)
+    cs1 = cs1.space
+  if(type(cs2) is Sliceable):
+    print("YUP2")
+    cs2 = slice_space(cs2.space)
+    cs2 = cs2.space
   #return CategoricalSpace([x for x in itertools.product(cs1.categories, cs2.categories)])
   out_categories = []
   for l in cs1.categories:
@@ -193,7 +208,7 @@ for problem_id,problem in problem_descriptions.items():
       query_string += "dv%s.%s AS variable_value%s%s" % (index, "value%s" % (index,), index, ", " if oindex is not (num_outputs-1) else " ")
     query_string += " FROM trials "
     for index,variable in enumerate(problem["inputs"]):
-      higher = [x for x in slice_space(variable_descriptions[variable]["search_space"]).space.categories if x > category[index]]
+      higher = [x for x in slice_space(variable_descriptions[variable]["search_space"]).categories if x > category[index]]
       query_string+="LEFT JOIN (SELECT trial_id AS tid%s, %s AS value%s  FROM trial_values WHERE variable_id=%s AND " % (index, "discrete_result", index, variable)
       if higher:
         next_higher = min(higher)
@@ -304,7 +319,7 @@ for problem_id,problem in problem_descriptions.items():
   for inp in problem["inputs"]:
     space = slice_space(variable_descriptions[inp]["search_space"])
     spaces.append(space)
-    sizes.append(len(space.space.categories))
+    sizes.append(len(space.categories))
   num_categories = len(problem["sliced_space"].categories)
   #print(problem["sliced_space"].categories)
   for category_index, category in enumerate(problem["sliced_space"].categories):
@@ -362,7 +377,7 @@ for problem_id,problem in problem_descriptions.items():
     sliced = slice_space(search_space)
     choice_variable = "  choice_%s" % (input_index,)
     code += "  returned_choice += stride * %s;\n" % (choice_variable,)
-    code += "  stride *= %s;\n" % (len(sliced.space.categories))
+    code += "  stride *= %s;\n" % (len(sliced.categories))
   code += "  return %s[returned_choice];\n" % (choice_array_name,)
   code += "}\n"
 code += "Kokkos::Tools::Experimental::VariableValue* get_output(size_t count, Kokkos::Tools::Experimental::VariableValue* in) {\n"
