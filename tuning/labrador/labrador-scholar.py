@@ -1,7 +1,6 @@
 import sqlite3
 import itertools
 from enum import Enum
-from sklearn.tree import DecisionTreeClassifier, plot_tree
 import math
 import os
 
@@ -119,9 +118,11 @@ for id in problem_ids:
     problem_descriptions[id]["outputs"].append(x[0])
 def slice_space(space):
   if(type(space)==Sliceable):
-    space_to_slice = space
+    return space
   else:
     space_to_slice = Sliceable(space,10)
+  if(type(space_to_slice.space == CategoricalSpace)):
+    return space_to_slice
   if(type(space_to_slice.space == OrdinalSpace)):
     values = []
     sliced_distance = (space_to_slice.space.max - space_to_slice.space.min) / space_to_slice.slices
@@ -192,7 +193,7 @@ for problem_id,problem in problem_descriptions.items():
       query_string += "dv%s.%s AS variable_value%s%s" % (index, "value%s" % (index,), index, ", " if oindex is not (num_outputs-1) else " ")
     query_string += " FROM trials "
     for index,variable in enumerate(problem["inputs"]):
-      higher = [x for x in slice_space(variable_descriptions[variable]["search_space"]).categories if x > category[index]]
+      higher = [x for x in slice_space(variable_descriptions[variable]["search_space"]).space.categories if x > category[index]]
       query_string+="LEFT JOIN (SELECT trial_id AS tid%s, %s AS value%s  FROM trial_values WHERE variable_id=%s AND " % (index, "discrete_result", index, variable)
       if higher:
         next_higher = min(higher)
@@ -303,7 +304,7 @@ for problem_id,problem in problem_descriptions.items():
   for inp in problem["inputs"]:
     space = slice_space(variable_descriptions[inp]["search_space"])
     spaces.append(space)
-    sizes.append(len(space.categories))
+    sizes.append(len(space.space.categories))
   num_categories = len(problem["sliced_space"].categories)
   #print(problem["sliced_space"].categories)
   for category_index, category in enumerate(problem["sliced_space"].categories):
@@ -361,7 +362,7 @@ for problem_id,problem in problem_descriptions.items():
     sliced = slice_space(search_space)
     choice_variable = "  choice_%s" % (input_index,)
     code += "  returned_choice += stride * %s;\n" % (choice_variable,)
-    code += "  stride *= %s;\n" % (len(sliced.categories))
+    code += "  stride *= %s;\n" % (len(sliced.space.categories))
   code += "  return %s[returned_choice];\n" % (choice_array_name,)
   code += "}\n"
 code += "Kokkos::Tools::Experimental::VariableValue* get_output(size_t count, Kokkos::Tools::Experimental::VariableValue* in) {\n"

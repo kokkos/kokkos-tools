@@ -25,8 +25,37 @@ struct variableSet {
   size_t num_input_variables;
 };
 
-using clock_type = std::chrono::steady_clock;
+using clock_type = std::chrono::high_resolution_clock;
 using time_point = decltype(clock_type::now());
+extern "C" void kokkosp_begin_parallel_for(const char* name,
+                                           const uint32_t devID,
+                                           uint64_t* kID) {
+  //printf("kokkosp_begin_parallel_for:%s:%u:%lu::", name, devID, *kID);
+}
+
+extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
+  //printf("kokkosp_end_parallel_for:%lu::", kID);
+}
+
+extern "C" void kokkosp_begin_parallel_scan(const char* name,
+                                            const uint32_t devID,
+                                            uint64_t* kID) {
+  //printf("kokkosp_begin_parallel_scan:%s:%u:%lu::", name, devID, *kID);
+}
+
+extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
+  //printf("kokkosp_end_parallel_scan:%lu::", kID);
+}
+
+extern "C" void kokkosp_begin_parallel_reduce(const char* name,
+                                              const uint32_t devID,
+                                              uint64_t* kID) {
+  //printf("kokkosp_begin_parallel_reduce:%s:%u:%lu::", name, devID, *kID);
+}
+
+extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
+  //printf("kokkosp_end_parallel_reduce:%lu::", kID);
+}
 
 struct dataSet {
   float result;
@@ -39,6 +68,7 @@ struct tuningData {
   size_t problem_size;
   int64_t problem_id;
   int64_t num_trials;
+  int64_t choice_index;
 };
 namespace std {
 template <> struct less<variableSet> {
@@ -702,11 +732,12 @@ extern "C" void kokkosp_request_values(size_t context_id,
   int64_t trial_num = tuning_data.num_trials++;
 
   tuning_data.data[trial_num] = dataSet{0.0f};
-  tuning_data.data[trial_num].start_time = std::chrono::steady_clock::now();
+  tuning_data.data[trial_num].start_time = clock_type::now();
   for (int x = 0; x < num_context_variables; ++x) {
     tuning_data.data[trial_num].values[x] = context_values[x];
   }
-  int64_t tuning_choice = rand() % tuning_data.problem_size;
+  int64_t tuning_choice = tuning_data.choice_index++ % tuning_data.problem_size;
+  tuning_data.choice_index %= tuning_data.problem_size;
   for (int x = 0; x < num_tuning_variables; ++x) {
     auto *database_info = reinterpret_cast<VariableDatabaseData *>(
         tuning_values[x].metadata->toolProvidedInfo);
@@ -725,16 +756,12 @@ extern "C" void kokkosp_finalize_library() {
     flush_buffer(vars, data);
   }
 }
-int64_t min_time = 999999999999999999;
 extern "C" void kokkosp_end_context(size_t context_id) {
   auto *data_set = live_contexts[context_id];
-  auto end_time = clock_type::now();
-  auto time_diff = end_time - data_set->start_time;
-  data_set->result = time_diff.count();
-  if(time_diff.count() < min_time){
-    min_time = time_diff.count();
-    
-    std::cout << "New min time: "<<min_time<<"," <<data_set->values[2].value.int_value<<std::endl;
+  if(data_set){
+    auto end_time = clock_type::now();
+    auto time_diff = end_time - data_set->start_time;
+    data_set->result = time_diff.count();
+    live_contexts.erase(context_id);
   }
-  live_contexts.erase(context_id);
 }
