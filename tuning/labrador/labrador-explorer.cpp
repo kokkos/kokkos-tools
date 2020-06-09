@@ -8,9 +8,27 @@
 #include <sqlite3.h>
 #include <string>
 #include <vector>
+void dbg_break(){}
+using valunion = decltype(std::declval<Kokkos::Tools::Experimental::VariableValue>().value);
+using valtype = decltype(std::declval<Kokkos::Tools::Experimental::VariableValue>().metadata->type);
+
+int cmp(valtype t, valunion l, valunion r){
+
+  if(l.int_value < r.int_value){
+          return -1;
+  }
+  if(l.int_value > r.int_value){
+    return 1;
+  }
+  return 0;
+}
+
+
 struct VariableDatabaseData {
   int64_t canonical_id;
   int64_t candidate_set_size;
+  valunion minimum;
+  valunion maximum;
   Kokkos::Tools::Experimental::VariableValue *candidate_values;
 };
 using db_id_type = int64_t;
@@ -653,6 +671,7 @@ int64_t get_problem_id(variableSet &variables, tuningData &data) {
 //              nullptr, nullptr, const_cast<char **>(&data));
 void flush_buffer(variableSet &variables, tuningData &buffer) {
   for (int trial = 0; trial < buffer.num_trials; ++trial) {
+    
     int64_t trial_num = ++num_trials;
     int64_t problem_id = buffer.problem_id;
     float result = buffer.data[trial].result;
@@ -660,27 +679,38 @@ void flush_buffer(variableSet &variables, tuningData &buffer) {
     sqlite3_step(insert_trial_data);
     sqlite3_reset(insert_trial_data);
     for (int variable = 0; variable < variables.num_variables; ++variable) {
+      VariableDatabaseData* dbdat = reinterpret_cast<VariableDatabaseData*>(buffer.data[trial].values[variable].metadata);
+      auto real_id = dbdat->canonical_id;
+            int status = SQLITE_OK;
       switch (buffer.data[trial].values[variable].metadata->type) {
       case ValueType::kokkos_value_floating_point:
         bind_statement(insert_trial_values, trial_num,
-                       int64_t(buffer.data[trial].values[variable].id),
+                       real_id,
                        std::nullptr_t{},
                        buffer.data[trial].values[variable].value.double_value);
-        sqlite3_step(insert_trial_values);
+       status = sqlite3_step(insert_trial_values);
         sqlite3_reset(insert_trial_values);
         break;
       case ValueType::kokkos_value_integer:
+        if(reinterpret_cast<VariableDatabaseData *>(buffer.data[trial].values[variable].metadata->toolProvidedInfo)->canonical_id == 3){
+          //std::cout << "Insert on "<<buffer.data[trial].values[variable].value.int_value << std::endl;
+        }
+        if(real_id == 8589934593){ dbg_break(); }
         bind_statement(insert_trial_values, trial_num,
-                       int64_t(buffer.data[trial].values[variable].id),
+                       real_id,
 
                        buffer.data[trial].values[variable].value.int_value,
                        std::nullptr_t{});
-        sqlite3_step(insert_trial_values);
+        status = sqlite3_step(insert_trial_values);
+  if(status==SQLITE_DONE){
+  } else {
+    std::cout << "[inserting int] [" << trial_num <<"," << buffer.data[trial].values[variable].id  <<","<<buffer.data[trial].values[variable].value.int_value<< "] error "<<status<<"?" << std::endl;
+  }
         sqlite3_reset(insert_trial_values);
         break;
       case ValueType::kokkos_value_boolean:
         bind_statement(insert_trial_values, trial_num,
-                       int64_t(buffer.data[trial].values[variable].id),
+                       real_id,
                        buffer.data[trial].values[variable].value.bool_value
                            ? int64_t(1)
                            : int64_t(0),
@@ -691,7 +721,7 @@ void flush_buffer(variableSet &variables, tuningData &buffer) {
       case ValueType::kokkos_value_text:
         bind_statement(
             insert_trial_values, trial_num,
-            int64_t(buffer.data[trial].values[variable].id),
+            real_id,
             int64_t(std::hash<std::string>{}(
                 buffer.data[trial].values[variable].value.string_value)),
             std::nullptr_t{});
@@ -719,6 +749,11 @@ extern "C" void kokkosp_request_values(size_t context_id,
     VariableDatabaseData *database_info =
         reinterpret_cast<VariableDatabaseData *>(
             context_values[x].metadata->toolProvidedInfo);
+    auto maxcmp = cmp(context_values[x].metadata->type,context_values[x].value,database_info->maximum); 
+    if(maxcmp>0){
+      std::cout << "New max for "<<database_info->canonical_id << ", "<<context_values[x].value.int_value<<"."<<std::endl;
+      database_info->maximum = context_values[x].value;
+    }
     set.variable_ids[index++] = database_info->canonical_id;
   }
   for (int x = 0; x < num_tuning_variables; ++x) {
