@@ -679,7 +679,7 @@ void flush_buffer(variableSet &variables, tuningData &buffer) {
     sqlite3_step(insert_trial_data);
     sqlite3_reset(insert_trial_data);
     for (int variable = 0; variable < variables.num_variables; ++variable) {
-      VariableDatabaseData* dbdat = reinterpret_cast<VariableDatabaseData*>(buffer.data[trial].values[variable].metadata);
+      VariableDatabaseData* dbdat = reinterpret_cast<VariableDatabaseData*>(buffer.data[trial].values[variable].metadata->toolProvidedInfo);
       auto real_id = dbdat->canonical_id;
             int status = SQLITE_OK;
       switch (buffer.data[trial].values[variable].metadata->type) {

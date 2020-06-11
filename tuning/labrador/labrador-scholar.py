@@ -417,9 +417,6 @@ for problem_id,problem in problem_descriptions.items():
     code += "(reinterpret_cast<CanonicalIdHolder*>(in[%s].metadata->toolProvidedInfo)->id ==%s) &&" % (index, inp,)
   code += " true ) {\n"
   code += "      auto ret = value_for_%s(in);\n" % (tuner_name,)
-  code+=  "      if(ret[0].id == 0) {\n"
-  code+=  "        return nullptr;\n"
-  code+=  "      }\n";
   code+=  "      return ret;\n";
          
   code += "    }\n"
