@@ -44,6 +44,7 @@ int cmp(valtype t, valunion l, valunion r);
 
 struct VariableDatabaseData {
   int64_t canonical_id;
+  const char* name;
   int64_t candidate_set_size;
   valunion minimum;
   valunion maximum;

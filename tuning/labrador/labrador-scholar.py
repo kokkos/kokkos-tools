@@ -3,7 +3,7 @@ import itertools
 from enum import Enum
 import math
 import os
-
+import sys
 class ValueType(Enum):
   boolean        = 0 
   integer        = 1
@@ -22,6 +22,12 @@ conn = sqlite3.connect(database_name)
 class EmptySpace():
   def __init__(self):
     pass
+
+liminality = False
+
+if(len(sys.argv) > 1):
+  if sys.argv[1] is "1":
+    liminality = True
 
 class CategoricalSpace():
     def __init__(self, initializer = []):
@@ -267,24 +273,23 @@ type_extractor_map = {
 }
 code = """
 #include <impl/Kokkos_Profiling_Interface.hpp>
+#include "labrador-exploration.hpp"
 #include <iostream>
 #include <cstring>
-using ValueUnion = decltype(std::declval<Kokkos::Tools::Experimental::VariableValue>().value);
 
-struct CanonicalIdHolder {
-  size_t id;
-  const char* name;
-};
+using namespace labrador::explorer;
+
+using ValueUnion = decltype(std::declval<Kokkos::Tools::Experimental::VariableValue>().value);
 
 
 template<typename Arg1, typename Arg2>
 void warn_unseen_min(Kokkos::Tools::Experimental::VariableValue var, Arg1 held, Arg2 min){
-  std::cout << "[liblabrador_retriever] is seeing an unfamiliar value for "<< reinterpret_cast<CanonicalIdHolder*>(var.metadata->toolProvidedInfo)->name << ", provided value is "<< held <<", but minimum was "<< min <<"\\n";
+  std::cout << "[liblabrador_retriever] is seeing an unfamiliar value for "<< reinterpret_cast<VariableDatabaseData*>(var.metadata->toolProvidedInfo)->name << ", provided value is "<< held <<", but minimum was "<< min <<"\\n";
 }
 
 template<typename Arg1, typename Arg2>
 void warn_unseen_max(Kokkos::Tools::Experimental::VariableValue var, Arg1 held, Arg2 max){
-  std::cout << "[liblabrador_retriever] is seeing an unfamiliar value for "<< reinterpret_cast<CanonicalIdHolder*>(var.metadata->toolProvidedInfo)->name << ", provided value is "<< held <<", but maximum was "<< max <<"\\n";
+  std::cout << "[liblabrador_retriever] is seeing an unfamiliar value for "<< reinterpret_cast<VariableDatabaseData*>(var.metadata->toolProvidedInfo)->name << ", provided value is "<< held <<", but maximum was "<< max <<"\\n";
 }
 
 ValueUnion make_value_union(bool in){
@@ -313,19 +318,27 @@ kokkosp_declare_input_type(const char *name, const size_t id,
                            Kokkos::Tools::Experimental::VariableInfo &info) {
 """
 
-for index,variable in variable_descriptions.items():
-  if variable["io"] is "input":
-    code += "  if(strncmp(name,\"%s\",256)==0) {\n" % variable["name"]
-    code += "    info.toolProvidedInfo = new CanonicalIdHolder { %s, \"%s\" };\n" % (variable["id"], variable["name"])
-    code += "  }\n"
-
+if not liminality:
+  for index,variable in variable_descriptions.items():
+    if variable["io"] is "input":
+      code += "  if(strncmp(name,\"%s\",256)==0) {\n" % variable["name"]
+      code += "    info.toolProvidedInfo = new VariableDatabaseData { %s, \"%s\" };\n" % (variable["id"], variable["name"])
+      code += "  }\n"
+else:
+  code+="""
+  labrador::explorer::kokkosp_declare_input_type(name, id,info);
+  """
 code+="""
 }
 extern "C" void
 kokkosp_declare_output_type(const char *name, const size_t id,
                             Kokkos::Tools::Experimental::VariableInfo &info) {
-}
-"""
+			    """
+if liminality:
+  code+="""
+  labrador::explorer::kokkosp_declare_output_type(name, id,info);
+  """
+code+= "}\n"
 for problem_id,problem in problem_descriptions.items():
   num_inputs = len(problem["inputs"])
   num_outputs = len(problem["outputs"])
@@ -414,7 +427,7 @@ for problem_id,problem in problem_descriptions.items():
   code += "  if (%s == %s) {\n" % ("count",len(problem["inputs"]),)
   code += "    if("    
   for index,inp in enumerate(problem["inputs"]):
-    code += "(reinterpret_cast<CanonicalIdHolder*>(in[%s].metadata->toolProvidedInfo)->id ==%s) &&" % (index, inp,)
+    code += "(reinterpret_cast<VariableDatabaseData*>(in[%s].metadata->toolProvidedInfo)->canonical_id ==%s) &&" % (index, inp,)
   code += " true ) {\n"
   code += "      auto ret = value_for_%s(in);\n" % (tuner_name,)
   code+=  "      return ret;\n";
@@ -439,4 +452,47 @@ code += "    }\n"
 code += "    tuning_values = result;\n" 
 code += "  }\n" 
 code+= "}"
+
+if liminality:
+  code += """
+extern "C" void kokkosp_begin_parallel_for(const char* name,
+                                           const uint32_t devID,
+                                           uint64_t* kID) {
+}
+
+extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
+  //printf("kokkosp_end_parallel_for:%lu::", kID);
+}
+
+extern "C" void kokkosp_begin_parallel_scan(const char* name,
+                                            const uint32_t devID,
+                                            uint64_t* kID) {
+  //printf("kokkosp_begin_parallel_scan:%s:%u:%lu::", name, devID, *kID);
+}
+
+extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
+  //printf("kokkosp_end_parallel_scan:%lu::", kID);
+}
+
+extern "C" void kokkosp_begin_parallel_reduce(const char* name,
+                                              const uint32_t devID,
+                                              uint64_t* kID) {
+  //printf("kokkosp_begin_parallel_reduce:%s:%u:%lu::", name, devID, *kID);
+}
+
+extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
+  //printf("kokkosp_end_parallel_reduce:%lu::", kID);
+}
+
+extern "C" void kokkosp_init_library(const int a1,
+                                     const uint64_t a2,
+                                     const uint32_t a3, void * a4) {
+  labrador::explorer::kokkosp_init_library(a1,a2,a3,a4);
+}
+
+extern "C" void kokkosp_finalize_library(){
+  labrador::explorer::kokkosp_finalize_library();
+}
+  """
+
 print(code)

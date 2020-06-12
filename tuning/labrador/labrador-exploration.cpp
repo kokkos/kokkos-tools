@@ -486,6 +486,9 @@ kokkosp_declare_input_type(const char *name, const size_t id,
       get_type_id(get_input_type, set_input_type, std::string(name), id, info);
   reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo)
       ->canonical_id = canonical_type;
+  reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo)
+      ->name = name;
+
 }
 
 void
@@ -497,6 +500,8 @@ kokkosp_declare_output_type(const char *name, const size_t id,
                                        std::string(name), id, info);
   reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo)
       ->canonical_id = canonical_type;
+  reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo)
+      ->name = name;
 }
 
 using Kokkos::Tools::Experimental::VariableValue;
