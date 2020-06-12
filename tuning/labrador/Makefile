@@ -15,5 +15,5 @@ liblabrador-retriever.so: labrador-retriever.cpp
 	cd sqlite3 && make
 
 ./sqlite3/Makefile:
-	cd sqlite3 && ./configure
+	cd sqlite3 && autoreconf -f -i && CFLAGS="-g -O2 -fPIC" ./configure
 
