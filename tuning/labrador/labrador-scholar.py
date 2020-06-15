@@ -313,6 +313,10 @@ ValueUnion make_value_union(const char* in){
   return ret;
 }
 
+extern "C" void kokkosp_end_context(size_t context_id){
+  labrador::explorer::kokkosp_end_context(context_id);
+}
+
 extern "C" void
 kokkosp_declare_input_type(const char *name, const size_t id,
                            Kokkos::Tools::Experimental::VariableInfo &info) {
@@ -382,12 +386,14 @@ for problem_id,problem in problem_descriptions.items():
     sliced = slice_space(search_space)
     type_id = variable_descriptions[input_id]["value_type"]
     if type(search_space) is CategoricalSpace or type(search_space) is OrdinalSpace:
-      code += "  switch(in[%s].value%s) { " % (input_index, type_extractor_map[type_id],)
+      code += "  switch(in[%s].value%s) {\n" % (input_index, type_extractor_map[type_id],)
       for category_index,category in enumerate(search_space.categories):
-        code += "    case %s :" % (category,)
-        code += "      %s = %s;" % (choice_variable,category_index)
-        code += "      break;"
-        pass
+        code += "    case %s :\n" % (category,)
+        code += "      %s = %s;\n" % (choice_variable,category_index)
+        code += "      break;\n"
+      code+="""
+        default: return nullptr;
+      """
       code += "  }"
     else:
       code += "  auto %s = in[%s].value%s;\n" % (holder_variable, input_index, type_extractor_map[type_id],) 
@@ -418,7 +424,10 @@ for problem_id,problem in problem_descriptions.items():
     sliced = slice_space(search_space)
     choice_variable = "  choice_%s" % (input_index,)
     code += "  returned_choice += stride * %s;\n" % (choice_variable,)
-    code += "  stride *= %s;\n" % (len(sliced.categories))
+    tmp = sliced
+    if type(sliced) is Sliceable:
+      tmp = sliced.space
+    code += "  stride *= %s;\n" % (len(tmp.categories))
   code += "  return %s[returned_choice];\n" % (choice_array_name,)
   code += "}\n"
 code += "Kokkos::Tools::Experimental::VariableValue* get_output(size_t count, Kokkos::Tools::Experimental::VariableValue* in) {\n"
@@ -450,7 +459,12 @@ code += "    for(int x = 0; x< num_tuning_variables; ++x){\n"
 code += "      tuning_values[x] = result[x];\n"
 code += "    }\n" 
 code += "    tuning_values = result;\n" 
-code += "  }\n" 
+code += "  }\n"
+code += """
+  else {
+    labrador::explorer::kokkosp_request_values(context_id, num_context_variables, context_values, num_tuning_variables, tuning_values);
+  }
+"""
 code+= "}"
 
 if liminality:
