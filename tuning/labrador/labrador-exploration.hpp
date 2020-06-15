@@ -1,3 +1,5 @@
+#ifndef LABRADOR_EXPLORATION_HPP
+#define LABRADOR_EXPLORATION_HPP
 #include <chrono>
 #include <cstddef>
 #include <cstring>
@@ -8,6 +10,7 @@
 #include <sqlite3.h>
 #include <string>
 #include <vector>
+
 namespace labrador{
 	namespace explorer {
 constexpr const size_t max_variables = 64;
@@ -94,7 +97,14 @@ void bind_statement(sqlite3_stmt *stmt, int index, Arg arg, Args... args) {
   bind_statement(stmt, index + 1, args...);
 }
 
-template <> void bind_statement(sqlite3_stmt *stmt, int index) {}
+template <> void bind_statement(sqlite3_stmt *stmt, int index);
+
+extern template void bind_statement(sqlite3_stmt*, int);
+extern template void bind_statement(sqlite3_stmt*, int,std::nullptr_t, long);
+extern template void bind_statement(sqlite3_stmt*, int);
+extern template void bind_statement(sqlite3_stmt*, int, long, long, std::nullptr_t);
+extern template void bind_statement(sqlite3_stmt*, int, std::string);
+extern template void bind_statement(sqlite3_stmt*, int, std::string, std::string);
 
 } // namespace impl
 
@@ -102,6 +112,9 @@ template <typename... Args>
 void bind_statement(sqlite3_stmt *stmt, Args... args) {
   return impl::bind_statement(stmt, 1, args...);
 }
+
+extern template void bind_statement(sqlite3_stmt*, int, std::string, long, long);
+extern template void bind_statement(sqlite3_stmt*, std::string, long, long);
 
 using ValueType = Kokkos::Tools::Experimental::ValueType;
 using StatisticalCategory = Kokkos::Tools::Experimental::StatisticalCategory;
@@ -175,3 +188,4 @@ void kokkosp_end_context(size_t context_id);
 
 } // namespace explorer
 } // namespace labrador
+#endif

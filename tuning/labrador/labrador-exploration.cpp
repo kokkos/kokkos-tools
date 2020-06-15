@@ -724,5 +724,10 @@ void kokkosp_end_context(size_t context_id) {
     live_contexts.erase(context_id);
   }
 }
+
+namespace impl {
+template <> void bind_statement(sqlite3_stmt *stmt, int index) {}
+
+} // end namespace impl
 } // namespace explorer
 } // namespace labrador
