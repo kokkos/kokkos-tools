@@ -99,12 +99,12 @@ void bind_statement(sqlite3_stmt *stmt, int index, Arg arg, Args... args) {
 
 template <> void bind_statement(sqlite3_stmt *stmt, int index);
 
-extern template void bind_statement(sqlite3_stmt*, int);
-extern template void bind_statement(sqlite3_stmt*, int,std::nullptr_t, long);
-extern template void bind_statement(sqlite3_stmt*, int);
-extern template void bind_statement(sqlite3_stmt*, int, long, long, std::nullptr_t);
-extern template void bind_statement(sqlite3_stmt*, int, std::string);
-extern template void bind_statement(sqlite3_stmt*, int, std::string, std::string);
+//extern template void bind_statement(sqlite3_stmt*, int);
+//extern template void bind_statement(sqlite3_stmt*, int,std::nullptr_t, long);
+//extern template void bind_statement(sqlite3_stmt*, int);
+//extern template void bind_statement(sqlite3_stmt*, int, long, long, std::nullptr_t);
+//extern template void bind_statement(sqlite3_stmt*, int, std::string);
+//extern template void bind_statement(sqlite3_stmt*, int, std::string, std::string);
 
 } // namespace impl
 
@@ -113,8 +113,8 @@ void bind_statement(sqlite3_stmt *stmt, Args... args) {
   return impl::bind_statement(stmt, 1, args...);
 }
 
-extern template void bind_statement(sqlite3_stmt*, int, std::string, long, long);
-extern template void bind_statement(sqlite3_stmt*, std::string, long, long);
+//extern template void bind_statement(sqlite3_stmt*, int, std::string, long, long);
+//extern template void bind_statement(sqlite3_stmt*, std::string, long, long);
 
 using ValueType = Kokkos::Tools::Experimental::ValueType;
 using StatisticalCategory = Kokkos::Tools::Experimental::StatisticalCategory;
