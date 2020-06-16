@@ -284,12 +284,12 @@ using ValueUnion = decltype(std::declval<Kokkos::Tools::Experimental::VariableVa
 
 template<typename Arg1, typename Arg2>
 void warn_unseen_min(Kokkos::Tools::Experimental::VariableValue var, Arg1 held, Arg2 min){
-  std::cout << "[liblabrador_retriever] is seeing an unfamiliar value for "<< reinterpret_cast<VariableDatabaseData*>(var.metadata->toolProvidedInfo)->name << ", provided value is "<< held <<", but minimum was "<< min <<"\\n";
+  //std::cout << "[liblabrador_retriever] is seeing an unfamiliar value for "<< reinterpret_cast<VariableDatabaseData*>(var.metadata->toolProvidedInfo)->name << ", provided value is "<< held <<", but minimum was "<< min <<"\\n";
 }
 
 template<typename Arg1, typename Arg2>
 void warn_unseen_max(Kokkos::Tools::Experimental::VariableValue var, Arg1 held, Arg2 max){
-  std::cout << "[liblabrador_retriever] is seeing an unfamiliar value for "<< reinterpret_cast<VariableDatabaseData*>(var.metadata->toolProvidedInfo)->name << ", provided value is "<< held <<", but maximum was "<< max <<"\\n";
+  //std::cout << "[liblabrador_retriever] is seeing an unfamiliar value for "<< reinterpret_cast<VariableDatabaseData*>(var.metadata->toolProvidedInfo)->name << ", provided value is "<< held <<", but maximum was "<< max <<"\\n";
 }
 
 ValueUnion make_value_union(bool in){

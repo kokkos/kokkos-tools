@@ -1,0 +1,12 @@
+merge_in=tuning_db.db
+rm $merge_in
+merge_these=$(ls tuning_db[0-9].db);
+start=0
+for x in $merge_these; do 
+  if [ $start -eq 0 ]; then
+    cp $x $merge_in
+    start=1
+  else
+    python merger.py $merge_in $x
+  fi
+done
