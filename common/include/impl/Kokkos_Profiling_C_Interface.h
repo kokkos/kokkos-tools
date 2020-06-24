@@ -53,7 +53,7 @@
 #include <stdint.h>
 #endif
 
-#define KOKKOSP_INTERFACE_VERSION 20191080
+#define KOKKOSP_INTERFACE_VERSION 20200520
 
 // Profiling
 
@@ -97,19 +97,17 @@ typedef void (*Kokkos_Profiling_beginDeepCopyFunction)(
 typedef void (*Kokkos_Profiling_endDeepCopyFunction)();
 
 // Tuning
-
+using tuning_string = char[64];
 union Kokkos_Tools_VariableValue_ValueUnion {
-  bool bool_value;
   int64_t int_value;
   double double_value;
-  const char* string_value;
+  tuning_string string_value;
 };
 
 union Kokkos_Tools_VariableValue_ValueUnionSet {
-  bool* bool_value;
   int64_t* int_value;
   double* double_value;
-  const char** string_value;
+  tuning_string* string_value;
 };
 
 struct Kokkos_Tools_ValueSet {
@@ -123,7 +121,7 @@ enum Kokkos_Tools_OptimizationType {
 };
 
 struct Kokkos_Tools_OptimzationGoal {
-  size_t id;
+  size_t type_id;
   Kokkos_Tools_OptimizationType goal;
 };
 
@@ -136,10 +134,9 @@ struct Kokkos_Tools_ValueRange {
 };
 
 enum Kokkos_Tools_VariableInfo_ValueType {
-  kokkos_value_floating_point,
-  kokkos_value_integer,
-  kokkos_value_text,
-  kokkos_value_boolean,
+  kokkos_value_double,
+  kokkos_value_int64,
+  kokkos_value_string,
 };
 
 enum Kokkos_Tools_VariableInfo_StatisticalCategory {
@@ -172,7 +169,7 @@ struct Kokkos_Tools_VariableInfo {
 };
 
 struct Kokkos_Tools_VariableValue {
-  size_t id;
+  size_t type_id;
   union Kokkos_Tools_VariableValue_ValueUnion value;
   struct Kokkos_Tools_VariableInfo* metadata;
 };
@@ -185,7 +182,9 @@ typedef void (*Kokkos_Tools_inputTypeDeclarationFunction)(
 typedef void (*Kokkos_Tools_requestValueFunction)(
     const size_t, const size_t, const Kokkos_Tools_VariableValue*,
     const size_t count, Kokkos_Tools_VariableValue*);
-typedef void (*Kokkos_Tools_contextEndFunction)(const size_t);
+typedef void (*Kokkos_Tools_contextBeginFunction)(const size_t);
+typedef void (*Kokkos_Tools_contextEndFunction)(const size_t,
+                                                Kokkos_Tools_VariableValue);
 typedef void (*Kokkos_Tools_optimizationGoalDeclarationFunction)(
     const size_t, const Kokkos_Tools_OptimzationGoal& goal);
 
@@ -215,9 +214,10 @@ struct Kokkos_Profiling_EventSet {
   Kokkos_Tools_outputTypeDeclarationFunction declare_output_type;
   Kokkos_Tools_inputTypeDeclarationFunction declare_input_type;
   Kokkos_Tools_requestValueFunction request_output_values;
+  Kokkos_Tools_contextBeginFunction begin_tuning_context;
   Kokkos_Tools_contextEndFunction end_tuning_context;
   Kokkos_Tools_optimizationGoalDeclarationFunction declare_optimization_goal;
-  char padding[235 *
+  char padding[234 *
                sizeof(function_pointer)];  // allows us to add another 256
                                            // events to the Tools interface
                                            // without changing struct layout

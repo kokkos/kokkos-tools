@@ -84,13 +84,13 @@ def make_ordinal(input_set):
 def make_interval(input_set):
   mi = min(input_set)
   ma = max(input_set)
-  if(mi==ma):
+  if(mi is ma):
     return CategoricalSpace([mi])
   return IntervalSpace(mi,ma + 1)
 def make_ratio(input_set):
   mi = min(input_set)
   ma = max(input_set)
-  if(mi==ma):
+  if(mi is ma):
     return CategoricalSpace([mi])
   return RatioSpace(mi,ma + 1)
 
@@ -227,13 +227,13 @@ for problem_id,problem in problem_descriptions.items():
       search_space = slice_space(variable_descriptions[variable]["search_space"])
       if(type(search_space) is Sliceable):
         search_space = search_space.space
-      higher = [x for x in search_space.categories if x > category[index]]
+      higher = [x for x in search_space.categories if x > category]
       query_string+="LEFT JOIN (SELECT trial_id AS tid%s, %s AS value%s  FROM trial_values WHERE variable_id=%s AND " % (index, "discrete_result", index, variable)
       if higher:
         next_higher = min(higher)
         query_string += " %s >= %s and %s < %s " % ("discrete_result", category[index], "discrete_result", next_higher)
       else:
-        query_string += " %s >= %s " % ("discrete_result", category[index])
+        query_string += " %s >= %s " % ("discrete_result", category)
       query_string += ") dv%s ON dv%s.%s = trials.trial_id " % (index, index, "tid%s" % (index))
     for oindex,variable in enumerate(problem["outputs"]):
       index = num_inputs + oindex
@@ -266,7 +266,6 @@ type_constructor_map = {
   ValueType.text : "std::string"
 }
 type_extractor_map = {
-  ValueType.boolean : ".bool_value",
   ValueType.integer : ".int_value",
   ValueType.floating_point : ".double_value",
   ValueType.text : ".string_value"
@@ -292,11 +291,6 @@ void warn_unseen_max(Kokkos::Tools::Experimental::VariableValue var, Arg1 held, 
   //std::cout << "[liblabrador_retriever] is seeing an unfamiliar value for "<< reinterpret_cast<VariableDatabaseData*>(var.metadata->toolProvidedInfo)->name << ", provided value is "<< held <<", but maximum was "<< max <<"\\n";
 }
 
-ValueUnion make_value_union(bool in){
-  ValueUnion ret;
-  ret.bool_value = in;
-  return ret;
-}
 ValueUnion make_value_union(int64_t in){
   ValueUnion ret;
   ret.int_value = in;
@@ -309,7 +303,7 @@ ValueUnion make_value_union(double in){
 }
 ValueUnion make_value_union(const char* in){
   ValueUnion ret;
-  ret.string_value = in;
+  strncpy(ret.string_value,in,63);
   return ret;
 }
 

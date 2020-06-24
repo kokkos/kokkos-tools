@@ -211,13 +211,11 @@ using CandidateValueType = Kokkos::Tools::Experimental::CandidateValueType;
 
 int64_t id_for_type(ValueType type) {
   switch (type) {
-  case ValueType::kokkos_value_boolean:
-    return 0;
-  case ValueType::kokkos_value_integer:
+  case ValueType::kokkos_value_int64:
     return 1;
-  case ValueType::kokkos_value_floating_point:
+  case ValueType::kokkos_value_double:
     return 2;
-  case ValueType::kokkos_value_text:
+  case ValueType::kokkos_value_string:
     return 3;
   }
   return -1;
@@ -243,7 +241,7 @@ void make_candidate_set(int64_t id,
       reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo);
   auto set = database_data->candidate_values;
   switch (info.type) {
-  case ValueType::kokkos_value_integer:
+  case ValueType::kokkos_value_int64:
     for (int x = 0; x < database_data->candidate_set_size; ++x) {
       bind_statement(insert_candidate_set_entry, id, std::nullptr_t{},
                      set[x].value.int_value);
@@ -251,7 +249,7 @@ void make_candidate_set(int64_t id,
       sqlite3_reset(insert_candidate_set_entry);
     }
     break;
-  case ValueType::kokkos_value_floating_point:
+  case ValueType::kokkos_value_double:
     for (int x = 0; x < database_data->candidate_set_size; ++x) {
       bind_statement(insert_candidate_set_entry, id, set[x].value.double_value,
                      std::nullptr_t{});
@@ -259,19 +257,11 @@ void make_candidate_set(int64_t id,
       sqlite3_reset(insert_candidate_set_entry);
     }
     break;
-  case ValueType::kokkos_value_text:
+  case ValueType::kokkos_value_string:
     for (int x = 0; x < database_data->candidate_set_size; ++x) {
       bind_statement(insert_candidate_set_entry, id, std::nullptr_t{},
                      int64_t(std::hash<std::string>{}(
                          std::string(set[x].value.string_value))));
-      sqlite3_step(insert_candidate_set_entry);
-      sqlite3_reset(insert_candidate_set_entry);
-    }
-    break;
-  case ValueType::kokkos_value_boolean:
-    for (int x = 0; x < database_data->candidate_set_size; ++x) {
-      bind_statement(insert_candidate_set_entry, id, std::nullptr_t{},
-                     set[x].value.bool_value ? int64_t(1) : int64_t(0));
       sqlite3_step(insert_candidate_set_entry);
       sqlite3_reset(insert_candidate_set_entry);
     }
@@ -340,11 +330,11 @@ int64_t count_range_slices(Kokkos_Tools_ValueRange &in,
                            Kokkos::Tools::Experimental::ValueType type) {
 
   switch (type) {
-  case ValueType::kokkos_value_integer:
+  case ValueType::kokkos_value_int64:
     return ((in.openUpper ? in.lower.int_value : (in.lower.int_value - 1)) -
             (in.openLower ? in.lower.int_value : (in.lower.int_value + 1))) /
            in.step.int_value;
-  case ValueType::kokkos_value_floating_point:
+  case ValueType::kokkos_value_double:
     return (in.step.double_value ==
             0.0) // intentional comparison to double value 0.0, this shouldn't
                  // be a calculated value, but a value that has been set to the
@@ -354,8 +344,7 @@ int64_t count_range_slices(Kokkos_Tools_ValueRange &in,
                   in.openLower ? in.lower.double_value : (in.lower.double_value + epsilon),
 		  in.step.double_value
 			       );
-  case ValueType::kokkos_value_text:
-  case ValueType::kokkos_value_boolean:
+  case ValueType::kokkos_value_string:
     // TODO: error mechanism?
     return -1;
   }
@@ -367,21 +356,18 @@ mvv(size_t id, Kokkos_Tools_VariableValue_ValueUnionSet values,
     Kokkos::Tools::Experimental::VariableInfo &info, int index) {
   Kokkos_Tools_VariableValue_ValueUnion holder;
   switch (info.type) {
-  case ValueType::kokkos_value_integer:
+  case ValueType::kokkos_value_int64:
     holder.int_value = values.int_value[index];
     break;
-  case ValueType::kokkos_value_floating_point:
+  case ValueType::kokkos_value_double:
     holder.double_value = values.double_value[index];
     break;
-  case ValueType::kokkos_value_boolean:
-    holder.bool_value = values.bool_value[index];
-    break;
-  case ValueType::kokkos_value_text:
-    holder.string_value = values.string_value[index];
+  case ValueType::kokkos_value_string:
+    strncpy(holder.string_value,values.string_value[index],64);
     break;
   }
   Kokkos::Tools::Experimental::VariableValue value;
-  value.id = id;
+  value.type_id = id;
   value.value = holder;
   Kokkos::Tools::Experimental::VariableInfo *new_info =
       new Kokkos::Tools::Experimental::VariableInfo(info);
@@ -394,21 +380,18 @@ mvv(size_t id, Kokkos_Tools_VariableValue_ValueUnion value,
     Kokkos::Tools::Experimental::VariableInfo &info) {
   Kokkos_Tools_VariableValue_ValueUnion holder;
   switch (info.type) {
-  case ValueType::kokkos_value_integer:
+  case ValueType::kokkos_value_int64:
     holder.int_value = value.int_value;
     break;
-  case ValueType::kokkos_value_floating_point:
+  case ValueType::kokkos_value_double:
     holder.double_value = value.double_value;
     break;
-  case ValueType::kokkos_value_boolean:
-    holder.bool_value = value.bool_value;
-    break;
-  case ValueType::kokkos_value_text:
-    holder.string_value = value.string_value;
+  case ValueType::kokkos_value_string:
+    strncpy(holder.string_value,value.string_value,64);
     break;
   }
   Kokkos::Tools::Experimental::VariableValue ret_value;
-  ret_value.id = id;
+  ret_value.type_id = id;
   ret_value.value = holder;
   ret_value.metadata = &info;
   return ret_value;
@@ -417,7 +400,7 @@ void form_set_from_range(Kokkos::Tools::Experimental::VariableValue *fill_this,
                          Kokkos_Tools_ValueRange with_this, int64_t num_slices,
                          size_t id,
                          Kokkos::Tools::Experimental::VariableInfo &info) {
-  if (info.type == ValueType::kokkos_value_integer) {
+  if (info.type == ValueType::kokkos_value_int64) {
     for (int x = 0; x < num_slices; ++x) {
       auto lower =
           (with_this.openLower
@@ -427,7 +410,7 @@ void form_set_from_range(Kokkos::Tools::Experimental::VariableValue *fill_this,
       value.int_value = lower + (x * with_this.step.int_value);
       fill_this[x] = mvv(id, value, info);
     }
-  } else if (info.type == ValueType::kokkos_value_floating_point) {
+  } else if (info.type == ValueType::kokkos_value_double) {
     for (int x = 0; x < num_slices; ++x) {
       auto lower =
           (with_this.openLower ? with_this.lower.double_value
@@ -592,7 +575,7 @@ void flush_buffer(variableSet &variables, tuningData &buffer) {
       auto real_id = dbdat->canonical_id;
             int status = SQLITE_OK;
       switch (buffer.data[trial].values[variable].metadata->type) {
-      case ValueType::kokkos_value_floating_point:
+      case ValueType::kokkos_value_double:
         bind_statement(insert_trial_values, trial_num,
                        real_id,
                        std::nullptr_t{},
@@ -600,7 +583,7 @@ void flush_buffer(variableSet &variables, tuningData &buffer) {
        status = sqlite3_step(insert_trial_values);
         sqlite3_reset(insert_trial_values);
         break;
-      case ValueType::kokkos_value_integer:
+      case ValueType::kokkos_value_int64:
         if(reinterpret_cast<VariableDatabaseData *>(buffer.data[trial].values[variable].metadata->toolProvidedInfo)->canonical_id == 3){
           //std::cout << "Insert on "<<buffer.data[trial].values[variable].value.int_value << std::endl;
         }
@@ -612,21 +595,11 @@ void flush_buffer(variableSet &variables, tuningData &buffer) {
         status = sqlite3_step(insert_trial_values);
   if(status==SQLITE_DONE){
   } else {
-    std::cout << "[inserting int] [" << trial_num <<"," << buffer.data[trial].values[variable].id  <<","<<buffer.data[trial].values[variable].value.int_value<< "] error "<<status<<"?" << std::endl;
+    std::cout << "[inserting int] [" << trial_num <<"," << buffer.data[trial].values[variable].type_id  <<","<<buffer.data[trial].values[variable].value.int_value<< "] error "<<status<<"?" << std::endl;
   }
         sqlite3_reset(insert_trial_values);
         break;
-      case ValueType::kokkos_value_boolean:
-        bind_statement(insert_trial_values, trial_num,
-                       real_id,
-                       buffer.data[trial].values[variable].value.bool_value
-                           ? int64_t(1)
-                           : int64_t(0),
-                       std::nullptr_t{});
-        sqlite3_step(insert_trial_values);
-        sqlite3_reset(insert_trial_values);
-        break;
-      case ValueType::kokkos_value_text:
+      case ValueType::kokkos_value_string:
         bind_statement(
             insert_trial_values, trial_num,
             real_id,
