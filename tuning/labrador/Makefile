@@ -10,10 +10,10 @@ all: explorer retriever
 liblabrador-explorer.so: labrador-explorer.cpp util
 	g++ -shared -std=c++11 -pthread -g -fPIC -O2 -I../../common/include/ -I./sqlite3 -o liblabrador-explorer.so labrador-explorer.cpp ./liblabrador-utils.a -ldl
 
-liblabrador-utils.a: labrador-exploration.o  ./sqlite3/sqlite3.o
+liblabrador-utils.a: labrador-exploration.o ./sqlite3/sqlite3.o
 	ar crf liblabrador-utils.a labrador-exploration.o ./sqlite3/sqlite3.o
 
-labrador-exploration.o: labrador-exploration.cpp labrador-exploration.hpp
+labrador-exploration.o: labrador-exploration.cpp labrador-exploration.hpp ./sqlite3/sqlite3.o
 	g++ -std=c++11 -pthread -g -fPIC -O2 -I../../common/include/ -I./sqlite3 -c labrador-exploration.cpp ./sqlite3/sqlite3.o -ldl -o labrador-exploration.o
 
 
