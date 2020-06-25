@@ -236,11 +236,11 @@ int64_t id_for_category(StatisticalCategory category) {
 }
 
 void make_candidate_set(int64_t id,
-                        const Kokkos::Tools::Experimental::VariableInfo &info) {
+                        const Kokkos::Tools::Experimental::VariableInfo *info) {
   auto database_data =
-      reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo);
+      reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo);
   auto set = database_data->candidate_values;
-  switch (info.type) {
+  switch (info->type) {
   case ValueType::kokkos_value_int64:
     for (int x = 0; x < database_data->candidate_set_size; ++x) {
       bind_statement(insert_candidate_set_entry, id, std::nullptr_t{},
@@ -271,10 +271,10 @@ void make_candidate_set(int64_t id,
 
 db_id_type
 insert_type_id(sqlite3_stmt *stmt, const std::string &name, size_t id,
-               const Kokkos::Tools::Experimental::VariableInfo &info) {
+               const Kokkos::Tools::Experimental::VariableInfo *info) {
   int type_id = ++num_types;
-  bind_statement(stmt, type_id, name, id_for_type(info.type),
-                 id_for_category(info.category));
+  bind_statement(stmt, type_id, name, id_for_type(info->type),
+                 id_for_category(info->category));
   int status = sqlite3_step(stmt);
   if (status != SQLITE_DONE) {
     std::cout << "[insert_input_type] insert not successful [" << status << "]"
@@ -282,7 +282,7 @@ insert_type_id(sqlite3_stmt *stmt, const std::string &name, size_t id,
   } else {
     sqlite3_reset(stmt);
   }
-  switch (info.valueQuantity) {
+  switch (info->valueQuantity) {
   case CandidateValueType::kokkos_value_range:
   case CandidateValueType::kokkos_value_set:
     make_candidate_set(type_id, info);
@@ -296,7 +296,7 @@ insert_type_id(sqlite3_stmt *stmt, const std::string &name, size_t id,
 
 db_id_type get_type_id(sqlite3_stmt *get_stmt, sqlite3_stmt *set_stmt,
                        const std::string &name, size_t id,
-                       const Kokkos::Tools::Experimental::VariableInfo &info) {
+                       const Kokkos::Tools::Experimental::VariableInfo *info) {
   bind_statement(get_stmt, name);
   // check status
   int status = sqlite3_step(get_stmt);
@@ -353,9 +353,9 @@ int64_t count_range_slices(Kokkos_Tools_ValueRange &in,
 
 Kokkos::Tools::Experimental::VariableValue
 mvv(size_t id, Kokkos_Tools_VariableValue_ValueUnionSet values,
-    Kokkos::Tools::Experimental::VariableInfo &info, int index) {
+    Kokkos::Tools::Experimental::VariableInfo *info, int index) {
   Kokkos_Tools_VariableValue_ValueUnion holder;
-  switch (info.type) {
+  switch (info->type) {
   case ValueType::kokkos_value_int64:
     holder.int_value = values.int_value[index];
     break;
@@ -370,16 +370,16 @@ mvv(size_t id, Kokkos_Tools_VariableValue_ValueUnionSet values,
   value.type_id = id;
   value.value = holder;
   Kokkos::Tools::Experimental::VariableInfo *new_info =
-      new Kokkos::Tools::Experimental::VariableInfo(info);
+      new Kokkos::Tools::Experimental::VariableInfo(*info);
   value.metadata = new_info;
   return value;
 }
 
 Kokkos::Tools::Experimental::VariableValue
 mvv(size_t id, Kokkos_Tools_VariableValue_ValueUnion value,
-    Kokkos::Tools::Experimental::VariableInfo &info) {
+    Kokkos::Tools::Experimental::VariableInfo *info) {
   Kokkos_Tools_VariableValue_ValueUnion holder;
-  switch (info.type) {
+  switch (info->type) {
   case ValueType::kokkos_value_int64:
     holder.int_value = value.int_value;
     break;
@@ -393,14 +393,14 @@ mvv(size_t id, Kokkos_Tools_VariableValue_ValueUnion value,
   Kokkos::Tools::Experimental::VariableValue ret_value;
   ret_value.type_id = id;
   ret_value.value = holder;
-  ret_value.metadata = &info;
+  ret_value.metadata = info;
   return ret_value;
 }
 void form_set_from_range(Kokkos::Tools::Experimental::VariableValue *fill_this,
                          Kokkos_Tools_ValueRange with_this, int64_t num_slices,
                          size_t id,
-                         Kokkos::Tools::Experimental::VariableInfo &info) {
-  if (info.type == ValueType::kokkos_value_int64) {
+                         Kokkos::Tools::Experimental::VariableInfo *info) {
+  if (info->type == ValueType::kokkos_value_int64) {
     for (int x = 0; x < num_slices; ++x) {
       auto lower =
           (with_this.openLower
@@ -410,7 +410,7 @@ void form_set_from_range(Kokkos::Tools::Experimental::VariableValue *fill_this,
       value.int_value = lower + (x * with_this.step.int_value);
       fill_this[x] = mvv(id, value, info);
     }
-  } else if (info.type == ValueType::kokkos_value_double) {
+  } else if (info->type == ValueType::kokkos_value_double) {
     for (int x = 0; x < num_slices; ++x) {
       auto lower =
           (with_this.openLower ? with_this.lower.double_value
@@ -422,16 +422,16 @@ void form_set_from_range(Kokkos::Tools::Experimental::VariableValue *fill_this,
   }
 }
 void associate_candidates(const size_t id,
-                          Kokkos::Tools::Experimental::VariableInfo &info) {
+                          Kokkos::Tools::Experimental::VariableInfo *info) {
   int64_t candidate_set_size = 0;
   auto *databaseInfo =
-      reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo);
-  switch (info.valueQuantity) {
+      reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo);
+  switch (info->valueQuantity) {
   case CandidateValueType::kokkos_value_set:
-    candidate_set_size = info.candidates.set.size;
+    candidate_set_size = info->candidates.set.size;
     break;
   case CandidateValueType::kokkos_value_range:
-    candidate_set_size = count_range_slices(info.candidates.range, info.type);
+    candidate_set_size = count_range_slices(info->candidates.range, info->type);
     //std::cout << "[ac] range as slices: "<<candidate_set_size<<"\n";
     break;
   case CandidateValueType::kokkos_value_unbounded:
@@ -441,14 +441,14 @@ void associate_candidates(const size_t id,
   if (candidate_set_size > 0) {
     Kokkos::Tools::Experimental::VariableValue *candidate_values =
         new Kokkos::Tools::Experimental::VariableValue[candidate_set_size];
-    switch (info.valueQuantity) {
+    switch (info->valueQuantity) {
     case CandidateValueType::kokkos_value_set:
       for (int x = 0; x < candidate_set_size; ++x) {
-        candidate_values[x] = mvv(id, info.candidates.set.values, info, x);
+        candidate_values[x] = mvv(id, info->candidates.set.values, info, x);
       }
       break;
     case CandidateValueType::kokkos_value_range:
-      form_set_from_range(candidate_values, info.candidates.range,
+      form_set_from_range(candidate_values, info->candidates.range,
                           candidate_set_size, id, info);
       break;
     case CandidateValueType::kokkos_value_unbounded:
@@ -462,28 +462,28 @@ void associate_candidates(const size_t id,
 
 void
 kokkosp_declare_input_type(const char *name, const size_t id,
-                           Kokkos::Tools::Experimental::VariableInfo &info) {
-  info.toolProvidedInfo = new VariableDatabaseData{};
+                           Kokkos::Tools::Experimental::VariableInfo *info) {
+  info->toolProvidedInfo = new VariableDatabaseData{};
   associate_candidates(id, info);
   int64_t canonical_type =
       get_type_id(get_input_type, set_input_type, std::string(name), id, info);
-  reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo)
+  reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
       ->canonical_id = canonical_type;
-  reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo)
+  reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
       ->name = name;
 
 }
 
 void
 kokkosp_declare_output_type(const char *name, const size_t id,
-                            Kokkos::Tools::Experimental::VariableInfo &info) {
-  info.toolProvidedInfo = new VariableDatabaseData{};
+                            Kokkos::Tools::Experimental::VariableInfo *info) {
+  info->toolProvidedInfo = new VariableDatabaseData{};
   associate_candidates(id, info);
   int64_t canonical_type = get_type_id(get_output_type, set_output_type,
                                        std::string(name), id, info);
-  reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo)
+  reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
       ->canonical_id = canonical_type;
-  reinterpret_cast<VariableDatabaseData *>(info.toolProvidedInfo)
+  reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
       ->name = name;
 }
 

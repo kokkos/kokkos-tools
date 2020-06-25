@@ -161,9 +161,9 @@ void kokkosp_init_library(const int,
                                      const uint32_t, void *) ;
 
 void kokkosp_declare_input_type(const char *name, const size_t id,
-                           Kokkos::Tools::Experimental::VariableInfo &info);
+                           Kokkos::Tools::Experimental::VariableInfo *info);
 void kokkosp_declare_output_type(const char *name, const size_t id,
-                            Kokkos::Tools::Experimental::VariableInfo &info);
+                            Kokkos::Tools::Experimental::VariableInfo *info);
 
 using Kokkos::Tools::Experimental::VariableValue;
 

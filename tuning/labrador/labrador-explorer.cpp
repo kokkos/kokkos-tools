@@ -37,13 +37,13 @@ extern "C" void kokkosp_init_library(const int a1,
 
 extern "C" void
 kokkosp_declare_input_type(const char *name, const size_t id,
-                           Kokkos::Tools::Experimental::VariableInfo &info) {
+                           Kokkos::Tools::Experimental::VariableInfo *info) {
   labrador::explorer::kokkosp_declare_input_type(name,id,info);
 }
 
 extern "C" void
 kokkosp_declare_output_type(const char *name, const size_t id,
-                            Kokkos::Tools::Experimental::VariableInfo &info) {
+                            Kokkos::Tools::Experimental::VariableInfo *info) {
   labrador::explorer::kokkosp_declare_output_type(name,id,info);
 }
 using Kokkos::Tools::Experimental::VariableValue;

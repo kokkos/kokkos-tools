@@ -313,14 +313,14 @@ extern "C" void kokkosp_end_context(size_t context_id){
 
 extern "C" void
 kokkosp_declare_input_type(const char *name, const size_t id,
-                           Kokkos::Tools::Experimental::VariableInfo &info) {
+                           Kokkos::Tools::Experimental::VariableInfo *info) {
 """
 
 if not liminality:
   for index,variable in variable_descriptions.items():
     if variable["io"] is "input":
       code += "  if(strncmp(name,\"%s\",256)==0) {\n" % variable["name"]
-      code += "    info.toolProvidedInfo = new VariableDatabaseData { %s, \"%s\" };\n" % (variable["id"], variable["name"])
+      code += "    info->toolProvidedInfo = new VariableDatabaseData { %s, \"%s\" };\n" % (variable["id"], variable["name"])
       code += "  }\n"
 else:
   code+="""
@@ -330,7 +330,7 @@ code+="""
 }
 extern "C" void
 kokkosp_declare_output_type(const char *name, const size_t id,
-                            Kokkos::Tools::Experimental::VariableInfo &info) {
+                            Kokkos::Tools::Experimental::VariableInfo *info) {
 			    """
 if liminality:
   code+="""
