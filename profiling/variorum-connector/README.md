@@ -19,3 +19,5 @@ After compiling the .so file, you can have kokkos use it for profiling by settin
 KOKKOS_PROFILE_LIBRARY=/path/to/where/your/library/lives.so 
 
 This connector has been developed and testd on the quartz (intel xeon) and lassen (IBM Power9) clusters at LLNL. 
+
+Power caps can be set on intel CPU architectures and power9 nodes using <variorum buidl direcotry here>/examples/variorum-set-and-verify-node-power-limit-example <power limit value in Watts>
