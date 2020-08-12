@@ -40,6 +40,10 @@
 // ************************************************************************
 //@HEADER
 
+//Modified by Zach Frye at LLNL
+//Contact: frye7@llnl.gov 
+//Organization: CASC at LLNL
+
 #include <stdio.h>
 #include <inttypes.h>
 #include <cstdlib>
@@ -90,7 +94,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
     time(&start_time);
     std::cout << "Start Time: " << start_time << std::endl;
 
-    //print variorum power whenever parallel for is called
+    //print variorum power when Kokkos is initialized called
     //Pre: No Arguments required for print power
     //Post: An integer value that represents the return success/error code
     //Description: variorum_print_power prints out the current architecture specific power usage measurements
@@ -104,11 +108,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 extern "C" void kokkosp_finalize_library() {
 
     int ret;
-    //print variorum power whenever parallel for is called
-    //Pre: No Arguments required for print power
-    //Post: An integer value that represents the return success/error code
-    //Description: variorum_print_power prints out the current architecture specific power usage measurements
-    //at the moment that it is called to standard out. 
+    //print variorum power when kokkos is finalized is called
 	ret = variorum_print_power();
     if (ret != 0) {
         printf("Print power failed!\n");
@@ -125,11 +125,7 @@ extern "C" void kokkosp_finalize_library() {
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
 
     int ret;
-    //print variorum power whenever parallel for is called
-    //Pre: No Arguments required for print power
-    //Post: An integer value that represents the return success/error code
-    //Description: variorum_print_power prints out the current architecture specific power usage measurements
-    //at the moment that it is called to standard out. 
+    //print variorum power whenever parallelfor is called
 	ret = variorum_print_power();
     if (ret != 0) {
         printf("Print power failed!\n");
@@ -139,10 +135,6 @@ extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devI
 extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
 
     //print variorum power ever time a parallel for has finished executing 
-    //Pre: No Arguments required for print power
-    //Post: An integer value that represents the return success/error code
-    //Description: variorum_print_power prints out the current architecture specific power usage measurements
-    //at the moment that it is called to standard out. 
     int ret;
 	ret = variorum_print_power();
     if (ret != 0) {
@@ -154,10 +146,6 @@ extern "C" void kokkosp_begin_parallel_scan(const char* name, const uint32_t dev
 	
     int ret;
     //print variorum power when parallel scan begins 
-    //Pre: No Arguments required for print power
-    //Post: An integer value that represents the return success/error code
-    //Description: variorum_print_power prints out the current architecture specific power usage measurements
-    //at the moment that it is called to standard out. 
 	ret = variorum_print_power();
     if (ret != 0) {
         printf("Print power failed!\n");
@@ -168,10 +156,6 @@ extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
     
     int ret;
     //print power when a parallel scan completes
-    //Pre: No Arguments required for print power
-    //Post: An integer value that represents the return success/error code
-    //Description: variorum_print_power prints out the current architecture specific power usage measurements
-    //at the moment that it is called to standard out. 
 	ret = variorum_print_power();
     if (ret != 0) {
         printf("Print power failed!\n");
@@ -183,10 +167,6 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t d
     
     int ret;
     //print power when a parallel reduce begins
-    //Pre: No Arguments required for print power
-    //Post: An integer value that represents the return success/error code
-    //Description: variorum_print_power prints out the current architecture specific power usage measurements
-    //at the moment that it is called to standard out. 
 	ret = variorum_print_power();
     if (ret != 0) {
         printf("Print power failed!\n");
@@ -196,11 +176,7 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t d
 extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
     int ret;
 
-    //print power when a parallel reduce completes
-    //Pre: No Arguments required for print power
-    //Post: An integer value that represents the return success/error code
-    //Description: variorum_print_power prints out the current architecture specific power usage measurements
-    //at the moment that it is called to standard out. 
+    //print power when a parallel reduce completes 
 	ret = variorum_print_power();
     if (ret != 0) {
         printf("Print power failed!\n");
