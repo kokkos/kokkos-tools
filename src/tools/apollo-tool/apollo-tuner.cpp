@@ -259,7 +259,8 @@ extern "C" void kokkosp_request_values(
       tuningProblem.variable_ids[numValidVariables++] = tuningValues[x];
   }
   tuningProblem.num_variables = numValidVariables;
-  if (tuning_regions.find(tuningProblem) == tuning_regions.end()) {
+  auto iter = tuning_regions.emplace(tuningProblem, std::make_pair("",nullptr));
+  if (iter.second) {
     std::string prefix = "dtree-step-0-rank-0-";
     std::string suffix = ".yaml";
     std::string name = get_region_name(tuningProblem);
@@ -274,9 +275,9 @@ extern "C" void kokkosp_request_values(
       region =
           new Apollo::Region(numContextVariables, name.c_str(), choiceSpaceSize);
     }
-    tuning_regions[tuningProblem] = std::make_pair(name,region);
+    iter.first->second = std::make_pair(name,region);
   }
-  auto region = tuning_regions[tuningProblem].second;
+  auto region = iter.first->second.second;
   tuned_contexts[contextId] = region;
   region->begin();
   //std::cout <<"Cont: "<<numContextVariables<<std::endl;
