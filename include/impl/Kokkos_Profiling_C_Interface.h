@@ -51,9 +51,10 @@
 #else
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #endif
 
-#define KOKKOSP_INTERFACE_VERSION 20191080
+#define KOKKOSP_INTERFACE_VERSION 20200625
 
 // Profiling
 
@@ -65,51 +66,69 @@ struct Kokkos_Profiling_SpaceHandle {
   char name[64];
 };
 
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_initFunction)(
     const int, const uint64_t, const uint32_t,
-    Kokkos_Profiling_KokkosPDeviceInfo*);
+    struct Kokkos_Profiling_KokkosPDeviceInfo*);
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_finalizeFunction)();
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_beginFunction)(const char*, const uint32_t,
                                                uint64_t*);
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_endFunction)(uint64_t);
 
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_pushFunction)(const char*);
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_popFunction)();
 
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_allocateDataFunction)(
-    const Kokkos_Profiling_SpaceHandle, const char*, const void*,
+    const struct Kokkos_Profiling_SpaceHandle, const char*, const void*,
     const uint64_t);
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_deallocateDataFunction)(
-    const Kokkos_Profiling_SpaceHandle, const char*, const void*,
+    const struct Kokkos_Profiling_SpaceHandle, const char*, const void*,
     const uint64_t);
 
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_createProfileSectionFunction)(const char*,
                                                               uint32_t*);
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_startProfileSectionFunction)(const uint32_t);
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_stopProfileSectionFunction)(const uint32_t);
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_destroyProfileSectionFunction)(const uint32_t);
 
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_profileEventFunction)(const char*);
 
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_beginDeepCopyFunction)(
-    Kokkos_Profiling_SpaceHandle, const char*, const void*,
-    Kokkos_Profiling_SpaceHandle, const char*, const void*, uint64_t);
+    struct Kokkos_Profiling_SpaceHandle, const char*, const void*,
+    struct Kokkos_Profiling_SpaceHandle, const char*, const void*, uint64_t);
+// NOLINTNEXTLINE(modernize-use-using): C compatibility
 typedef void (*Kokkos_Profiling_endDeepCopyFunction)();
+typedef void (*Kokkos_Profiling_beginFenceFunction)(const char*, const uint32_t,
+                                                    uint64_t*);
+typedef void (*Kokkos_Profiling_endFenceFunction)(uint64_t);
 
 // Tuning
 
+#define KOKKOS_TOOLS_TUNING_STRING_LENGTH 64
+typedef char Kokkos_Tools_Tuning_String[KOKKOS_TOOLS_TUNING_STRING_LENGTH];
 union Kokkos_Tools_VariableValue_ValueUnion {
-  bool bool_value;
   int64_t int_value;
   double double_value;
-  const char* string_value;
+  Kokkos_Tools_Tuning_String string_value;
 };
 
 union Kokkos_Tools_VariableValue_ValueUnionSet {
-  bool* bool_value;
   int64_t* int_value;
   double* double_value;
-  const char** string_value;
+  Kokkos_Tools_Tuning_String* string_value;
 };
 
 struct Kokkos_Tools_ValueSet {
@@ -123,8 +142,8 @@ enum Kokkos_Tools_OptimizationType {
 };
 
 struct Kokkos_Tools_OptimzationGoal {
-  size_t id;
-  Kokkos_Tools_OptimizationType goal;
+  size_t type_id;
+  enum Kokkos_Tools_OptimizationType goal;
 };
 
 struct Kokkos_Tools_ValueRange {
@@ -136,10 +155,9 @@ struct Kokkos_Tools_ValueRange {
 };
 
 enum Kokkos_Tools_VariableInfo_ValueType {
-  kokkos_value_floating_point,
-  kokkos_value_integer,
-  kokkos_value_text,
-  kokkos_value_boolean,
+  kokkos_value_double,
+  kokkos_value_int64,
+  kokkos_value_string,
 };
 
 enum Kokkos_Tools_VariableInfo_StatisticalCategory {
@@ -172,24 +190,26 @@ struct Kokkos_Tools_VariableInfo {
 };
 
 struct Kokkos_Tools_VariableValue {
-  size_t id;
+  size_t type_id;
   union Kokkos_Tools_VariableValue_ValueUnion value;
   struct Kokkos_Tools_VariableInfo* metadata;
 };
 
 typedef void (*Kokkos_Tools_outputTypeDeclarationFunction)(
-    const char*, const size_t, Kokkos_Tools_VariableInfo info);
+    const char*, const size_t, struct Kokkos_Tools_VariableInfo* info);
 typedef void (*Kokkos_Tools_inputTypeDeclarationFunction)(
-    const char*, const size_t, Kokkos_Tools_VariableInfo info);
+    const char*, const size_t, struct Kokkos_Tools_VariableInfo* info);
 
 typedef void (*Kokkos_Tools_requestValueFunction)(
-    const size_t, const size_t, const Kokkos_Tools_VariableValue*,
-    const size_t count, Kokkos_Tools_VariableValue*);
-typedef void (*Kokkos_Tools_contextEndFunction)(const size_t);
+    const size_t, const size_t, const struct Kokkos_Tools_VariableValue*,
+    const size_t count, struct Kokkos_Tools_VariableValue*);
+typedef void (*Kokkos_Tools_contextBeginFunction)(const size_t);
+typedef void (*Kokkos_Tools_contextEndFunction)(
+    const size_t, struct Kokkos_Tools_VariableValue);
 typedef void (*Kokkos_Tools_optimizationGoalDeclarationFunction)(
-    const size_t, const Kokkos_Tools_OptimzationGoal& goal);
+    const size_t, const struct Kokkos_Tools_OptimzationGoal goal);
 
-using function_pointer = void (*)();
+typedef void (*function_pointer)();
 
 struct Kokkos_Profiling_EventSet {
   Kokkos_Profiling_initFunction init;
@@ -211,13 +231,16 @@ struct Kokkos_Profiling_EventSet {
   Kokkos_Profiling_profileEventFunction profile_event;
   Kokkos_Profiling_beginDeepCopyFunction begin_deep_copy;
   Kokkos_Profiling_endDeepCopyFunction end_deep_copy;
-  char profiling_padding[16 * sizeof(function_pointer)];
+  Kokkos_Profiling_beginFenceFunction begin_fence;
+  Kokkos_Profiling_endFenceFunction end_fence;
+  char profiling_padding[14 * sizeof(function_pointer)];
   Kokkos_Tools_outputTypeDeclarationFunction declare_output_type;
   Kokkos_Tools_inputTypeDeclarationFunction declare_input_type;
   Kokkos_Tools_requestValueFunction request_output_values;
+  Kokkos_Tools_contextBeginFunction begin_tuning_context;
   Kokkos_Tools_contextEndFunction end_tuning_context;
   Kokkos_Tools_optimizationGoalDeclarationFunction declare_optimization_goal;
-  char padding[235 *
+  char padding[234 *
                sizeof(function_pointer)];  // allows us to add another 256
                                            // events to the Tools interface
                                            // without changing struct layout

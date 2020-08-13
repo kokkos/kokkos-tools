@@ -47,9 +47,7 @@
 
 #include <cinttypes>
 #include <cstddef>
-#include <string>
 
-#include <iostream>
 #include <cstdlib>
 
 // NOTE: in this Kokkos::Profiling block, do not define anything that shouldn't
@@ -81,7 +79,7 @@ inline uint32_t device_id(ExecutionSpace const& space) noexcept {
 }  // namespace Tools
 }  // end namespace Kokkos
 
-#if defined(KOKKOS_ENABLE_PROFILING)
+#if defined(KOKKOS_ENABLE_LIBDL)
 // We check at configure time that libdl is available.
 #include <dlfcn.h>
 #endif
@@ -122,6 +120,8 @@ using destroyProfileSectionFunction =
 using profileEventFunction  = Kokkos_Profiling_profileEventFunction;
 using beginDeepCopyFunction = Kokkos_Profiling_beginDeepCopyFunction;
 using endDeepCopyFunction   = Kokkos_Profiling_endDeepCopyFunction;
+using beginFenceFunction    = Kokkos_Profiling_beginFenceFunction;
+using endFenceFunction      = Kokkos_Profiling_endFenceFunction;
 
 }  // namespace Tools
 
@@ -179,18 +179,14 @@ using CandidateValueType  = Kokkos_Tools_VariableInfo_CandidateValueType;
 using SetOrRange          = Kokkos_Tools_VariableInfo_SetOrRange;
 using VariableInfo        = Kokkos_Tools_VariableInfo;
 using OptimizationGoal    = Kokkos_Tools_OptimzationGoal;
-
-using VariableValue = Kokkos_Tools_VariableValue;
-
-VariableValue make_variable_value(size_t id, bool val);
-VariableValue make_variable_value(size_t id, int64_t val);
-VariableValue make_variable_value(size_t id, double val);
-VariableValue make_variable_value(size_t id, const char* val);
+using TuningString        = Kokkos_Tools_Tuning_String;
+using VariableValue       = Kokkos_Tools_VariableValue;
 
 using outputTypeDeclarationFunction =
     Kokkos_Tools_outputTypeDeclarationFunction;
 using inputTypeDeclarationFunction = Kokkos_Tools_inputTypeDeclarationFunction;
 using requestValueFunction         = Kokkos_Tools_requestValueFunction;
+using contextBeginFunction         = Kokkos_Tools_contextBeginFunction;
 using contextEndFunction           = Kokkos_Tools_contextEndFunction;
 using optimizationGoalDeclarationFunction =
     Kokkos_Tools_optimizationGoalDeclarationFunction;
