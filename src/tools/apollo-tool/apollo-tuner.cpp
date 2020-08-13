@@ -59,7 +59,9 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   for (int x = 0; x < max_choices; ++x) {
     choices[x] = x; // TODO constexpr smart blah blah
   }
+  putenv("APOLLO_STORE_MODELS=1");
   putenv("APOLLO_RETRAIN_ENABLE=1");
+  putenv("APOLLO_REGION_MODEL=1");
   putenv("APOLLO_LOCAL_TRAINING=1");
   putenv("APOLLO_INIT_MODEL=RoundRobin");
   putenv("APOLLO_COLLECTIVE_TRAINING=0");
@@ -67,8 +69,19 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   apollo = Apollo::instance();
 }
 
+using RegionData = std::pair<std::string, Apollo::Region*>;
+//using RegionData = Apollo::Region*;
+
+static std::map<size_t, Apollo::Region *> tuned_contexts;
+static std::map<variableSet, RegionData> tuning_regions;
 extern "C" void kokkosp_finalize_library() {
   printf("Finalizing Apollo Tuning adapter\n");
+  for(auto kv: tuning_regions){
+    RegionData data = kv.second;
+    auto file_name = data.first;
+    auto* region = data.second;
+    
+  }
 }
 
 extern "C" void kokkosp_begin_parallel_for(const char *name,
@@ -207,8 +220,6 @@ Kokkos::Tools::Experimental::VariableValue mvv(size_t index, Kokkos::Tools::Expe
   return value;
 }
 
-using RegionData = std::pair<std::string, Apollo::Region*>;
-//using RegionData = Apollo::Region*;
 
 std::string get_region_name(variableSet variables){
   std::string name;
@@ -228,8 +239,6 @@ bool file_exists(std::string path){
   struct stat buffer;   
   return (stat (path.c_str(), &buffer) == 0); 
 }
-static std::map<size_t, Apollo::Region *> tuned_contexts;
-static std::map<variableSet, RegionData> tuning_regions;
 extern "C" void kokkosp_request_values(
     size_t contextId, size_t numContextVariables,
     Kokkos::Tools::Experimental::VariableValue *contextValues, size_t numTuningVariables,
@@ -264,11 +273,14 @@ extern "C" void kokkosp_request_values(
   }
   tuningProblem.num_variables = numValidVariables;
   if (tuning_regions.find(tuningProblem) == tuning_regions.end()) {
-    std::cout << "Testing space size is " << choiceSpaceSize << std::endl;
+    std::string prefix = "dtree-step-0-rank-0-";
+    std::string suffix = ".yaml";
     std::string name = get_region_name(tuningProblem);
+    name = name.substr(0,63);
+    std::string final_name = prefix + name + suffix;
     Apollo::Region* region;
-    if(file_exists(name)) {
-      region = new Apollo::Region(numContextVariables,name.c_str(), choiceSpaceSize, name); 
+    if(file_exists(final_name)) {
+      region = new Apollo::Region(numContextVariables,name.c_str(), choiceSpaceSize, final_name); 
     }
     else{
       region =
