@@ -1,6 +1,7 @@
-
 #include <algorithm>
 #include <apollo/Apollo.h>
+#include <apollo/ModelFactory.h>
+#include <sys/stat.h>
 #include <apollo/Region.h>
 #include <cassert>
 #include<iostream>
@@ -206,11 +207,27 @@ Kokkos::Tools::Experimental::VariableValue mvv(size_t index, Kokkos::Tools::Expe
   return value;
 }
 
-//using RegionData = std::pair<std::string, Apollo::Region*>;
-using RegionData = Apollo::Region*;
+using RegionData = std::pair<std::string, Apollo::Region*>;
+//using RegionData = Apollo::Region*;
 
-RegionData get_region_name(variableSet variables);
-
+std::string get_region_name(variableSet variables){
+  std::string name;
+  for(int x =0 ; x< variables.num_variables; ++x){
+    auto* local_name = reinterpret_cast<std::string*>(variables.variable_ids[x].metadata->toolProvidedInfo);
+    name += *local_name;    
+    if( x == (variables.num_variables - 1)){
+      name+=".yaml";
+    }
+    else {
+      name+="_";
+    }
+  }
+  return name;
+}
+bool file_exists(std::string path){
+  struct stat buffer;   
+  return (stat (path.c_str(), &buffer) == 0); 
+}
 static std::map<size_t, Apollo::Region *> tuned_contexts;
 static std::map<variableSet, RegionData> tuning_regions;
 extern "C" void kokkosp_request_values(
@@ -248,12 +265,18 @@ extern "C" void kokkosp_request_values(
   tuningProblem.num_variables = numValidVariables;
   if (tuning_regions.find(tuningProblem) == tuning_regions.end()) {
     std::cout << "Testing space size is " << choiceSpaceSize << std::endl;
-    std::string name = "debug_name_"+std::to_string(created_regions);
-    auto region =
-        new Apollo::Region(numContextVariables, name.c_str(), choiceSpaceSize);
-    tuning_regions[tuningProblem] = region;
+    std::string name = get_region_name(tuningProblem);
+    Apollo::Region* region;
+    if(file_exists(name)) {
+      region = new Apollo::Region(numContextVariables,name.c_str(), choiceSpaceSize, name); 
+    }
+    else{
+      region =
+          new Apollo::Region(numContextVariables, name.c_str(), choiceSpaceSize);
+    }
+    tuning_regions[tuningProblem] = std::make_pair(name,region);
   }
-  auto region = tuning_regions[tuningProblem];
+  auto region = tuning_regions[tuningProblem].second;
   tuned_contexts[contextId] = region;
   region->begin();
   //std::cout <<"Cont: "<<numContextVariables<<std::endl;
