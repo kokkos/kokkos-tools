@@ -51,8 +51,8 @@
 #include <cuda_runtime.h>
 #include <set>
 #include <map>
-template<typename T>
-using SetType =std::map<void*,T>;
+#include <algorithm>
+
 struct ptr_info {
   std::string who;
   void* what;
@@ -60,21 +60,40 @@ struct ptr_info {
   bool where;
   mutable void* canonical; // look, I'm in a hurry, I'm sorry
 };
+
+struct variable_data {
+  std::vector<ptr_info> instances;
+  void insert(ptr_info& in){
+    instances.push_back(in);
+  }
+  void remove(void* out){
+    std::remove_if(instances.begin(), instances.end(), [=](const ptr_info& test){
+       return test.what == out;
+    });
+  }
+  void remove(ptr_info& out){
+    std::remove_if(instances.begin(), instances.end(), [=](const ptr_info& test){
+       return test.what == out.what;
+    });
+  }
+};
+
 std::string trigger;
 std::string output;
 struct SpaceHandle {
   char name[64];
 };
-SetType<ptr_info> allocations;
+std::map<std::string, variable_data> allocations;
 
 void dump_checkpoint(int signo){
   std::ofstream out(output);
   out << allocations.size();
-  for(auto& alloc_handle: allocations){
-    auto& alloc = alloc_handle.second;
-    out << alloc.who << " "<< alloc.how_much; 
-    out.write((char*)alloc.canonical,alloc.how_much);
-    
+  for(auto& variable_handle: allocations){
+    auto& alloc_list = variable_handle.second; 
+    for(auto& alloc: alloc_list.instances){
+      out << alloc.who << " "<< alloc.how_much; 
+      out.write((char*)alloc.canonical,alloc.how_much);
+    }
   }
   out.close();
 }
@@ -88,8 +107,12 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 	const uint32_t devInfoCount,
 	void* deviceInfo) {
    std::cout << "KokkosP: Initialized checkpoint tool\n";
+   const char* index = getenv("OMPI_COMM_WORLD_RANK");
    trigger = getenv("CHECKPOINT_TRIGGER_ATTR");
    output = getenv("CHECKPOINT_OUTPUT") ? getenv("CHECKPOINT_OUTPUT") : "checkpoint.kokkos";
+   if(index){
+     output+=".rank"+std::string(index);
+   }
    signal(SIGSEGV, dump_checkpoint);
    signal(SIGTERM, dump_checkpoint);
    signal(SIGABRT, dump_checkpoint);
@@ -105,22 +128,23 @@ extern "C" void kokkosp_finalize_library() {
 }
 
 void checkpoint(){
-  for(auto& alloc_handle: allocations){
-    auto& alloc = alloc_handle.second;
-    if(!alloc.canonical){
-      alloc.canonical = malloc(alloc.how_much);
-    }
-    if(alloc.where){
-    cudaMemcpy(alloc.canonical, alloc.what, alloc.how_much, cudaMemcpyDefault);
-    }          
-    else{
-      memcpy(alloc.canonical, alloc.what, alloc.how_much);
+  for(auto& variable_handle: allocations){
+    auto& alloc_list = variable_handle.second; 
+    for(auto& alloc: alloc_list.instances){
+      if(!alloc.canonical){
+        alloc.canonical = malloc(alloc.how_much);
+      }
+      if(alloc.where){
+      cudaMemcpy(alloc.canonical, alloc.what, alloc.how_much, cudaMemcpyDefault);
+      }          
+      else{
+        memcpy(alloc.canonical, alloc.what, alloc.how_much);
+      }
     }
   }
 }
 
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
-  cudaDeviceSynchronize();
   if(std::string(name) == trigger){
           checkpoint();
   }
@@ -167,11 +191,11 @@ extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char* name, void
   info.how_much = size; 
   info.where = device;
   info.canonical = nullptr;
-  allocations[ptr] = info;
+  allocations[name].insert(info);
 }
 
 extern "C" void kokkosp_deallocate_data(SpaceHandle handle, const char* name, void* ptr, uint64_t size) {
-  allocations.erase(ptr);
+  allocations[name].remove(ptr);
 }
 
 extern "C" void kokkosp_begin_deep_copy(
