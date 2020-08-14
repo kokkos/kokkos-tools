@@ -128,6 +128,7 @@ extern "C" void kokkosp_finalize_library() {
 }
 
 void checkpoint(){
+  cudaDeviceSynchronize();
   for(auto& variable_handle: allocations){
     auto& alloc_list = variable_handle.second; 
     for(auto& alloc: alloc_list.instances){
