@@ -60,7 +60,7 @@ struct ptr_info {
   bool where;
   void* canonical; // look, I'm in a hurry, I'm sorry
 };
-
+std::string rank_string = "0";
 struct variable_data {
   std::vector<ptr_info> instances;
   void insert(ptr_info in){
@@ -96,6 +96,7 @@ void dump_checkpoint(int signo){
       out.write((char*)alloc.canonical,alloc.how_much);
     }
   }
+  std::cout <<"Finished writing on rank "<<rank_string<<std::endl;
   out.close();
 }
 
@@ -113,6 +114,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
    output = getenv("CHECKPOINT_OUTPUT") ? getenv("CHECKPOINT_OUTPUT") : "checkpoint.kokkos";
    if(index){
      output+=".rank"+std::string(index);
+     rank_string = index;
    }
    signal(SIGSEGV, dump_checkpoint);
    signal(SIGTERM, dump_checkpoint);
