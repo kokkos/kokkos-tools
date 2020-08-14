@@ -67,15 +67,18 @@ struct variable_data {
     instances.push_back(in);
   }
   void remove(void* out){
-    instances.erase(std::remove_if(instances.begin(), instances.end(), [=](const ptr_info& test){
+    auto er =
+    std::remove_if(instances.begin(), instances.end(), [=](const ptr_info& test){
        bool rem= (test.what == out);
        return rem;
-    }));
+    });
+    if(er != instances.end()) { instances.erase(er); }
   }
   void remove(ptr_info& out){
-    instances.erase(std::remove_if(instances.begin(), instances.end(), [=](const ptr_info& test){
+    auto er = std::remove_if(instances.begin(), instances.end(), [=](const ptr_info& test){
        return test.what == out.what;
-    }));
+    });
+    if(er != instances.end()) { instances.erase(er); }
   }
 };
 
