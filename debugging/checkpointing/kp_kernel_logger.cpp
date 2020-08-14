@@ -52,29 +52,30 @@
 #include <set>
 #include <map>
 #include <algorithm>
-
+#include <list>
 struct ptr_info {
   std::string who;
   void* what;
   size_t how_much;
   bool where;
-  mutable void* canonical; // look, I'm in a hurry, I'm sorry
+  void* canonical; // look, I'm in a hurry, I'm sorry
 };
 
 struct variable_data {
   std::vector<ptr_info> instances;
-  void insert(ptr_info& in){
+  void insert(ptr_info in){
     instances.push_back(in);
   }
   void remove(void* out){
-    std::remove_if(instances.begin(), instances.end(), [=](const ptr_info& test){
-       return test.what == out;
-    });
+    instances.erase(std::remove_if(instances.begin(), instances.end(), [=](const ptr_info& test){
+       bool rem= (test.what == out);
+       return rem;
+    }));
   }
   void remove(ptr_info& out){
-    std::remove_if(instances.begin(), instances.end(), [=](const ptr_info& test){
+    instances.erase(std::remove_if(instances.begin(), instances.end(), [=](const ptr_info& test){
        return test.what == out.what;
-    });
+    }));
   }
 };
 
@@ -196,7 +197,7 @@ extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char* name, void
 }
 
 extern "C" void kokkosp_deallocate_data(SpaceHandle handle, const char* name, void* ptr, uint64_t size) {
-  allocations[name].remove(ptr);
+  allocations[name].remove(ptr + 128);
 }
 
 extern "C" void kokkosp_begin_deep_copy(

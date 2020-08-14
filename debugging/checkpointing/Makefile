@@ -1,5 +1,5 @@
 CXX=nvcc
-CXXFLAGS=-O3 -std=c++11 -g
+CXXFLAGS=-O0 -std=c++11 -g
 SHARED_CXXFLAGS=-shared -Xcompiler -fPIC
 
 all: kp_checkpoint.so reader
