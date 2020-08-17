@@ -1,7 +1,7 @@
 MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
 
 CXX=nvcc
-CXXFLAGS=-O0 -std=c++11 -g -I.
+CXXFLAGS=-O0 -std=c++11 -g -I.  -L$(PROTOBUF_DIR)/lib64 -I$(PROTOBUF_DIR)/include -lprotobuf
 SHARED_CXXFLAGS=-shared -Xcompiler -fPIC
 PROTOBUF_DIR=${MAKEFILE_PATH}/protobuf-install
 all: kp_checkpoint.so reader
@@ -16,9 +16,10 @@ protobuf-install/lib64/libprotobuf.a: protobuf-build/Makefile
 	cd ${MAKEFILE_PATH}/protobuf-build && make -j8 install
 
 kp_checkpoint.so: ${MAKEFILE_PATH}kp_kernel_logger.cpp protobuf-install/lib64/libprotobuf.a
-	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}kp_kernel_logger.cpp ${MAKEFILE_PATH}/protocols/checkpointing.pb.cc -L$(PROTOBUF_DIR)/lib64 -I$(PROTOBUF_DIR)/include -lprotobuf
+	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}kp_kernel_logger.cpp ${MAKEFILE_PATH}/protocols/checkpointing.pb.cc
 
 reader: ${MAKEFILE_PATH}reader.cpp protobuf-install/lib64/libprotobuf.a
-	$(CXX) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}reader.cpp
+	$(CXX) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}reader.cpp ${MAKEFILE_PATH}/protocols/checkpointing.pb.cc
+
 clean:
 	rm *.so
