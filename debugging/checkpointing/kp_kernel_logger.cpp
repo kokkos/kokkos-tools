@@ -104,7 +104,11 @@ void dump_checkpoint(int signo){
       v.set_size(alloc.how_much);
       v.set_name(alloc.who);
       v.set_data(alloc.canonical, alloc.how_much);
-      v.SerializeToOstream(&out);
+      bool success = v.SerializeToOstream(&out);
+      if(!success){
+        std::cout << "Error serializing a View named "<<alloc.who<<std::endl;
+        exit(1);
+      }
       //out << alloc.who << " "<< alloc.how_much; 
       //out.write((char*)alloc.canonical,alloc.how_much);
     }
