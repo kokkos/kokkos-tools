@@ -45,6 +45,7 @@
 #include <vector>
 #include <iostream>
 #include <signal.h>
+#include <protocols/checkpointing.pb.h>
 #include <fstream>
 #include <string>
 #include <cstring>
@@ -91,12 +92,21 @@ std::map<std::string, variable_data> allocations;
 
 void dump_checkpoint(int signo){
   std::ofstream out(output);
-  out << allocations.size();
+  int size_sum = 0;
+  for(auto& alloc : allocations){
+    size_sum += alloc.second.instances.size();
+  }
+  out << size_sum;
   for(auto& variable_handle: allocations){
     auto& alloc_list = variable_handle.second; 
     for(auto& alloc: alloc_list.instances){
-      out << alloc.who << " "<< alloc.how_much; 
-      out.write((char*)alloc.canonical,alloc.how_much);
+     kokkos_checkpointing::View v;
+      v.set_size(alloc.how_much);
+      v.set_name(alloc.who);
+      v.set_data(alloc.canonical, alloc.how_much);
+      v.SerializeToOstream(&out);
+      //out << alloc.who << " "<< alloc.how_much; 
+      //out.write((char*)alloc.canonical,alloc.how_much);
     }
   }
   std::cout <<"Finished writing on rank "<<rank_string<<std::endl;
