@@ -57,7 +57,7 @@ std::set<std::string> care_about = {
 "B entry positions"
 };
 bool name_matches(std::string name){
-  return (care_about.find(name) != care_about.end());
+  return true;
 }
 std::string get_kokkos_view_string(std::string name, bool new_name = true){
   std::string build;
@@ -84,6 +84,8 @@ std::string get_kokkos_view_string(std::string name, bool new_name = true){
   return build; 
 }
 int main(int argc, char* argv[]){
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
   std::string filename = "checkpoint.kokkos";
   if(argc > 1){
     filename = argv[1];
@@ -91,20 +93,28 @@ int main(int argc, char* argv[]){
   std::ifstream input(filename);
   int num_allocations;
   input >> num_allocations;
-  std::cout << "NUMALLOC: "<<num_allocations;
+  std::cout << "NUMALLOC: "<<num_allocations << std::endl;
   std::string program = program_prefix;
-
   for(int x =0; x<num_allocations;++x){
+    size_t message_size;
+    input >> message_size;
+
+    char* raw_input = new char[message_size];    
+    input.read(raw_input, message_size);
+    
     ptr_info info;
     kokkos_checkpointing::View v;
-    v.ParseFromIstream(&input);
+    bool worked = v.ParseFromString(raw_input);
     info.who = v.name();
     info.how_much = v.size();
     char* raw_data = const_cast<char*>(v.data().c_str());
     //char* raw_data = (char*)malloc(info.how_much);
     int num_entries = info.how_much/sizeof(float);
     //input.read(raw_data, info.how_much);
-    std::cout << "NAME: "<< info.who << std::endl;
+    std::cout << "NAME: "<< info.who << ", "<<info.how_much<<std::endl;
+    //if(!worked){
+    //  std::cout << "IT BROKE\n";
+    //}
     std::string reader = get_kokkos_view_string(info.who);    
     program+=reader;
   }
