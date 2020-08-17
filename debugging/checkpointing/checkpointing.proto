@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package kokkos_checkpointing;
+
+message View {
+ required string name = 1;
+ required int64  size = 2;
+ required bytes  data = 3;
+};
