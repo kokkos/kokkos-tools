@@ -115,12 +115,12 @@ void dump_checkpoint(int signo){
       //out.write((char*)alloc.canonical,alloc.how_much);
     }
   }
-  std::cout <<"Finished writing on rank "<<rank_string<<std::endl;
+  std::cout <<"Finished writing on rank "<<rank_string<<", signal was "<<signo<<std::endl;
   out.close();
 }
 
 void at_exit(){
-        dump_checkpoint(0);
+        dump_checkpoint(999);
 }
 
 extern "C" void kokkosp_init_library(const int loadSeq,
