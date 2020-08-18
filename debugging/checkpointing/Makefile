@@ -15,7 +15,7 @@ protobuf-build:
 	mkdir ${MAKEFILE_PATH}/protobuf-build
 
 protobuf-build/Makefile: protobuf-build
-	cd protobuf-build && cmake -DCMAKE_INSTALL_PREFIX=${MAKEFILE_PATH}/protobuf-install -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_BUILD_TYPE=Release -Dprotobuf_BUILD_TESTS=OFF ${MAKEFILE_PATH}/protobuf/cmake/
+	cd protobuf-build && cmake -DCMAKE_INSTALL_PREFIX=${MAKEFILE_PATH}/protobuf-install -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_BUILD_TYPE=Release -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_CXX_COMPILER=g++ ${MAKEFILE_PATH}/protobuf/cmake/
 
 protobuf-install/lib64/libprotobuf.a: protobuf-build/Makefile
 	cd ${MAKEFILE_PATH}/protobuf-build && make -j8 install
