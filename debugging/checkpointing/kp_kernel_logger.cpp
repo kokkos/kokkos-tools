@@ -90,7 +90,18 @@ struct SpaceHandle {
 };
 std::map<std::string, variable_data> allocations;
 
+
+
 void dump_checkpoint(int signo){
+  static bool second;
+  if(second){
+    if(signo!=999){
+            raise(signo);
+    }
+  }
+  else{
+          second = true;
+  }
   std::ofstream out(output);
   int size_sum = 0;
   for(auto& alloc : allocations){
@@ -114,9 +125,6 @@ void dump_checkpoint(int signo){
       //out << alloc.who << " "<< alloc.how_much; 
       //out.write((char*)alloc.canonical,alloc.how_much);
     }
-  }
-  if(signo!=999){
-          raise(signo);
   }
   std::cout <<"Finished writing on rank "<<rank_string<<", signal was "<<signo<<std::endl;
   out.close();
