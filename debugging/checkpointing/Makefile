@@ -4,6 +4,7 @@ CXX=nvcc
 CXXFLAGS=-O0 -std=c++11 -g -I.  -L$(PROTOBUF_DIR)/lib64 -I$(PROTOBUF_DIR)/include -lprotobuf
 SHARED_CXXFLAGS=-shared -Xcompiler -fPIC
 PROTOBUF_DIR=${MAKEFILE_PATH}/protobuf-install
+
 all: kp_checkpoint.so reader
 
 protobuf-build:
