@@ -52,7 +52,13 @@ std::pair<void*,size_t> get_ptr_data(std::ifstream& input){
 int main(int argc, char* argv[]){
   Kokkos::initialize(argc, argv);
   {
-    std::ifstream input("checkpoint.kokkos");
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+    std::string filename = "checkpoint.kokkos";
+    if (argc > 1) {
+      filename = argv[1];
+    }
+    std::ifstream input(filename);
     size_t num_alloc;
     input >> num_alloc;
 )PREFIX";
@@ -76,6 +82,10 @@ std::map<std::string, std::string> care_about = {
     {"B entry positions", "b_pos"},
     {"puppies", "puppies"}};
 
+std::map<std::string, std::pair<std::string,std::string>> type_info = {
+   { "puppies", {"float", "*"}}       
+};
+
 std::set<std::string> encountered_names;
 bool name_matches(std::string name) {
   return (care_about.find(name) != care_about.end());
@@ -93,16 +103,23 @@ std::string get_kokkos_view_string(std::string oname, bool new_name = true) {
       value_name += "_" + std::to_string(value);
     }
     ++value;
+    std::string raw_scalar_type = "USER_FILL_THIS_IN";
+    std::string raw_pointer_addend = "*";
+    if(type_info.find(oname)!=type_info.end()){
+      auto pr = type_info[oname];
+      raw_scalar_type = pr.first;
+      raw_pointer_addend = pr.second;
+    }
     std::string scalar_type_name = name + "_scalar_type";
     std::string view_type_name   = name + "_view_type";
     std::string view_type =
-        "Kokkos::View<" + scalar_type_name + ", Kokkos::CudaSpace>";
+        "Kokkos::View<" + scalar_type_name + raw_pointer_addend + ", Kokkos::CudaSpace>";
     std::string mirror_view_type_name = view_type_name + "::HostMirror";
     std::string mirror_name           = value_name + "_mirror";
     std::string data_name             = value_name + "_data";
     // build+= ((new_name) ? ("YES\n") : ("NO\n"));
     if (new_name) {
-      build += "    using " + scalar_type_name + "= USER_FILL_THIS_IN;\n";
+      build += "    using " + scalar_type_name + "= "+raw_scalar_type+";\n";
       build += "    using " + view_type_name + "= " + view_type +
                "; /** you need to fill in the number of dimensions, sorry */\n";
     }
