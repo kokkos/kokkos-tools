@@ -128,6 +128,9 @@ void dump_checkpoint(int signo){
   }
   std::cout <<"Finished writing on rank "<<rank_string<<", signal was "<<signo<<std::endl;
   out.close();
+    if(signo!=999){
+            raise(signo);
+    }
 }
 
 void at_exit(){
