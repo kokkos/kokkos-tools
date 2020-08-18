@@ -134,6 +134,7 @@ std::string get_kokkos_view_string(std::string oname, bool new_name = true) {
              data_name + ".second / sizeof(" + scalar_type_name + "));\n";
     build += "    Kokkos::deep_copy(" + value_name + "," + mirror_name + ");\n";
     build += "    Kokkos::fence();\n";
+    build += "    show("+mirror_name+","+value_name+");\n";
   } else {
     build += "    get_ptr_data(input);\n";
   }

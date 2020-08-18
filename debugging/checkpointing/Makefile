@@ -7,6 +7,10 @@ PROTOBUF_DIR=${MAKEFILE_PATH}/protobuf-install
 
 all: kp_checkpoint.so reader
 
+NVCC_WRAPPER=nvcc_wrapper
+KOKKOS_DIR=$(HOME)/installs/kokkos/cuda
+KOKKOS_FLAGS=-I$(KOKKOS_DIR)/include -L$(KOKKOS_DIR)/lib64 -lkokkoscore -lkokkoscontainers
+
 protobuf-build:
 	mkdir ${MAKEFILE_PATH}/protobuf-build
 
@@ -21,6 +25,9 @@ kp_checkpoint.so: ${MAKEFILE_PATH}kp_kernel_logger.cpp protobuf-install/lib64/li
 
 reader: ${MAKEFILE_PATH}reader.cpp protobuf-install/lib64/libprotobuf.a
 	$(CXX) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}reader.cpp ${MAKEFILE_PATH}/protocols/checkpointing.pb.cc
+
+example: ${MAKEFILE_PATH}example.cpp
+	$(NVCC_WRAPPER) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}example.cpp ${MAKEFILE_PATH}/protocols/checkpointing.pb.cc ${KOKKOS_FLAGS}
 
 clean:
 	rm *.so
