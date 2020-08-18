@@ -137,6 +137,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
    }
    signal(SIGSEGV, dump_checkpoint);
    signal(SIGTERM, dump_checkpoint);
+   signal(SIGINT, dump_checkpoint);
    signal(SIGABRT, dump_checkpoint);
    atexit(at_exit);
 }

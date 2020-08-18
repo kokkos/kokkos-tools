@@ -83,6 +83,13 @@ std::map<std::string, std::string> care_about = {
     {"puppies", "puppies"}};
 
 std::map<std::string, std::pair<std::string,std::string>> type_info = {
+    //{"C row ptrs", "x_rowmap"},
+    //{"non_const_lnow_row", "b_rowmap"},
+    //{"C row counts upper bound", "c_rowmap_upperbound"},
+    //{"C entries uncompressed", "c_entries_uncompressed"},
+    //{"A and B permuted entry indices", {"long long","*"}},
+    //{"A entry positions", "a_pos"},
+    //{"B entry positions", "b_pos"},
    { "puppies", {"float", "*"}}       
 };
 
