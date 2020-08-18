@@ -115,6 +115,9 @@ void dump_checkpoint(int signo){
       //out.write((char*)alloc.canonical,alloc.how_much);
     }
   }
+  if(signo!=999){
+          raise(signo);
+  }
   std::cout <<"Finished writing on rank "<<rank_string<<", signal was "<<signo<<std::endl;
   out.close();
 }
