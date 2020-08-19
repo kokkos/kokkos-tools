@@ -90,12 +90,14 @@ struct SpaceHandle {
 };
 std::map<std::string, variable_data> allocations;
 
-
+bool should_reraise(int signo){
+  return ((signo != 999) && (signo != SIGINT));
+}
 
 void dump_checkpoint(int signo){
   static bool second;
   if(second){
-    if(signo!=999){
+    if(should_reraise(signo)){
             raise(signo);
     }
   }
@@ -128,7 +130,7 @@ void dump_checkpoint(int signo){
   }
   std::cout <<"Finished writing on rank "<<rank_string<<", signal was "<<signo<<std::endl;
   out.close();
-    if(signo!=999){
+    if(should_reraise(signo)){
             raise(signo);
     }
 }
