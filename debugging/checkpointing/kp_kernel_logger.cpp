@@ -117,12 +117,20 @@ void dump_checkpoint(int signo){
     auto& alloc_list = variable_handle.second; 
     for(auto& alloc: alloc_list.instances){
      kokkos_checkpointing::View v;
-      if(debug){
+      if(debug) {
         std::cout << "Dumping an alloc with name: "<<alloc.who<<std::endl;
       }
-      v.set_size(alloc.how_much);
-      v.set_name(alloc.who);
-      v.set_data(alloc.canonical, alloc.how_much);
+
+      if(alloc.canonical){
+        v.set_size(alloc.how_much);
+        v.set_name(alloc.who);
+        v.set_data(alloc.canonical, alloc.how_much);
+      }
+      else{
+        v.set_size(0);
+        v.set_name(alloc.who + " [corrupted]");
+        v.set_data("");
+      }
       size_t message_size  =v.ByteSizeLong();
       out << message_size;
       bool success = v.SerializeToOstream(&out);
