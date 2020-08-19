@@ -192,7 +192,7 @@ void checkpoint(){
 }
 
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
-  if(std::string(name) == trigger){
+  if(name && (std::string(name) == trigger)){
           checkpoint();
   }
 }
@@ -204,7 +204,7 @@ extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
 }
 
 extern "C" void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID, uint64_t* kID) {
-  if(std::string(name) == trigger){
+  if(name && (std::string(name) == trigger)){
           checkpoint();
   }
 }
@@ -213,7 +213,7 @@ extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
 }
 
 extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID, uint64_t* kID) {
-  if(std::string(name) == trigger){
+  if(name && (std::string(name) == trigger)){
           checkpoint();
   }
 }
