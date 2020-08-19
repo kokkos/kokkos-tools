@@ -150,7 +150,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 	const uint32_t devInfoCount,
 	void* deviceInfo) {
    std::cout << "KokkosP: Initialized checkpoint tool\n";
-   const char* index = getenv("OMPI_COMM_WORLD_RANK");
+   char* index = getenv("OMPI_COMM_WORLD_RANK");
    trigger = getenv("CHECKPOINT_TRIGGER_ATTR");
    output = getenv("CHECKPOINT_OUTPUT") ? getenv("CHECKPOINT_OUTPUT") : "checkpoint.kokkos";
    debug = (getenv("CHECKPOINT_DEBUG") != nullptr);
@@ -238,7 +238,7 @@ extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char* name, void
     strncpy(newname,name, 127);
   }
   else {
-    name = "[default name]";
+    strcpy(newname,"[default name]");
   }
   info.who = std::string(newname);
   info.what = ptr + 128;
