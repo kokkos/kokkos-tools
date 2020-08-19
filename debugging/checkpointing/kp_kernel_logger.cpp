@@ -99,6 +99,7 @@ void dump_checkpoint(int signo){
   static bool second;
   if(second){
     if(should_reraise(signo)){
+            sigignore(signo);
             raise(signo);
     }
   }
@@ -135,6 +136,7 @@ void dump_checkpoint(int signo){
   std::cout <<"Finished writing on rank "<<rank_string<<", signal was "<<signo<<std::endl;
   out.close();
     if(should_reraise(signo)){
+            sigignore(signo);
             raise(signo);
     }
 }
