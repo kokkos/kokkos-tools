@@ -233,7 +233,14 @@ extern "C" void kokkosp_pop_profile_region() {
 extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char* name, void* ptr, uint64_t size) {
   bool device = (handle.name[0] == 'C');
   ptr_info info;
-  info.who = name;
+  char* newname = new char[128];
+  if(name){
+    strncpy(newname,name, 127);
+  }
+  else {
+    name = "[default name]";
+  }
+  info.who = std::string(newname);
   info.what = ptr + 128;
   info.how_much = size; 
   info.where = device;
