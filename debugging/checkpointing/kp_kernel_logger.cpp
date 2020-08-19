@@ -85,6 +85,7 @@ struct variable_data {
 
 std::string trigger;
 std::string output;
+bool debug;
 struct SpaceHandle {
   char name[64];
 };
@@ -114,6 +115,9 @@ void dump_checkpoint(int signo){
     auto& alloc_list = variable_handle.second; 
     for(auto& alloc: alloc_list.instances){
      kokkos_checkpointing::View v;
+      if(debug){
+        std::cout << "Dumping an alloc with name: "<<alloc.who<<std::endl;
+      }
       v.set_size(alloc.how_much);
       v.set_name(alloc.who);
       v.set_data(alloc.canonical, alloc.how_much);
@@ -147,6 +151,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
    const char* index = getenv("OMPI_COMM_WORLD_RANK");
    trigger = getenv("CHECKPOINT_TRIGGER_ATTR");
    output = getenv("CHECKPOINT_OUTPUT") ? getenv("CHECKPOINT_OUTPUT") : "checkpoint.kokkos";
+   debug = (getenv("CHECKPOINT_DEBUG") != nullptr);
    if(index){
      output+=".rank"+std::string(index);
      rank_string = index;
