@@ -249,7 +249,9 @@ extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char* name, void
 }
 
 extern "C" void kokkosp_deallocate_data(SpaceHandle handle, const char* name, void* ptr, uint64_t size) {
+  if(allocations.find(name)!=allocations.end()){
   allocations[name].remove(ptr + 128);
+  }
 }
 
 extern "C" void kokkosp_begin_deep_copy(
