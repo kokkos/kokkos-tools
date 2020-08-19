@@ -112,6 +112,7 @@ void dump_checkpoint(int signo){
     size_sum += alloc.second.instances.size();
   }
   out << size_sum << " ";
+  std::cout << "Starting allocation dump\n";
   for(auto& variable_handle: allocations){
     auto& alloc_list = variable_handle.second; 
     for(auto& alloc: alloc_list.instances){
