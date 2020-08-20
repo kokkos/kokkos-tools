@@ -86,6 +86,7 @@ struct variable_data {
 std::string trigger;
 std::string output;
 bool debug;
+bool have_checkpointed;
 struct SpaceHandle {
   char name[64];
 };
@@ -113,6 +114,9 @@ void dump_checkpoint(int signo){
   }
   out << size_sum << " ";
   std::cout << "Starting allocation dump\n";
+  if(!have_checkpointed){
+    std::cout << "WARNING: have not yet checkpointed memory, you're likely to see a checkpoint file with a lot of [corrupted] allocations. Check your setting of CHECKPOINT_ATTR to make sure it matches your kernel name\n";    std::cout << "WARNING: have not yet checkpointed memory, you're likely to see a checkpoint file with a lot of [corrupted] allocations. Check your setting of CHECKPOINT_ATTR to make sure it matches your kernel name\n";
+  }
   for(auto& variable_handle: allocations){
     auto& alloc_list = variable_handle.second; 
     for(auto& alloc: alloc_list.instances){
@@ -184,6 +188,7 @@ extern "C" void kokkosp_finalize_library() {
 
 void checkpoint(){
   cudaDeviceSynchronize();
+  have_checkpointed = true;
   for(auto& variable_handle: allocations){
     auto& alloc_list = variable_handle.second; 
     for(auto& alloc: alloc_list.instances){
