@@ -98,6 +98,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 
 extern "C" void kokkosp_finalize_library() {
 	fprintf(outfile,"KokkosP: Kokkos library finalization called.\n");
+    fclose(outfile);
 }
 
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
