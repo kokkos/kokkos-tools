@@ -96,17 +96,7 @@ bool should_reraise(int signo){
   return ((signo != 999) && (signo != SIGINT));
 }
 
-void dump_checkpoint(int signo){
-  static bool second;
-  if(second){
-    if(should_reraise(signo)){
-            sigignore(signo);
-            raise(signo);
-    }
-  }
-  else{
-          second = true;
-  }
+void dump_checkpoint(){
   std::ofstream out(output);
   int size_sum = 0;
   for(auto& alloc : allocations){
@@ -146,8 +136,22 @@ void dump_checkpoint(int signo){
       //out.write((char*)alloc.canonical,alloc.how_much);
     }
   }
-  std::cout <<"Finished writing on rank "<<rank_string<<", signal was "<<signo<<std::endl;
   out.close();
+}
+
+void checkpoint_handler(int signo){
+  static bool second;
+  if(second){
+    if(should_reraise(signo)){
+            sigignore(signo);
+            raise(signo);
+    }
+  }
+  // dump_checkpoint();
+  // std::cout <<"Finished writing on rank "<<rank_string<<", signal was "<<signo<<std::endl;
+  else{
+          second = true;
+  }
     if(should_reraise(signo)){
             sigignore(signo);
             raise(signo);
@@ -155,7 +159,7 @@ void dump_checkpoint(int signo){
 }
 
 void at_exit(){
-        dump_checkpoint(999);
+        checkpoint_handler(999);
 }
 
 extern "C" void kokkosp_init_library(const int loadSeq,
@@ -171,10 +175,10 @@ extern "C" void kokkosp_init_library(const int loadSeq,
      output+=".rank"+std::string(index);
      rank_string = index;
    }
-   signal(SIGSEGV, dump_checkpoint);
-   signal(SIGTERM, dump_checkpoint);
-   signal(SIGINT, dump_checkpoint);
-   signal(SIGABRT, dump_checkpoint);
+   signal(SIGSEGV, checkpoint_handler);
+   signal(SIGTERM, checkpoint_handler);
+   signal(SIGINT, checkpoint_handler);
+   signal(SIGABRT, checkpoint_handler);
    atexit(at_exit);
 }
 
@@ -208,6 +212,7 @@ void checkpoint(){
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
   if(name && (std::string(name) == trigger)){
           checkpoint();
+          dump_checkpoint();
   }
 }
 
@@ -220,6 +225,7 @@ extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
 extern "C" void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID, uint64_t* kID) {
   if(name && (std::string(name) == trigger)){
           checkpoint();
+          dump_checkpoint();
   }
 }
 
@@ -229,6 +235,7 @@ extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
 extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID, uint64_t* kID) {
   if(name && (std::string(name) == trigger)){
           checkpoint();
+          dump_checkpoint();
   }
 }
 
