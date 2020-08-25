@@ -80,8 +80,6 @@ extern "C" void kokkosp_finalize_library() {
 extern "C" void kokkosp_begin_parallel_for(const char* name,
                                            const uint32_t devID,
                                            uint64_t* kID) {
-  *kID = nextKernelID++;
-
   nvtxRangePush(name);
 }
 
@@ -90,8 +88,6 @@ extern "C" void kokkosp_end_parallel_for(const uint64_t kID) { nvtxRangePop(); }
 extern "C" void kokkosp_begin_parallel_scan(const char* name,
                                             const uint32_t devID,
                                             uint64_t* kID) {
-  *kID = nextKernelID++;
-
   nvtxRangePush(name);
 }
 
@@ -110,7 +106,7 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
 }
 
 extern "C" void kokkosp_push_profile_region(char* regionName) {
-  nvtxRangeId_t kernelRangeMarker = nvtxRangePush(regionName);
+  nvtxRangeId_t kernelRangeMarker = nvtxRangeStartA(regionName);
   region_range_stack.push(kernelRangeMarker);
 }
 
