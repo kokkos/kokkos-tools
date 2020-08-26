@@ -1,0 +1,33 @@
+MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
+
+CXX=nvcc
+CXXFLAGS=-O0 -std=c++11 -g -I.  -L$(PROTOBUF_DIR)/lib64 -I$(PROTOBUF_DIR)/include -lprotobuf
+SHARED_CXXFLAGS=-shared -Xcompiler -fPIC
+PROTOBUF_DIR=${MAKEFILE_PATH}/protobuf-install
+
+all: kp_checkpoint.so reader
+
+NVCC_WRAPPER=nvcc_wrapper
+KOKKOS_DIR=$(HOME)/installs/kokkos/cuda
+KOKKOS_FLAGS=-I$(KOKKOS_DIR)/include -L$(KOKKOS_DIR)/lib64 -lkokkoscore -lkokkoscontainers
+
+protobuf-build:
+	mkdir ${MAKEFILE_PATH}/protobuf-build
+
+protobuf-build/Makefile: protobuf-build
+	cd protobuf-build && cmake -DCMAKE_INSTALL_PREFIX=${MAKEFILE_PATH}/protobuf-install -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_BUILD_TYPE=Release -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_CXX_COMPILER=g++ ${MAKEFILE_PATH}/protobuf/cmake/
+
+protobuf-install/lib64/libprotobuf.a: protobuf-build/Makefile
+	cd ${MAKEFILE_PATH}/protobuf-build && make -j8 install
+
+kp_checkpoint.so: ${MAKEFILE_PATH}kp_kernel_logger.cpp protobuf-install/lib64/libprotobuf.a
+	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}kp_kernel_logger.cpp ${MAKEFILE_PATH}/protocols/checkpointing.pb.cc
+
+reader: ${MAKEFILE_PATH}reader.cpp protobuf-install/lib64/libprotobuf.a
+	$(CXX) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}reader.cpp ${MAKEFILE_PATH}/protocols/checkpointing.pb.cc
+
+example: ${MAKEFILE_PATH}example.cpp
+	$(NVCC_WRAPPER) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}example.cpp ${MAKEFILE_PATH}/protocols/checkpointing.pb.cc ${KOKKOS_FLAGS}
+
+clean:
+	rm *.so
