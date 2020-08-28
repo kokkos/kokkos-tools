@@ -58,7 +58,7 @@
 #include <chrono>
 #include <iostream>
 
-//variorum trial run
+//variorum.h include. Extern required because it is a c library and this is a C++ application.
 extern "C" {
 #include <variorum.h>
 }
@@ -86,20 +86,20 @@ static endFunction endReduceCallee = NULL;
 //Description: function that will call print power and handle the execution errors
 //Pre: None
 //Post: Will print an error message if variorum print power fails. No return value. 
-
 void variorum_print_power_call() {
-    int ret;
-    //Pre: No Arguments required for print power
-    //Post: An integer value that represents the return success/error code
+    
     //Description: variorum_print_power prints out the current architecture specific power usage measurements
     //at the moment that it is called to standard out. 
+    //Pre: No Arguments required for print power
+    //Post: An integer value that represents the return success/error code
+    int ret;
 	ret = variorum_print_power();
     if (ret != 0) {
         printf("Print power failed!\n");
     }
 }
 
-//variables for simple timer
+//variables for simple timer start
 time_t start_time;
 
 
@@ -111,7 +111,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
     time(&start_time);
     std::cout << "Start Time: " << start_time << "\n";
 
-    //print variorum power when Kokkos is initialized called
+    //print variorum power when Kokkos is initialized 
 	ret = variorum_print_power();
     variorum_print_power_call();
 }
@@ -121,36 +121,36 @@ extern "C" void kokkosp_finalize_library() {
     variorum_print_power_call();
     time_t end_time;
     time(&end_time);
-    std::cout << "End Time: " << end_time << "\nStart Time: " << start_time << std::endl;
+    std::cout << "End Time: " << end_time << "\nStart Time: " << start_time << "\n";
     time_t total_time = end_time - start_time;
 
-    std::cout << "The kokkos library was alive for " << total_time << " seconds." << "\n";
+    std::cout << "The kokkos library was alive for " << total_time << " seconds." << std::endl;
 }
 
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
 
     int ret;
-    //print variorum power whenever parallelfor is called
+    //print variorum power when a parallel-for is called
 	variorum_print_power_call();
 }
 
 extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
 
-    //print variorum power ever time a parallel for has finished executing 
+    //print variorum powe when a parallel-for has finished executing 
     variorum_print_power_call();
 }
 
 extern "C" void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID, uint64_t* kID) {
 	
     int ret;
-    //print variorum power when parallel scan begins 
+    //print variorum power when a parallel-scan begins 
 	variorum_print_power_call();
 }
 
 extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
     
     int ret;
-    //print power when a parallel scan completes
+    //print power when a parallel-scan completes
 	variorum_print_power_call();
 	
 }
@@ -158,14 +158,14 @@ extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
 extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID, uint64_t* kID) {
     
     int ret;
-    //print power when a parallel reduce begins
+    //print power when a parallel-reduce begins
 	variorum_print_power_call();
 }
 
 extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
     int ret;
 
-    //print power when a parallel reduce completes 
+    //print power when a parallel-reduce completes 
 	variorum_print_power_call();
 }
 
