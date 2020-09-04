@@ -48,6 +48,7 @@
 #define MEMOP_POP_REGION 4
 
 #include <cstring>
+#include <cstdio>
 #include <inttypes.h>
 
 struct SpaceHandle {
