@@ -469,8 +469,10 @@ kokkosp_declare_input_type(const char *name, const size_t id,
       get_type_id(get_input_type, set_input_type, std::string(name), id, info);
   reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
       ->canonical_id = canonical_type;
-  reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
-      ->name = name;
+ reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
+      ->name = reinterpret_cast<char*>(malloc(sizeof(char) * 64)); 
+  strncpy(reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
+      ->name , name, 64);
 
 }
 
@@ -483,8 +485,10 @@ kokkosp_declare_output_type(const char *name, const size_t id,
                                        std::string(name), id, info);
   reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
       ->canonical_id = canonical_type;
-  reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
-      ->name = name;
+ reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
+      ->name = reinterpret_cast<char*>(malloc(sizeof(char) * 64)); 
+  strncpy(reinterpret_cast<VariableDatabaseData *>(info->toolProvidedInfo)
+      ->name , name, 64);
 }
 
 using Kokkos::Tools::Experimental::VariableValue;
@@ -632,7 +636,6 @@ void kokkosp_request_values(size_t context_id,
             context_values[x].metadata->toolProvidedInfo);
     auto maxcmp = cmp(context_values[x].metadata->type,context_values[x].value,database_info->maximum); 
     if(maxcmp>0){
-      std::cout << "New max for "<<database_info->canonical_id << ", "<<context_values[x].value.int_value<<"."<<std::endl;
       database_info->maximum = context_values[x].value;
     }
     set.variable_ids[index++] = database_info->canonical_id;
@@ -674,7 +677,9 @@ void kokkosp_request_values(size_t context_id,
     auto *database_info = reinterpret_cast<VariableDatabaseData *>(
         tuning_values[x].metadata->toolProvidedInfo);
     int64_t local_choice = tuning_choice % database_info->candidate_set_size;
+    auto canonical_metadata = tuning_values[x].metadata;
     tuning_values[x] = database_info->candidate_values[local_choice];
+    tuning_values[x].metadata = canonical_metadata;
     tuning_data.data[trial_num].values[num_context_variables + x] =
         tuning_values[x];
     tuning_choice /= database_info->candidate_set_size;
