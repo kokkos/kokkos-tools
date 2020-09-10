@@ -4,8 +4,10 @@ from enum import Enum
 import math
 import os
 import sys
+import pdb
+
 class ValueType(Enum):
-  boolean        = 0 
+  boolean        = 0 # unused, legacy
   integer        = 1
   floating_point = 2
   text           = 3
@@ -78,7 +80,7 @@ fetcher.execute("SELECT * FROM input_types")
 input_types = fetcher.fetchall()
 
 def make_categorical(input_set):
-  return CategoricalSpace(input_set)
+  return CategoricalSpace(sorted(list(set(input_set))))
 def make_ordinal(input_set):
   return OrdinalSpace(input_set)
 def make_interval(input_set):
@@ -132,7 +134,6 @@ for id in problem_ids:
   for x in outputs:
     problem_descriptions[id]["outputs"].append(x[0])
 def slice_space(space):
-
   if(type(space)==Sliceable):
     return space
   else:
@@ -164,10 +165,7 @@ def num_slices(space):
   if(type(space) is Sliceable):
     return space.num_slices
   return len(slice_space(space).categories)
-import pdb
 def combine_spaces(space_one,space_two):
-  #print(space_one)
-  #print(space_two)
   if (type(space_one) is EmptySpace):    
     return space_two
   if (type(space_two) is EmptySpace):    
@@ -227,17 +225,26 @@ for problem_id,problem in problem_descriptions.items():
       search_space = slice_space(variable_descriptions[variable]["search_space"])
       if(type(search_space) is Sliceable):
         search_space = search_space.space
-      higher = [x for x in search_space.categories if x > category]
+      key = category
+      if(type(key) is tuple):
+        key=key[index]
+      higher = [x for x in search_space.categories if x > category[index]]
       query_string+="LEFT JOIN (SELECT trial_id AS tid%s, %s AS value%s  FROM trial_values WHERE variable_id=%s AND " % (index, "discrete_result", index, variable)
       if higher:
         next_higher = min(higher)
+        if type(next_higher) is tuple:
+            next_higher = next_higher[index]
         query_string += " %s >= %s and %s < %s " % ("discrete_result", category[index], "discrete_result", next_higher)
       else:
-        query_string += " %s >= %s " % ("discrete_result", category)
+        key = category
+        if type(key) is tuple:
+            key = key[index]
+        query_string += " %s >= %s " % ("discrete_result", key)
       query_string += ") dv%s ON dv%s.%s = trials.trial_id " % (index, index, "tid%s" % (index))
     for oindex,variable in enumerate(problem["outputs"]):
+      id_discrete = variable_descriptions[variable]["value_type"] is not ValueType.floating_point
       index = num_inputs + oindex
-      query_string+="LEFT JOIN (SELECT trial_id AS tid%s, %s AS value%s  FROM trial_values WHERE variable_id=%s " % (index, "discrete_result", index, variable)
+      query_string+="LEFT JOIN (SELECT trial_id AS tid%s, %s AS value%s  FROM trial_values WHERE variable_id=%s " % (index, "discrete_result" if id_discrete else "real_result", index, variable)
       query_string += ") dv%s ON dv%s.%s = trials.trial_id " % (index, index, "tid%s" % (index))
     query_string += " GROUP BY %s ) concretized WHERE " % (group_by,)
     for index,variable in enumerate(problem["inputs"]):
@@ -248,7 +255,6 @@ for problem_id,problem in problem_descriptions.items():
     if(len(best_string) > 0):
       best_trial[problem_id][category] = best_string[0][1]
       #print (query_string)
-      #print(best_string[0][1])
     else:
       best_trial[problem_id][category] = None
 import string      
@@ -270,6 +276,12 @@ type_extractor_map = {
   ValueType.floating_point : ".double_value",
   ValueType.text : ".string_value"
 }
+
+def get_value_extractor(index,tn):
+ st = "in[%s].value%s" % (index, type_extractor_map[tn])
+ if tn is ValueType.text:
+     st = "int64_t(std::hash<std::string>{}(std::string(" + st +")))"
+ return st
 code = """
 #include <impl/Kokkos_Profiling_Interface.hpp>
 #include "labrador-exploration.hpp"
@@ -362,9 +374,12 @@ for problem_id,problem in problem_descriptions.items():
     best_option = best_trial[problem_id][category]
     if best_option is not None:
       for variable_index,output in enumerate(problem["outputs"]):
-        fetcher.execute("SELECT discrete_result FROM trial_values WHERE trial_id=? AND variable_id=?" , (best_option, output))
+        id_discrete = variable_descriptions[output]["value_type"] is not ValueType.floating_point
+        query_string = "SELECT %s FROM trial_values WHERE trial_id=? AND variable_id=?" % ("discrete_result" if id_discrete else "real_result",)
+        fetcher.execute(query_string , (best_option, output))
         value = fetcher.fetchone()[0]
         code += make_variable_value(output, "%s(%s) " %(type_constructor_map[variable_descriptions[output]["value_type"]], value))
+        code +=  ", " if variable_index is not (len(problem["outputs"])-1) else ""
     else:
       code += make_variable_value(0, "int64_t(0)")
     code += " }%s " % (' ' if category_index is (num_categories-1) else ',')
@@ -380,7 +395,7 @@ for problem_id,problem in problem_descriptions.items():
     sliced = slice_space(search_space)
     type_id = variable_descriptions[input_id]["value_type"]
     if type(search_space) is CategoricalSpace or type(search_space) is OrdinalSpace:
-      code += "  switch(in[%s].value%s) {\n" % (input_index, type_extractor_map[type_id],)
+      code += "  switch(%s) {\n" % (get_value_extractor(input_index,type_id),)
       for category_index,category in enumerate(search_space.categories):
         code += "    case %s :\n" % (category,)
         code += "      %s = %s;\n" % (choice_variable,category_index)
@@ -390,7 +405,7 @@ for problem_id,problem in problem_descriptions.items():
       """
       code += "  }"
     else:
-      code += "  auto %s = in[%s].value%s;\n" % (holder_variable, input_index, type_extractor_map[type_id],) 
+      code += "  auto %s = %s;\n" % (holder_variable, get_value_extractor(input_index,type_id),) 
       if type(search_space) is IntervalSpace:
          minval = sliced.categories[0]
          maxval = sliced.categories[-1]

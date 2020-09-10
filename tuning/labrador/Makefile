@@ -18,7 +18,7 @@ labrador-exploration.o: labrador-exploration.cpp labrador-exploration.hpp ./sqli
 
 
 liblabrador-retriever.so: labrador-retriever.cpp util
-	g++ -shared -std=c++11 -pthread -g -fPIC -O2 -I../../common/include/ -I./sqlite3 labrador-retriever.cpp ./liblabrador-utils.a -o liblabrador-retriever.so
+	g++ -std=c++11 -shared -std=c++11 -pthread -g -fPIC -O2 -I../../common/include/ -I./sqlite3 labrador-retriever.cpp ./liblabrador-utils.a -o liblabrador-retriever.so
 
 ./sqlite3/sqlite3.o: ./sqlite3/Makefile
 	cd sqlite3 && make
