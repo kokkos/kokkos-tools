@@ -469,11 +469,12 @@ code += "      tuning_values[x] = result[x];\n"
 code += "    }\n" 
 code += "    tuning_values = result;\n" 
 code += "  }\n"
-code += """
-  else {
-    labrador::explorer::kokkosp_request_values(context_id, num_context_variables, context_values, num_tuning_variables, tuning_values);
-  }
-"""
+if liminality:
+  code += """
+    else {
+      labrador::explorer::kokkosp_request_values(context_id, num_context_variables, context_values, num_tuning_variables, tuning_values);
+    }
+  """
 code+= "}"
 
 if liminality:
