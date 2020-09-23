@@ -45,6 +45,7 @@
 
 #include <stdio.h>
 #include <sys/time.h>
+#include <string>
 #include <cstring>
 
 #if defined(__GXX_ABI_VERSION)
