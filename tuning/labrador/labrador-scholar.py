@@ -249,7 +249,8 @@ for problem_id,problem in problem_descriptions.items():
     query_string += " GROUP BY %s ) concretized WHERE " % (group_by,)
     for index,variable in enumerate(problem["inputs"]):
       query_string += "concretized.variable_value%s NOT NULL AND " % (index)
-    query_string += " (1=1) ORDER BY avg_result"
+    #query_string += " (1=1) ORDER BY avg_result"
+    query_string += " concretized.problem_id=%s ORDER BY avg_result" % (problem_id)
     fetcher.execute(query_string)
     best_string = fetcher.fetchall()
     if(len(best_string) > 0):
@@ -375,8 +376,9 @@ for problem_id,problem in problem_descriptions.items():
     if best_option is not None:
       for variable_index,output in enumerate(problem["outputs"]):
         id_discrete = variable_descriptions[output]["value_type"] is not ValueType.floating_point
+        variable_id = variable_descriptions[output]["id"]
         query_string = "SELECT %s FROM trial_values WHERE trial_id=? AND variable_id=?" % ("discrete_result" if id_discrete else "real_result",)
-        fetcher.execute(query_string , (best_option, output))
+        fetcher.execute(query_string , (best_option, variable_id))
         value = fetcher.fetchone()[0]
         code += make_variable_value(output, "%s(%s) " %(type_constructor_map[variable_descriptions[output]["value_type"]], value))
         code +=  ", " if variable_index is not (len(problem["outputs"])-1) else ""
@@ -452,8 +454,8 @@ for problem_id,problem in problem_descriptions.items():
          
   code += "    }\n"
   code += "  }\n"
-  code += "  return nullptr;"
-  code += "}\n"
+code += "  return nullptr;"
+code += "}\n"
 
 code += """
 extern "C" void kokkosp_request_values(size_t context_id,
