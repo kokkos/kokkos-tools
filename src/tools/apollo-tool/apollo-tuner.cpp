@@ -214,7 +214,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
     choices[x] = x; // TODO constexpr smart blah blah
   }
   putenv("APOLLO_STORE_MODELS=1");
-  putenv("APOLLO_RETRAIN_ENABLE=1");
+  putenv("APOLLO_RETRAIN_ENABLE=0");
   putenv("APOLLO_REGION_MODEL=1");
   putenv("APOLLO_LOCAL_TRAINING=1");
   putenv("APOLLO_INIT_MODEL=RoundRobin");
@@ -237,6 +237,7 @@ extern "C" void kokkosp_finalize_library() {
   }
 }
 
+#ifndef NO_APP_FENCES
 extern "C" void kokkosp_begin_parallel_for(const char *name,
                                            const uint32_t devID,
                                            uint64_t *kID) {
@@ -312,7 +313,7 @@ extern "C" void kokkosp_stop_profile_section(uint32_t sec_id) {}
 extern "C" void kokkosp_destroy_profile_section(uint32_t sec_id) {}
 
 extern "C" void kokkosp_profile_event(const char *name) {}
-
+#endif //NO_APP_FENCES
 extern "C" void
 kokkosp_declare_output_type(const char *name, const size_t id,
                             Kokkos::Tools::Experimental::VariableInfo *info) {
