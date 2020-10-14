@@ -321,12 +321,12 @@ kokkosp_declare_output_type(const char *name, const size_t id,
   strncpy(metadata->name, name, 64);
   info->toolProvidedInfo = metadata;
   associate_candidates(id, info);
-  if ((info->valueQuantity != kokkos_value_set)) {
-    printf("Apollo Tuning Adaptor: won't learn %s because values are drawn "
-           "from a range\n",
-           name);
-    untunables.insert(id);
-  }
+  //if ((info->valueQuantity != kokkos_value_set)) {
+  //  printf("Apollo Tuning Adaptor: won't learn %s because values are drawn "
+  //         "from a range\n",
+  //         name);
+  //  untunables.insert(id);
+  //}
 }
 
 extern "C" void
