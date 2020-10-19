@@ -345,7 +345,13 @@ extern "C" void
 kokkosp_declare_output_type(const char *name, const size_t id,
                             Kokkos::Tools::Experimental::VariableInfo *info) {
 			    """
-if liminality:
+if not liminality:
+  for index,variable in variable_descriptions.items():
+    if variable["io"] is "output":
+      code += "  if(strncmp(name,\"%s\",256)==0) {\n" % variable["name"]
+      code += "    info->toolProvidedInfo = new VariableDatabaseData { %s, \"%s\" };\n" % (variable["id"], variable["name"])
+      code += "  }\n"
+else:
   code+="""
   labrador::explorer::kokkosp_declare_output_type(name, id,info);
   """
@@ -441,13 +447,15 @@ for problem_id,problem in problem_descriptions.items():
     code += "  stride *= %s;\n" % (len(tmp.categories))
   code += "  return %s[returned_choice];\n" % (choice_array_name,)
   code += "}\n"
-code += "Kokkos::Tools::Experimental::VariableValue* get_output(size_t count, Kokkos::Tools::Experimental::VariableValue* in) {\n"
+code += "Kokkos::Tools::Experimental::VariableValue* get_output(size_t in_count, size_t out_count, Kokkos::Tools::Experimental::VariableValue* in, Kokkos::Tools::Experimental::VariableValue* out) {\n"
 for problem_id,problem in problem_descriptions.items():
   tuner_name = problem["tuner_name"] 
-  code += "  if (%s == %s) {\n" % ("count",len(problem["inputs"]),)
+  code += "  if ((%s == %s) && (%s == %s)) {\n" % ("in_count",len(problem["inputs"]),"out_count",len(problem["outputs"]),)
   code += "    if("    
   for index,inp in enumerate(problem["inputs"]):
     code += "(reinterpret_cast<VariableDatabaseData*>(in[%s].metadata->toolProvidedInfo)->canonical_id ==%s) &&" % (index, inp,)
+  for index,inp in enumerate(problem["outputs"]):
+    code += "(reinterpret_cast<VariableDatabaseData*>(out[%s].metadata->toolProvidedInfo)->canonical_id ==%s) &&" % (index, inp,)
   code += " true ) {\n"
   code += "      auto ret = value_for_%s(in);\n" % (tuner_name,)
   code+=  "      return ret;\n";
@@ -464,7 +472,7 @@ extern "C" void kokkosp_request_values(size_t context_id,
                                        size_t num_tuning_variables,
                                        Kokkos::Tools::Experimental::VariableValue *tuning_values) {
 """
-code += "  auto result = get_output(num_context_variables, context_values);\n" 
+code += "  auto result = get_output(num_context_variables, num_tuning_variables, context_values, tuning_values);\n" 
 code += "  if(result != nullptr) {\n" 
 code += "    for(int x = 0; x< num_tuning_variables; ++x){\n" 
 code += "      tuning_values[x] = result[x];\n"
