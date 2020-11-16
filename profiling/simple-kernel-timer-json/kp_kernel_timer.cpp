@@ -126,7 +126,7 @@ extern "C" void kokkosp_finalize_library() {
 
 	std::sort(kernelList.begin(), kernelList.end(), compareKernelPerformanceInfo);
 
-	fprintf(output_data, "\"kokkos-kernel-data\" : {\n");
+	fprintf(output_data, "{\n\"kokkos-kernel-data\" : {\n");
 	fprintf(output_data, "    \"mpi-rank\"               : %s,\n", 
 		(NULL == mpi_rank) ? "0" : mpi_rank);
 	fprintf(output_data, "    \"total-app-time\"         : %10.3f,\n", totalExecuteTime);
@@ -155,7 +155,7 @@ extern "C" void kokkosp_finalize_library() {
 
 	fprintf(output_data, "\n");
 	fprintf(output_data, "    ]\n");
-	fprintf(output_data, "}\n");
+	fprintf(output_data, "}\n}");
 	fclose(output_data);
 }
 
