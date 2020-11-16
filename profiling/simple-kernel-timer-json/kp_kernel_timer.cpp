@@ -126,7 +126,7 @@ extern "C" void kokkosp_finalize_library() {
 
 	std::sort(kernelList.begin(), kernelList.end(), compareKernelPerformanceInfo);
 
-	fprintf(output_data, "kokkos-kernel-data : {\n");
+	fprintf(output_data, "{\n\"kokkos-kernel-data\" : {\n");
 	fprintf(output_data, "    \"mpi-rank\"               : %s,\n", 
 		(NULL == mpi_rank) ? "0" : mpi_rank);
 	fprintf(output_data, "    \"total-app-time\"         : %10.3f,\n", totalExecuteTime);
@@ -140,22 +140,19 @@ extern "C" void kokkosp_finalize_library() {
 	
 	fprintf(output_data, "    \"kernel-perf-info\"       : [\n");
 	
-	auto kernel_itr = count_map.begin();
-	
 	#define KERNEL_INFO_INDENT "       "
 	
-	if( kernel_itr != count_map.end() ) {
-		kernel_itr->second->writeToFile(output_data, KERNEL_INFO_INDENT);
-	
-		for(; kernel_itr != count_map.end(); kernel_itr++) {
+        bool print_comma = false;
+	for(auto const& kernel : count_map) {
+                if (print_comma)
 			fprintf(output_data, ",\n");
-			kernel_itr->second->writeToFile(output_data, KERNEL_INFO_INDENT);
-		}
+		kernel.second->writeToFile(output_data, KERNEL_INFO_INDENT);
+		print_comma = true;
 	}
 
 	fprintf(output_data, "\n");
 	fprintf(output_data, "    ]\n");
-	fprintf(output_data, "}\n");
+	fprintf(output_data, "}\n}");
 	fclose(output_data);
 }
 
