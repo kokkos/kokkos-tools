@@ -124,7 +124,11 @@ struct State {
     char* fileOutput = (char*) malloc(sizeof(char) * 256);
     sprintf(fileOutput, "%s-%d-%s.json", hostname, (int) getpid(),
       (NULL == mpi_rank) ? "0" : mpi_rank);
+#if defined(USE_MPI) && USE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &my_mpi_rank);
+#else
+    my_mpi_rank = 0;
+#endif
 
     free(hostname);
     outfile.open(fileOutput, std::ios::out);
