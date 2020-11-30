@@ -44,6 +44,7 @@
 #include <iostream>
 #include <ios>
 #include <iomanip>
+#include <fstream>
 #include <cstdlib>
 #include <memory>
 #include <string>
@@ -258,6 +259,88 @@ struct StackNode {
       }
     }
     return inv_root;
+  }
+  void print_recursive_json(
+      std::ostream& os, StackNode const* parent, double tree_time) const {
+    static bool add_comma = false;
+    auto percent = (total_runtime / tree_time) * 100.0;
+    if (percent < 0.1) return;
+    if (!name.empty()) {
+      if (add_comma) os << ",\n";
+      add_comma = true;
+      os << "{\n";
+      auto imbalance = (max_runtime / avg_runtime - 1.0) * 100.0;
+      os << "\"average-time\" : ";
+      os << std::scientific << std::setprecision(2);
+      os << avg_runtime << ",\n";
+      os << std::fixed << std::setprecision(1);
+      auto percent_kokkos = (total_kokkos_runtime / total_runtime) * 100.0;
+
+      os << "\"percent\" : " << percent << ",\n";
+      os << "\"percent-kokkos\" : " << percent_kokkos << ",\n";
+      os << "\"imbalance\" : " << imbalance << ",\n";
+
+      // Sum over kids if we're a region
+      if (kind==STACK_REGION) {
+        double child_runtime = 0.0;
+        for (auto& child : children) {
+          child_runtime += child.total_runtime;
+        }
+        auto remainder = (1.0 - child_runtime / total_runtime) * 100.0;
+        double kps = total_number_of_kernel_calls / avg_runtime;
+        os << "\"remainder\" : " << remainder << ",\n";
+        os <<  std::scientific << std::setprecision(2);
+        os << "\"kernels-per-second\" : " << kps << ",\n";
+      }
+      else
+      {
+        os << "\"remainder\" : \"N/A\",\n";
+        os << "\"kernels-per-second\" : \"N/A\",\n";
+      }
+      os << "\"number-of-calls\" : " << number_of_calls << ",\n";
+      os << "\"name\" : \"" << name << "\",\n";
+      os << "\"parent-id\" : \"" << parent << "\",\n";
+      os << "\"id\" : \"" << this << "\",\n";
+
+      os << "\"kernel-type\" : ";
+      switch (kind) {
+        case STACK_FOR: os << "\"for\""; break;
+        case STACK_REDUCE: os << "\"reduce\""; break;
+        case STACK_SCAN: os << "\"scan\""; break;
+        case STACK_REGION: os << "\"region\""; break;
+        case STACK_COPY: os << "\"copy\""; break;
+      };
+
+      os << "\n}";
+    }
+    if (children.empty()) return;
+    auto by_time = [](StackNode const* a, StackNode const* b) {
+      if (a->total_runtime != b->total_runtime) {
+        return a->total_runtime > b->total_runtime;
+      }
+      return a->name < b->name;
+    };
+    std::set<StackNode const*, decltype(by_time)> children_by_time(by_time);
+    for (auto& child : children) {
+      children_by_time.insert(&child);
+    }
+    auto last = children_by_time.end();
+    --last;
+    for (auto it = children_by_time.begin(); it != children_by_time.end(); ++it) {
+      auto child = *it;
+      child->print_recursive_json(
+          os, this, tree_time);
+    }
+  }
+  void print_json(std::ostream& os) const {
+    std::ios saved_state(nullptr);
+    saved_state.copyfmt(os);
+    os << "{\n";
+    os << "\"space-time-stack-data\" : [\n";
+    print_recursive_json(os, nullptr, total_runtime);
+    os << '\n';
+    os << "]\n}\n";
+    os.copyfmt(saved_state);
   }
   void print_recursive(
       std::ostream& os, std::string my_indent, std::string const& child_indent, double tree_time) const {
@@ -521,8 +604,19 @@ struct State {
     }
     stack_frame->end(end_time);
     stack_root.adopt();
-    auto inv_stack_root = stack_root.invert();
     stack_root.reduce_over_mpi();
+    if (getenv("KOKKOS_PROFILE_EXPORT_JSON")) {
+#if USE_MPI
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      if (rank == 0)
+#endif
+        std::ofstream fout("noname.json");
+        stack_root.print_json(fout);
+        return;
+    }
+
+    auto inv_stack_root = stack_root.invert();
     inv_stack_root.reduce_over_mpi();
 #if USE_MPI
     int rank;
