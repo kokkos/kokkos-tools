@@ -28,7 +28,7 @@ class EmptySpace():
 liminality = False
 
 if(len(sys.argv) > 1):
-  if sys.argv[1] is "1":
+  if sys.argv[1] == "1":
     liminality = True
 
 class CategoricalSpace():
@@ -46,6 +46,7 @@ class IntervalSpace():
     def __init__(self, minval = None, maxval= None ):
       self.min = minval
       self.max = maxval
+      self.interval = (maxval-minval)/10
     def __repr__(self):
       return "IntervalSpace ( %s , %s ) "% (self.min,self.max)
 
@@ -53,6 +54,7 @@ class RatioSpace():
     def __init__(self, minval = None, maxval= None ):
       self.min = minval
       self.max = maxval
+      self.interval = (maxval-minval)/10
     def __repr__(self):
       return "RatioSpace ( %s , %s ) "% (self.min,self.max)
 
@@ -97,108 +99,218 @@ def make_ratio(input_set):
   return RatioSpace(mi,ma + 1)
 
 maker_switch = {
-  0 : make_categorical,
-  1 : make_ordinal,
-  2 : make_interval,
-  3 : make_ratio
+  StatisticalCategory.categorical : make_categorical,
+  StatisticalCategory.ordinal : make_ordinal,
+  StatisticalCategory.interval : make_interval,
+  StatisticalCategory.ratio : make_ratio
 }
+
+categorical_cutoff = 8
 
 for row in input_types:
   id,name,value_type,statistical_category=row
-  variable_descriptions[id] = {"id": id, "name": name, "value_type" : ValueType(value_type), "statistical_category" : StatisticalCategory(statistical_category),"io":"input", "search_space" : None }
-  fetcher.execute("SELECT * FROM trial_values WHERE variable_id=?",(id,))
-  variable_data = fetcher.fetchall() 
-  variable_set = [x[2] if x[2] is not None else x[3] for x in variable_data]
-  variable_descriptions[id]["search_space"] = maker_switch[statistical_category](variable_set)
+  variable_descriptions[id] = {"id": id, "name": name, "value_type" : ValueType(value_type), "statistical_category" : StatisticalCategory(statistical_category),"io":"input", "search_space" : None, "discrete" : value_type != 2, "is_categorical" : False }
+  #fetcher.execute("SELECT * FROM trial_values WHERE variable_id=?",(id,))
+  #variable_data = fetcher.fetchall() 
+  #variable_set = [x[2] if x[2] is not None else x[3] for x in variable_data]
+  #variable_descriptions[id]["search_space"] = maker_switch[statistical_category](variable_set)
+  
+fetcher.execute("SELECT max(discrete_result),min(discrete_result),max(real_result),min(real_result),COUNT(DISTINCT(discrete_result)),COUNT(DISTINCT(real_result)),variable_id FROM trial_values GROUP BY variable_id",())
+
+extrema_results = fetcher.fetchall()
+categorical_set_query = "SELECT DISTINCT real_result,discrete_result,variable_id FROM trial_values WHERE variable_id IN (-1,"
+for row in extrema_results:
+    vid = row[-1]
+    if vid not in variable_descriptions.keys():
+        continue
+    rowmax = row[0] if row[0] is not None else row[2]
+    rowmin = row[1] if row[1] is not None else row[3]
+    rowcount = row[2] if row[2] is not None else row[4]
+    nominal_statistical_category = variable_descriptions[vid]["statistical_category"]
+    is_categorical = (nominal_statistical_category==StatisticalCategory.ordinal) or (nominal_statistical_category==StatisticalCategory.categorical) or (rowcount <= categorical_cutoff)
+    
+    if is_categorical:
+        variable_descriptions[vid]["is_categorical"] = True
+        categorical_set_query += (str(vid)+ ",")
+    else:
+        maker = maker_switch[nominal_statistical_category]
+        variable_descriptions[vid]["search_space"] = maker([rowmin,rowmax])
+categorical_set_query += "-1)"
+fetcher.execute(categorical_set_query)
+distinct_rows = fetcher.fetchall()
+
+for row in distinct_rows:
+  vid = row[-1]
+  if variable_descriptions[vid]["search_space"] is None:
+    variable_descriptions[vid]["search_space"] = CategoricalSpace()
+  variable_descriptions[vid]["search_space"].categories.append(row[0] if row[0] is not None else row[1])
+
 fetcher.execute("SELECT * FROM output_types")
 
 output_types = fetcher.fetchall()
 
 for row in output_types:
   id,name,value_type,statistical_category=row
-  variable_descriptions[id] = {"id": id, "name": name, "value_type" : ValueType(value_type), "statistical_category" : StatisticalCategory(statistical_category),"io":"output", "candidates": []}
+  variable_descriptions[id] = {"id": id, "name": name, "value_type" : ValueType(value_type), "statistical_category" : StatisticalCategory(statistical_category),"io":"output", "candidates": [], "discrete" : value_type != 2, "is_categorical" : False }
   fetcher.execute("SELECT * FROM candidate_sets WHERE id=?",(id,))
   candidates = fetcher.fetchall()
   for candidate in candidates:
     _,continuous,discrete = candidate
     variable_descriptions[id]["candidates"].append(discrete if continuous is None else continuous)
-  
+
+#  boolean        = 0 # unused, legacy
+#  integer        = 1
+#  floating_point = 2
+#  text           = 3
+
+type_map  = { ValueType.boolean : "int",
+        ValueType.integer : "int",
+        ValueType.floating_point : "real",
+        ValueType.text : "int"
+        }
+
 for id in problem_ids:
-  problem_descriptions[id] = {"inputs": [], "outputs": [], "instances": []}
+  problem_descriptions[id] = {"inputs": [], "outputs": [], "instances": [], "name": None}
   fetcher.execute("SELECT variable_id FROM problem_inputs WHERE problem_inputs.problem_id=? ORDER BY variable_index", (id,))
   inputs = fetcher.fetchall()
+  name = "problem_"
   for x in inputs:
     problem_descriptions[id]["inputs"].append(x[0])
+    name+=str(x[0])+"_" 
   fetcher.execute("SELECT variable_id FROM problem_outputs WHERE problem_outputs.problem_id=? ORDER BY variable_index", (id,))
   outputs = fetcher.fetchall()
   for x in outputs:
     problem_descriptions[id]["outputs"].append(x[0])
-def slice_space(space):
-  if(type(space)==Sliceable):
-    return space
-  else:
-    space_to_slice = Sliceable(space,10)
-  if(type(space_to_slice.space) is CategoricalSpace):
-    return space_to_slice
-  if(type(space_to_slice.space) == OrdinalSpace):
-    values = []
-    sliced_distance = (space_to_slice.space.max - space_to_slice.space.min) / space_to_slice.slices
-    for i in range(space_to_slice.slices):
-      values.append(space_to_slice.space.min + (sliced_distance * i))
-    return CategoricalSpace(values)
-  elif(type(space_to_slice.space) == RatioSpace):
-    values = []
-    sliced_distance = (math.log(space_to_slice.space.max) - math.log(space_to_slice.space.min)) / space_to_slice.slices
-    for i in range(space_to_slice.slices):
-      values.append(space_to_slice.space.min * math.exp(i))
-    return CategoricalSpace(values)
-  elif(type(space_to_slice.space) == IntervalSpace):
-    values = []
-    sliced_distance = (space_to_slice.space.max - space_to_slice.space.min) / space_to_slice.slices
-    for i in range(space_to_slice.slices):
-      values.append(space_to_slice.space.min + (i * sliced_distance))
-    return CategoricalSpace(values)
+    name+=str(x[0])+"_" 
+  problem_descriptions[id]["name"]=name
+  creator_creator = "CREATE TABLE IF NOT EXISTS "+name+"(trial_id int, "
+  inserter = "INSERT INTO "+name+" values (?,"
+  selector = "SELECT trial_id, "
+  for x in inputs:
+    vid = x[0]
+    creator_creator += "input_"+str(vid)+" "+type_map[variable_descriptions[vid]["value_type"]]+", "
+    inserter+="?,"
+    selector +="Null,"
+  for x in outputs:
+    vid = x[0]
+    creator_creator += "output_"+str(vid)+" "+type_map[variable_descriptions[vid]["value_type"]]+", "
+    inserter+="?,"
+    selector +="Null,"
+  creator_creator += "result real)"
+  inserter+="?)"
+  selector +="result FROM trials WHERE problem_id=?"
+  fetcher.execute(selector,(id,))
+  rows = fetcher.fetchall()
+  fetcher.execute(creator_creator)
+  conn.commit()
+  fetcher.executemany(inserter,rows)
+  conn.commit()
 
-def num_slices(space):
-  if(type(space) is CategoricalSpace):
-    return len(space.categories)
-  if(type(space) is Sliceable):
-    return space.num_slices
-  return len(slice_space(space).categories)
-def combine_spaces(space_one,space_two):
-  if (type(space_one) is EmptySpace):    
-    return space_two
-  if (type(space_two) is EmptySpace):    
-    return space_one
-  if (type(space_one) is not CategoricalSpace):
-    cs1 = slice_space(space_one)  
-  else:
-    cs1 = space_one
-  if (type(space_two) is not CategoricalSpace):
-    cs2 = slice_space(space_two)  
-  else:
-    cs2 = space_two
+  #variable_descriptions[id] = {"id": id, "name": name, "value_type" : ValueType(value_type), "statistical_category" : StatisticalCategory(statistical_category),"io":"input", "search_space" : None, "discrete" : value_type is not ValueType.floating_point }
 
-  if(type(cs1) is Sliceable):
-    cs1 = slice_space(cs1.space)
-    cs1 = cs1.space
-  if(type(cs2) is Sliceable):
-    cs2 = slice_space(cs2.space)
-    cs2 = cs2.space
-  #return CategoricalSpace([x for x in itertools.product(cs1.categories, cs2.categories)])
-  out_categories = []
-  for l in cs1.categories:
-    if ((type(l) is not tuple)):
-      fl = (l,)
+  def process_field(field_description, force_categorical = False):
+    value_field = "discrete_result" if field_description["discrete"] else "real_result"
+    statistical_category = field_description["statistical_category"]
+    if force_categorical or field_description["is_categorical"] :
+      return "trial_values."+value_field
     else:
-      fl = l
-    for r in cs2.categories:
-      if ((type(r) is not tuple)):
-        fr = (r,)
-      else:
-        fr = r
-      out_categories.append(fl+fr)
-  return CategoricalSpace(out_categories)
+      space = field_description["search_space"]
+      interval = space.interval
+      return "CAST (((trial_values."+value_field+" - "+ str(space.min) +" )/ "+str(interval)+") AS INT)"
+  innames = []
+  outnames = []
+  for x in inputs:
+    vid = x[0]
+    fieldname = "input_" + str(vid)
+    innames.append(fieldname)
+    process = process_field(variable_descriptions[vid])
+    updator = "UPDATE "+name+ " SET "+fieldname+" = " + process +" FROM trial_values WHERE trial_values.variable_id=" +str(vid)+" AND trial_values.trial_id="+name+".trial_id"
+    fetcher.execute(updator)
+    conn.commit()
+  for x in outputs:
+    vid = x[0]
+    fieldname = "output_" + str(vid)
+    outnames.append(fieldname)
+    process = process_field(variable_descriptions[vid],True)
+    updator = "UPDATE "+name+ " SET "+fieldname+" = " + process +" FROM trial_values WHERE trial_values.variable_id=" +str(vid)+" AND trial_values.trial_id="+name+".trial_id"
+    fetcher.execute(updator)
+    conn.commit()
+  #SELECT min(avgtime),input_4,input_3,input_2,input_1,output_7,output_8 FROM (SELECT avg(result) AS avgtime, input_4,input_3,input_2,input_1,output_7,output_8 FROM problem_4_3_2_1_7_8_ GROUP BY input_4,input_3,input_2,input_1,output_7,output_8) as dogs GROUP BY input_4,input_3,input_2,input_1; 
+  analyzer = "SELECT "+",".join(outnames)+","+",".join(innames)+",min(avgtime) FROM (select avg(result) as avgtime, "+",".join(innames)+","+",".join(outnames)+" FROM "+name+" GROUP BY "+",".join(innames)+","+",".join(outnames)+") as dogs GROUP BY "+",".join(innames)
+  fetcher.execute(analyzer)
+  problem_descriptions[id]["solution"] = fetcher.fetchall()
+# DZP FLAG pick this up here 
+fetcher.close()
+conn.close()
+sys.exit(0)
+#def slice_space(space):
+#  if(type(space)==Sliceable):
+#    return space
+#  else:
+#    space_to_slice = Sliceable(space,10)
+#  if(type(space_to_slice.space) is CategoricalSpace):
+#    return space_to_slice
+#  if(type(space_to_slice.space) == OrdinalSpace):
+#    values = []
+#    sliced_distance = (space_to_slice.space.max - space_to_slice.space.min) / space_to_slice.slices
+#    for i in range(space_to_slice.slices):
+#      values.append(space_to_slice.space.min + (sliced_distance * i))
+#    return CategoricalSpace(values)
+#  elif(type(space_to_slice.space) == RatioSpace):
+#    values = []
+#    sliced_distance = (math.log(space_to_slice.space.max) - math.log(space_to_slice.space.min)) / space_to_slice.slices
+#    for i in range(space_to_slice.slices):
+#      values.append(space_to_slice.space.min * math.exp(i))
+#    return CategoricalSpace(values)
+#  elif(type(space_to_slice.space) == IntervalSpace):
+#    values = []
+#    sliced_distance = (space_to_slice.space.max - space_to_slice.space.min) / space_to_slice.slices
+#    for i in range(space_to_slice.slices):
+#      values.append(space_to_slice.space.min + (i * sliced_distance))
+#    return CategoricalSpace(values)
+#
+#def num_slices(space):
+#  if(type(space) is CategoricalSpace):
+#    return len(space.categories)
+#  if(type(space) is Sliceable):
+#    return space.num_slices
+#  return len(slice_space(space).categories)
+#def combine_spaces(space_one,space_two):
+#  if (type(space_one) is EmptySpace):    
+#    return space_two
+#  if (type(space_two) is EmptySpace):    
+#    return space_one
+#  if (type(space_one) is not CategoricalSpace):
+#    cs1 = slice_space(space_one)  
+#  else:
+#    cs1 = space_one
+#  if (type(space_two) is not CategoricalSpace):
+#    cs2 = slice_space(space_two)  
+#  else:
+#    cs2 = space_two
+#
+#  if(type(cs1) is Sliceable):
+#    cs1 = slice_space(cs1.space)
+#    cs1 = cs1.space
+#  if(type(cs2) is Sliceable):
+#    cs2 = slice_space(cs2.space)
+#    cs2 = cs2.space
+#  #return CategoricalSpace([x for x in itertools.product(cs1.categories, cs2.categories)])
+#  out_categories = []
+#  for l in cs1.categories:
+#    if ((type(l) is not tuple)):
+#      fl = (l,)
+#    else:
+#      fl = l
+#    for r in cs2.categories:
+#      if ((type(r) is not tuple)):
+#        fr = (r,)
+#      else:
+#        fr = r
+#      out_categories.append(fl+fr)
+#  return CategoricalSpace(out_categories)
+
+
 
 answers = {}
 best_trial = {}
@@ -253,6 +365,7 @@ for problem_id,problem in problem_descriptions.items():
     query_string += " concretized.problem_id=%s ORDER BY avg_result" % (problem_id)
     fetcher.execute(query_string)
     best_string = fetcher.fetchall()
+
     if(len(best_string) > 0):
       best_trial[problem_id][category] = best_string[0][1]
       #print (query_string)
@@ -331,7 +444,7 @@ kokkosp_declare_input_type(const char *name, const size_t id,
 
 if not liminality:
   for index,variable in variable_descriptions.items():
-    if variable["io"] is "input":
+    if variable["io"] == "input":
       code += "  if(strncmp(name,\"%s\",256)==0) {\n" % variable["name"]
       code += "    info->toolProvidedInfo = new VariableDatabaseData { %s, \"%s\" };\n" % (variable["id"], variable["name"])
       code += "  }\n"
@@ -347,7 +460,7 @@ kokkosp_declare_output_type(const char *name, const size_t id,
 			    """
 if not liminality:
   for index,variable in variable_descriptions.items():
-    if variable["io"] is "output":
+    if variable["io"] == "output":
       code += "  if(strncmp(name,\"%s\",256)==0) {\n" % variable["name"]
       code += "    info->toolProvidedInfo = new VariableDatabaseData { %s, \"%s\" };\n" % (variable["id"], variable["name"])
       code += "  }\n"

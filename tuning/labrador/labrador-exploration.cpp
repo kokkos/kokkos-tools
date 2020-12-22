@@ -44,6 +44,8 @@ sqlite3_stmt *insert_problem_input;
 sqlite3_stmt *insert_problem_output;
 sqlite3_stmt *insert_trial_data;
 sqlite3_stmt *insert_trial_values;
+sqlite3_stmt *begin_transaction;
+sqlite3_stmt *commit_transaction;
 int64_t num_types;
 int64_t num_problems;
 int64_t num_trials;
@@ -133,6 +135,8 @@ void create_tables(sqlite3 *db) {
       prepare_statement(db, "INSERT INTO problem_inputs VALUES (?,?,?)");
   insert_problem_output =
       prepare_statement(db, "INSERT INTO problem_outputs VALUES (?,?,?)");
+  begin_transaction = prepare_statement(db, "BEGIN TRANSACTION");
+  commit_transaction = prepare_statement(db, "COMMIT");
   sqlite3_exec(
       db, "SELECT COUNT(*) FROM input_types",
       [](void *, int count, char **values, char **) {
@@ -566,6 +570,11 @@ int64_t get_problem_id(variableSet &variables, tuningData &data) {
 //              "variable_id int, discrete_result int, real_result real)",
 //              nullptr, nullptr, const_cast<char **>(&data));
 void flush_buffer(variableSet &variables, tuningData &buffer) {
+  bind_statement(begin_transaction);
+  bind_statement(commit_transaction);
+
+  sqlite3_step(begin_transaction);
+  sqlite3_reset(begin_transaction);
   for (int trial = 0; trial < buffer.num_trials; ++trial) {
     
     int64_t trial_num = ++num_trials;
@@ -616,6 +625,8 @@ void flush_buffer(variableSet &variables, tuningData &buffer) {
       }
     }
   }
+  sqlite3_step(commit_transaction);
+  sqlite3_reset(commit_transaction);
 }
 
 std::map<variableSet, tuningData> data_repo;

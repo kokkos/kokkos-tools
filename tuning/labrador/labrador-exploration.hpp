@@ -56,7 +56,7 @@ struct VariableDatabaseData {
 
 using db_id_type = int64_t;
 constexpr const int64_t slice_continuous = 100;
-constexpr const int64_t tuning_data_buffer_size = 1000;
+constexpr const int64_t tuning_data_buffer_size = 1000000;
 constexpr const double epsilon = 1E-24;
 using clock_type = std::chrono::high_resolution_clock;
 using time_point = decltype(clock_type::now());
