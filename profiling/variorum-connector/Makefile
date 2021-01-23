@@ -1,7 +1,7 @@
 #Author: Zachary S. Frye
 #Organization: CASC at LLNL
 #Date: July 2020
-#Description: This is a simple makefile where i am testing and developing the Kokkos-variorum connector
+#Description: This is a simple makefile for testing and developing the Kokkos-variorum connector
 
 
 #Variorum stuff
