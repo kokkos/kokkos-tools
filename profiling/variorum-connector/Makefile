@@ -1,7 +1,7 @@
 #Author: Zachary S. Frye
 #Organization: CASC at LLNL
 #Date: July 2020
-#Description: This is a simple makefile for testing and developing the Kokkos-variorum connector
+#Description: This is a simple makefile where i am testing and developing the Kokkos-variorum connector
 
 
 #Variorum stuff
@@ -9,7 +9,7 @@ VAR_LIB=-L$(VARIORUM_ROOT)/lib
 VAR_INC=-I$(VARIORUM_ROOT)/include
 LINK_FLAG=-lvariorum
 
-CXX=g++
+CXX=mpicxx
 CXXFLAGS=-O3 -std=c++11 -g
 SHARED_CXXFLAGS=-shared -fPIC
 CFLAGS=-std=c++11 -Wall -g

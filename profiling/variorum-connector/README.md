@@ -39,4 +39,11 @@ example output from an Intel cluster:
     _LOG_VARIORUM_EXIT:$(VARIORUM_ROOT)/variorum.c:variorum_print_power::569
     _LOG_VARIORUM_ENTER:$(VARIORUM_ROOT)/variorum.c:variorum_print_power::552
 
-This connector has been developed and tested on Intel Broadwell and IBM Power9 clusters at LLNL. 
+This version of the connector was developed and tested on the Lassen cluster at LLNL.
+
+There are 5 options available with this connector that are set with Enviornment variables as follows:
+	1. VARIORUM_USING_MPI, this is set to either "true" or "false". The default is false. This option puts the connector in mpi mode where the output will be tied to an MPI rank 
+	2. RANKED_OUTPUT, this option is set to either "true" or "false". The default option is false When set to true the ranked output will be put in separated designated files.
+	3. KOKKOS_VARIORUM_FUNC_TYPE, this is set to either "json", "ppower" for print power or "both". This option is by default set to "both". There are two types of output this connector can provide, the power measurements printed out with their associated components or the direct jsoon data that holds the measrurements
+	4. VERBOSE, this option is set to either "true" or "false" and is associated with the print power option. The verbose print power function will print out the node, cpu, gpu and memeory power. The non verbose print power option will just print out node pwoer. 
+	5. VARIORUM_OUTPUT_PATH, this option enables the user to specify a desired output path. By default this option is set to "./" 
