@@ -99,7 +99,7 @@ class KernelPerformanceInfo {
 			free(kernelName);
 		}
 
-		KernelExecutionType getKernelType() {
+		KernelExecutionType getKernelType() const {
 			return kType;
 		}
 
@@ -122,11 +122,11 @@ class KernelPerformanceInfo {
 			startTime = seconds();
 		}
 
-		uint64_t getCallCount() {
+		uint64_t getCallCount() const {
 			return callCount;
 		}
 
-		double getTime() {
+		double getTime() const {
 			return time;
 		}
 
@@ -134,7 +134,7 @@ class KernelPerformanceInfo {
 			return timeSq;
 		}
 
-		char* getName() {
+		char* getName() const {
 			return kernelName;
 		}
 
