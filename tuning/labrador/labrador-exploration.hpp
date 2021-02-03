@@ -11,17 +11,64 @@
 #include <string>
 #include <vector>
 
-namespace labrador{
-	namespace explorer {
+namespace labrador{	
+namespace explorer {
+using valunion = decltype(std::declval<Kokkos::Tools::Experimental::VariableValue>().value);
+
+valunion make_valunion(double x) {
+	valunion ret;
+	ret.double_value =x;
+	return ret;
+}
+valunion make_valunion(int64_t x) {
+	valunion ret;
+	ret.double_value =x;
+	return ret;
+}
 constexpr const size_t max_variables = 64;
 struct variableSet {
   int64_t variable_ids[max_variables];
   size_t num_variables;
   size_t num_input_variables;
 };
+
+struct union_set {
+  size_t num_variables;
+  Kokkos_Tools_VariableInfo_ValueType types[max_variables];
+  valunion vars[max_variables];
+};
+
 }
 }
 namespace std {
+template <> struct less<labrador::explorer::union_set> {
+  bool operator()(const labrador::explorer::union_set &l, const labrador::explorer::union_set &r) {
+    if (l.num_variables != r.num_variables) {
+      return l.num_variables < r.num_variables;
+    }
+    for (int x = 0; x < l.num_variables; ++x) {
+      switch(l.types[x]) {
+        case kokkos_value_double:
+                if(l.vars[x].double_value != r.vars[x].double_value){
+                  return l.vars[x].double_value < r.vars[x].double_value;
+		}
+		break;
+	case kokkos_value_int64:
+                if(l.vars[x].int_value != r.vars[x].int_value){
+                  return l.vars[x].int_value < r.vars[x].int_value;
+		}
+		break;
+	case kokkos_value_string:
+                int x = strcmp(l.vars[x].string_value,r.vars[x].string_value);
+		if(x!=0){
+                  return (x < 0);
+		}
+		break;
+      }
+    }
+    return false;
+  }
+};
 template <> struct less<labrador::explorer::variableSet> {
   bool operator()(const labrador::explorer::variableSet &l, const labrador::explorer::variableSet &r) {
     if (l.num_variables != r.num_variables) {
@@ -40,7 +87,6 @@ template <> struct less<labrador::explorer::variableSet> {
 namespace labrador {
 namespace explorer {
 
-using valunion = decltype(std::declval<Kokkos::Tools::Experimental::VariableValue>().value);
 using valtype = decltype(std::declval<Kokkos::Tools::Experimental::VariableValue>().metadata->type);
 
 int cmp(valtype t, valunion l, valunion r);

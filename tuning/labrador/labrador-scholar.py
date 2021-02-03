@@ -105,7 +105,7 @@ maker_switch = {
   StatisticalCategory.ratio : make_ratio
 }
 
-categorical_cutoff = 8
+categorical_cutoff = 2
 
 for row in input_types:
   id,name,value_type,statistical_category=row
@@ -186,11 +186,17 @@ for id in problem_ids:
   creator_creator = "CREATE TABLE IF NOT EXISTS "+name+"(trial_id int, "
   inserter = "INSERT INTO "+name+" values (?,"
   selector = "SELECT trial_id, "
+  def get_type_info(variable_info,allow_translations):
+      if variable_info["is_categorical"] and allow_translations:
+        return "int"
+      else:
+        return type_map[variable_info["value_type"]]
   for x in inputs:
     vid = x[0]
-    creator_creator += "input_"+str(vid)+" "+type_map[variable_descriptions[vid]["value_type"]]+", "
-    inserter+="?,"
-    selector +="Null,"
+    creator_creator += "input_"+str(vid)+" "+get_type_info(variable_descriptions[vid],True)+", "
+    creator_creator += "input_"+str(vid)+"_raw "+get_type_info(variable_descriptions[vid],False)+", "
+    inserter+="?,?,"
+    selector +="Null,Null,"
   for x in outputs:
     vid = x[0]
     creator_creator += "output_"+str(vid)+" "+type_map[variable_descriptions[vid]["value_type"]]+", "
@@ -218,13 +224,21 @@ for id in problem_ids:
       interval = space.interval
       return "CAST (((trial_values."+value_field+" - "+ str(space.min) +" )/ "+str(interval)+") AS INT)"
   innames = []
+  groupnames = []
   outnames = []
   for x in inputs:
     vid = x[0]
     fieldname = "input_" + str(vid)
     innames.append(fieldname)
+    groupnames.append(fieldname)
+    innames.append(fieldname+"_raw")
     process = process_field(variable_descriptions[vid])
+    raw_process = process_field(variable_descriptions[vid],True)
     updator = "UPDATE "+name+ " SET "+fieldname+" = " + process +" FROM trial_values WHERE trial_values.variable_id=" +str(vid)+" AND trial_values.trial_id="+name+".trial_id"
+    fetcher.execute(updator)
+    conn.commit()
+
+    updator = "UPDATE "+name+ " SET "+fieldname+"_raw = " + raw_process +" FROM trial_values WHERE trial_values.variable_id=" +str(vid)+" AND trial_values.trial_id="+name+".trial_id"
     fetcher.execute(updator)
     conn.commit()
   for x in outputs:
@@ -235,142 +249,44 @@ for id in problem_ids:
     updator = "UPDATE "+name+ " SET "+fieldname+" = " + process +" FROM trial_values WHERE trial_values.variable_id=" +str(vid)+" AND trial_values.trial_id="+name+".trial_id"
     fetcher.execute(updator)
     conn.commit()
-  #SELECT min(avgtime),input_4,input_3,input_2,input_1,output_7,output_8 FROM (SELECT avg(result) AS avgtime, input_4,input_3,input_2,input_1,output_7,output_8 FROM problem_4_3_2_1_7_8_ GROUP BY input_4,input_3,input_2,input_1,output_7,output_8) as dogs GROUP BY input_4,input_3,input_2,input_1; 
-  analyzer = "SELECT "+",".join(outnames)+","+",".join(innames)+",min(avgtime) FROM (select avg(result) as avgtime, "+",".join(innames)+","+",".join(outnames)+" FROM "+name+" GROUP BY "+",".join(innames)+","+",".join(outnames)+") as dogs GROUP BY "+",".join(innames)
+  categorical_inputs = []
+  other_inputs = []
+  categorical_indices = []
+  other_indices = []
+  def index_for_analysis(name,offset=0):
+    pname = name[name.find("_")+1:]
+    return offset + int(pname[:pname.find("_")])
+  for field_index,x in enumerate(inputs):
+    vid = x[0]
+    description = variable_descriptions[vid]
+    fieldname = "input_"+str(vid)+"_raw"
+    category = description["is_categorical"]
+    if category:
+        categorical_inputs.append(fieldname)
+        categorical_indices.append(field_index)
+    else:
+        other_inputs.append(fieldname)
+        other_indices.append(field_index)
+  problem_descriptions[id]["analysis_sequence"] = []
+  problem_descriptions[id]["analysis_varinfo"] = []
+  for item in categorical_indices:
+    problem_descriptions[id]["analysis_sequence"].append(item)
+  for item in categorical_inputs:
+    problem_descriptions[id]["analysis_varinfo"].append(index_for_analysis(item))
+  for item in other_indices:
+    problem_descriptions[id]["analysis_sequence"].append(item)
+  for item in other_inputs:
+    problem_descriptions[id]["analysis_varinfo"].append(index_for_analysis(item))
+  orderby = "ORDER BY "+",".join([x[:x.find("_raw")] for x in categorical_inputs])+","+",".join([x[:x.find("_raw")] for x in other_inputs])
+  # if a problem lacks categorical or non-categorical inputs, the above can lead to commas at start or end
+  if orderby[0] == ',':
+      orderby = orderby[1:]
+  if orderby[-1] == ',':
+      orderby = orderby[:-1]
+  analyzer = "SELECT "+",".join(outnames)+","+",".join(innames)+",min(avgtime) FROM (select avg(result) as avgtime, "+",".join(innames)+","+",".join(outnames)+" FROM "+name+" GROUP BY "+",".join(groupnames)+","+",".join(outnames)+") as dogs GROUP BY "+",".join(groupnames)+ " " +orderby
   fetcher.execute(analyzer)
   problem_descriptions[id]["solution"] = fetcher.fetchall()
-# DZP FLAG pick this up here 
-fetcher.close()
-conn.close()
-sys.exit(0)
-#def slice_space(space):
-#  if(type(space)==Sliceable):
-#    return space
-#  else:
-#    space_to_slice = Sliceable(space,10)
-#  if(type(space_to_slice.space) is CategoricalSpace):
-#    return space_to_slice
-#  if(type(space_to_slice.space) == OrdinalSpace):
-#    values = []
-#    sliced_distance = (space_to_slice.space.max - space_to_slice.space.min) / space_to_slice.slices
-#    for i in range(space_to_slice.slices):
-#      values.append(space_to_slice.space.min + (sliced_distance * i))
-#    return CategoricalSpace(values)
-#  elif(type(space_to_slice.space) == RatioSpace):
-#    values = []
-#    sliced_distance = (math.log(space_to_slice.space.max) - math.log(space_to_slice.space.min)) / space_to_slice.slices
-#    for i in range(space_to_slice.slices):
-#      values.append(space_to_slice.space.min * math.exp(i))
-#    return CategoricalSpace(values)
-#  elif(type(space_to_slice.space) == IntervalSpace):
-#    values = []
-#    sliced_distance = (space_to_slice.space.max - space_to_slice.space.min) / space_to_slice.slices
-#    for i in range(space_to_slice.slices):
-#      values.append(space_to_slice.space.min + (i * sliced_distance))
-#    return CategoricalSpace(values)
-#
-#def num_slices(space):
-#  if(type(space) is CategoricalSpace):
-#    return len(space.categories)
-#  if(type(space) is Sliceable):
-#    return space.num_slices
-#  return len(slice_space(space).categories)
-#def combine_spaces(space_one,space_two):
-#  if (type(space_one) is EmptySpace):    
-#    return space_two
-#  if (type(space_two) is EmptySpace):    
-#    return space_one
-#  if (type(space_one) is not CategoricalSpace):
-#    cs1 = slice_space(space_one)  
-#  else:
-#    cs1 = space_one
-#  if (type(space_two) is not CategoricalSpace):
-#    cs2 = slice_space(space_two)  
-#  else:
-#    cs2 = space_two
-#
-#  if(type(cs1) is Sliceable):
-#    cs1 = slice_space(cs1.space)
-#    cs1 = cs1.space
-#  if(type(cs2) is Sliceable):
-#    cs2 = slice_space(cs2.space)
-#    cs2 = cs2.space
-#  #return CategoricalSpace([x for x in itertools.product(cs1.categories, cs2.categories)])
-#  out_categories = []
-#  for l in cs1.categories:
-#    if ((type(l) is not tuple)):
-#      fl = (l,)
-#    else:
-#      fl = l
-#    for r in cs2.categories:
-#      if ((type(r) is not tuple)):
-#        fr = (r,)
-#      else:
-#        fr = r
-#      out_categories.append(fl+fr)
-#  return CategoricalSpace(out_categories)
-
-
-
-answers = {}
-best_trial = {}
-for problem_id,problem in problem_descriptions.items():
-  best_trial[problem_id] = {}
-  merged_space = EmptySpace()
-  for variable in problem["inputs"]:
-    merged_space = combine_spaces(merged_space, variable_descriptions[variable]["search_space"])
-  problem["sliced_space"] = merged_space
-  for category in merged_space.categories: 
-    query_string = "SELECT * FROM ("
-    query_string += "SELECT COUNT(),MIN(trials.trial_id), trials.problem_id, AVG(trials.result) AS avg_result, "
-    num_inputs = len(problem["inputs"])
-    num_outputs = len(problem["outputs"])
-    for index,variable in enumerate(problem["inputs"]):
-      query_string += "dv%s.%s AS variable_value%s%s" % (index, "value%s" % (index,), index, ", ")
-    group_by = ""
-    for oindex,variable in enumerate(problem["outputs"]):
-      index = num_inputs + oindex
-      group_by += "variable_value%s%s" % (index, "," if oindex is not (len(problem["outputs"])-1) else "")
-      query_string += "dv%s.%s AS variable_value%s%s" % (index, "value%s" % (index,), index, ", " if oindex is not (num_outputs-1) else " ")
-    query_string += " FROM trials "
-    for index,variable in enumerate(problem["inputs"]):
-      search_space = slice_space(variable_descriptions[variable]["search_space"])
-      if(type(search_space) is Sliceable):
-        search_space = search_space.space
-      key = category
-      if(type(key) is tuple):
-        key=key[index]
-      higher = [x for x in search_space.categories if x > category[index]]
-      query_string+="LEFT JOIN (SELECT trial_id AS tid%s, %s AS value%s  FROM trial_values WHERE variable_id=%s AND " % (index, "discrete_result", index, variable)
-      if higher:
-        next_higher = min(higher)
-        if type(next_higher) is tuple:
-            next_higher = next_higher[index]
-        query_string += " %s >= %s and %s < %s " % ("discrete_result", category[index], "discrete_result", next_higher)
-      else:
-        key = category
-        if type(key) is tuple:
-            key = key[index]
-        query_string += " %s >= %s " % ("discrete_result", key)
-      query_string += ") dv%s ON dv%s.%s = trials.trial_id " % (index, index, "tid%s" % (index))
-    for oindex,variable in enumerate(problem["outputs"]):
-      id_discrete = variable_descriptions[variable]["value_type"] is not ValueType.floating_point
-      index = num_inputs + oindex
-      query_string+="LEFT JOIN (SELECT trial_id AS tid%s, %s AS value%s  FROM trial_values WHERE variable_id=%s " % (index, "discrete_result" if id_discrete else "real_result", index, variable)
-      query_string += ") dv%s ON dv%s.%s = trials.trial_id " % (index, index, "tid%s" % (index))
-    query_string += " GROUP BY %s ) concretized WHERE " % (group_by,)
-    for index,variable in enumerate(problem["inputs"]):
-      query_string += "concretized.variable_value%s NOT NULL AND " % (index)
-    #query_string += " (1=1) ORDER BY avg_result"
-    query_string += " concretized.problem_id=%s ORDER BY avg_result" % (problem_id)
-    fetcher.execute(query_string)
-    best_string = fetcher.fetchall()
-
-    if(len(best_string) > 0):
-      best_trial[problem_id][category] = best_string[0][1]
-      #print (query_string)
-    else:
-      best_trial[problem_id][category] = None
+  problem_descriptions[id]["analysis_query"] = analyzer
 import string      
 import random
 def make_variable_value(vid, value):
@@ -469,9 +385,19 @@ else:
   labrador::explorer::kokkosp_declare_output_type(name, id,info);
   """
 code+= "}\n"
+
+def disambiguate_variable_value(raw_value, variable_info):
+  typeinfo = variable_info["value_type"]
+  if typeinfo == ValueType.floating_point:
+    return "double("+str(raw_value)+")"
+  if (typeinfo == ValueType.integer) or (typeinfo == ValueType.text):
+    return "int64_t("+str(raw_value)+")"
+  pass
 for problem_id,problem in problem_descriptions.items():
   num_inputs = len(problem["inputs"])
   num_outputs = len(problem["outputs"])
+  map_initializer = {}
+  problem_groupings = {}
   tuner_name = ""
   for x in range(25):
     tuner_name += random.choice(string.ascii_lowercase)
@@ -480,32 +406,118 @@ for problem_id,problem in problem_descriptions.items():
   code += "Kokkos::Tools::Experimental::VariableValue %s [][%s] = { \n" % (choice_array_name,num_outputs,)
   sizes = []
   spaces = []
-  search_space = problem["sliced_space"]
-  for inp in problem["inputs"]:
-    space = slice_space(variable_descriptions[inp]["search_space"])
-    spaces.append(space)
-    if(type(space) is Sliceable):
-      space = space.space
-    sizes.append(len(space.categories))
-  num_categories = len(problem["sliced_space"].categories)
-  #print(problem["sliced_space"].categories)
-  for category_index, category in enumerate(problem["sliced_space"].categories):
-    code += " { "
-    best_option = best_trial[problem_id][category]
-    if best_option is not None:
-      for variable_index,output in enumerate(problem["outputs"]):
-        id_discrete = variable_descriptions[output]["value_type"] is not ValueType.floating_point
-        variable_id = variable_descriptions[output]["id"]
-        query_string = "SELECT %s FROM trial_values WHERE trial_id=? AND variable_id=?" % ("discrete_result" if id_discrete else "real_result",)
-        fetcher.execute(query_string , (best_option, variable_id))
-        value = fetcher.fetchone()[0]
-        code += make_variable_value(output, "%s(%s) " %(type_constructor_map[variable_descriptions[output]["value_type"]], value))
-        code +=  ", " if variable_index is not (len(problem["outputs"])-1) else ""
+  #search_space = problem["sliced_space"]
+  answer  = problem["solution"]
+  if len(answer) == 0:
+      continue
+  analysis_sequence = problem["analysis_sequence"]
+  analysis_varinfo = problem["analysis_varinfo"]
+  analysis_sequence.reverse()
+  analysis_varinfo.reverse()
+  num_numerical = 0
+  for problem_input in analysis_varinfo:
+    description = variable_descriptions[problem_input]
+    if not description["is_categorical"]:
+        num_numerical += 1
     else:
-      code += make_variable_value(0, "int64_t(0)")
-    code += " }%s " % (' ' if category_index is (num_categories-1) else ',')
-  code += " }; \n "
-  code += "Kokkos::Tools::Experimental::VariableValue* value_for_%s(Kokkos::Tools::Experimental::VariableValue* in) {\n"% (tuner_name,)
+        break
+  num_categorical = len(analysis_sequence) - num_numerical
+  print(problem["analysis_query"])
+  print("AS: "+str(analysis_sequence))
+  print("AV: "+str(analysis_varinfo))
+  print(answer[0])
+  #print("Pre loop")
+  measured_indices = set()
+  last_category = None
+  for answer_line in answer:
+    built_category = () 
+    for input_index,problem_input in enumerate(analysis_sequence[num_numerical:]):
+      measured_index = num_outputs + 2 * (problem_input)
+      raw_index = measured_index + 1
+      built_category = (answer_line[raw_index],) + built_category
+    if (built_category != last_category):
+      last_category = built_category
+      problem_groupings[built_category] = []
+    row = [answer_line[:num_outputs]]
+    for input_index,problem_input in enumerate(analysis_sequence[:num_numerical]):
+      measured_index = num_outputs + 2 * (problem_input)
+      raw_index = measured_index + 1
+      row.append(answer_line[measured_index])
+    row.reverse()
+    problem_groupings[built_category].append(row)
+  for categorical_key, numerical_results in problem_groupings.items():
+      inorder = analysis_sequence[:num_numerical]
+      inorder.reverse()
+      varinfo = analysis_varinfo[:num_numerical]
+      varinfo.reverse()
+      space_size = 1
+      mapped_to = "{ "
+      output_id = []
+      for x in problem["outputs"]:
+          output_id.append(x)
+      def get_space_size(space):
+          if (type(space) is CategoricalSpace or type(space) is OrdinalSpace):
+              return len(space.categories)
+          return 10 # TODO: smrter
+      def make_empty_entry(size):
+          retval = " { "
+          retval += "make_variable_value(-1,int64_t(-1))"
+          for x in range(size-1):
+              retval += ", make_variable_value(-1,int64_t(-1))"
+          retval += "}"
+          return retval
+      for item in varinfo:
+          space_size *= get_space_size(variable_descriptions[item]["search_space"])
+      space_index = 0
+      for whole_space_index in range(space_size):
+          if(space_index >= len(numerical_results)):
+              break
+          space_index_value = 0
+          multiplier = space_size / get_space_size(variable_descriptions[varinfo[num_numerical-1]]["search_space"])
+          for set_index,variable_index in enumerate(varinfo[:num_numerical]):
+            oindex = set_index
+            space_index_value += multiplier * numerical_results[space_index][oindex]
+            multiplier /= get_space_size(variable_descriptions[variable_index]["search_space"])
+          #print(space_index_value)
+          if whole_space_index != space_index_value:
+            mapped_to += make_empty_entry(num_outputs)
+          else:
+            subentry = "{ "
+            subentry += "make_variable_value(" + \
+            str(output_id[0])+", "+ \
+            disambiguate_variable_value(str(numerical_results[space_index][-1][0]), \
+                    variable_descriptions[output_id[0]])+")"
+            for x in range(num_outputs-1):
+              subentry += ", make_variable_value(" +str(output_id[x+1])+", "+disambiguate_variable_value(str(numerical_results[space_index][-1][x+1]),variable_descriptions[output_id[x+1]])+")"
+            subentry += "} "
+            space_index += 1
+            mapped_to += subentry
+          mapped_to +=", "
+      mapped_to += make_empty_entry(num_outputs)
+      mapped_to += "}"
+      map_initializer[categorical_key] = mapped_to
+  for key,val in map_initializer.items():
+      #analysis_sequence
+      #analysis_varinfo
+      print(analysis_sequence)
+      print(analysis_varinfo)
+      cut_analysis_sequence = analysis_sequence[num_numerical:]
+      cut_analysis_varinfo = analysis_varinfo[num_categorical:]
+      cut_analysis_sequence.reverse()
+      cut_analysis_varinfo.reverse()
+      
+      key_builder = list(zip(cut_analysis_varinfo,key)) 
+      # TODONEXT: make as in labrador-retriever.cpp
+      first_part = key_builder[0]
+      map_key = " { make_variable_value(" + str(first_part[0])+", "+disambiguate_variable_value(str(first_part[1]),variable_descriptions[first_part[0]]) +")"
+      if(len(key_builder) > 1):
+        for varinfo,value in key_builder[1:]:
+            map_key += ", " +" make_variable_value(" + str(varinfo)+", "+disambiguate_variable_value(str(value),variable_descriptions[varinfo]) +")" 
+      map_key += " } "
+      pdb.set_trace()
+
+     
+  #code += "Kokkos::Tools::Experimental::VariableValue* value_for_%s(Kokkos::Tools::Experimental::VariableValue* in) {\n"% (tuner_name,)
 
   for input_index, input_id in enumerate(problem["inputs"]):
     
