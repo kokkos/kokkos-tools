@@ -51,6 +51,7 @@
 #include <set>
 #include <cassert>
 #include <queue>
+#include <regex>
 #include <sstream>
 #include <sys/resource.h>
 #include <algorithm>
@@ -298,7 +299,8 @@ struct StackNode {
         os << "\"kernels-per-second\" : \"N/A\",\n";
       }
       os << "\"number-of-calls\" : " << number_of_calls << ",\n";
-      os << "\"name\" : \"" << name << "\",\n";
+      auto name_escape_double_quote_twices = std::regex_replace(name, std::regex("\""), "\\\"");
+      os << "\"name\" : \"" << name_escape_double_quote_twices << "\",\n";
       os << "\"parent-id\" : \"" << parent << "\",\n";
       os << "\"id\" : \"" << this << "\",\n";
 
