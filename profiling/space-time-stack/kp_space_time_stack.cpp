@@ -611,14 +611,13 @@ struct State {
 #if USE_MPI
       int rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#if USE_MPI
       if (rank == 0) {
 #endif
         std::ofstream fout("noname.json");
         stack_root.print_json(fout);
- #if USE_MPI
-    }
- #endif
+#if USE_MPI
+      }
+#endif
         return;
     }
 
