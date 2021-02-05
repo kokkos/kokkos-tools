@@ -9,7 +9,7 @@ VAR_LIB=-L$(VARIORUM_ROOT)/lib
 VAR_INC=-I$(VARIORUM_ROOT)/include
 LINK_FLAG=-lvariorum
 
-CXX=g++
+CXX=mpicxx
 CXXFLAGS=-O3 -std=c++11 -g
 SHARED_CXXFLAGS=-shared -fPIC
 CFLAGS=-std=c++11 -Wall -g
