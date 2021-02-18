@@ -226,7 +226,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 using RegionData = std::pair<std::string, Apollo::Region *>;
 // using RegionData = Apollo::Region*;
 
-static std::map<size_t, Apollo::Region *> tuned_contexts;
+static std::map<size_t, std::pair<Apollo::Region *, Apollo::RegionContext*>> tuned_contexts;
 static std::map<variableSet, RegionData> tuning_regions;
 extern "C" void kokkosp_finalize_library() {
   printf("Finalizing Apollo Tuning adapter\n");
@@ -445,8 +445,8 @@ extern "C" void kokkosp_request_values(
     iter.first->second = std::make_pair(name, region);
   }
   auto region = iter.first->second.second;
-  tuned_contexts[contextId] = region;
-  region->begin();
+  auto* context = region->begin();
+  tuned_contexts[contextId] = std::make_pair(region, context);
   // std::cout <<"Cont: "<<numContextVariables<<std::endl;
   for (int x = 0; x < numContextVariables; ++x) {
     if (untunables.find(contextValues[x].type_id) == untunables.end()) {
@@ -474,8 +474,10 @@ extern "C" void kokkosp_end_context(size_t contextId) {
   if (search == tuned_contexts.end()) {
     return;
   }
-  auto region = search->second;
-  region->end();
+  auto region_context = search->second;
+  auto region = region_context.first;
+  auto context = region_context.second;
+  region->end(context);
   tuned_contexts.erase(contextId);
   static int encounter;
   if ((++encounter % 500) == 0) {
