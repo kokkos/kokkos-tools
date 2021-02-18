@@ -437,7 +437,7 @@ extern "C" void kokkosp_request_values(
     Apollo::Region *region;
     if (file_exists(final_name)) {
       region = new Apollo::Region(numContextVariables, name.c_str(),
-                                  choiceSpaceSize, final_name);
+                                  choiceSpaceSize, nullptr, final_name);
     } else {
       region = new Apollo::Region(numContextVariables, name.c_str(),
                                   choiceSpaceSize);
@@ -478,7 +478,7 @@ extern "C" void kokkosp_end_context(size_t contextId) {
   region->end();
   tuned_contexts.erase(contextId);
   static int encounter;
-  if ((++encounter % 2000) == 0) {
+  if ((++encounter % 500) == 0) {
     apollo->flushAllRegionMeasurements(0);
   }
 }
