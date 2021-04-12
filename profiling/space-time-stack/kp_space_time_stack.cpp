@@ -53,6 +53,7 @@
 #include <sstream>
 #include <sys/resource.h>
 #include <algorithm>
+#include <cstring>
 
 #ifndef USE_MPI
 #define USE_MPI 1
@@ -76,16 +77,26 @@ struct SpaceHandle {
 
 enum Space {
   SPACE_HOST,
-  SPACE_CUDA
+  SPACE_CUDA,
+  SPACE_HIP,
+  SPACE_SYCL
 };
 
-enum { NSPACES = 2 };
+enum { NSPACES = 4 };
 
 Space get_space(SpaceHandle const& handle) {
-  switch (handle.name[0]) {
-    case 'H': return SPACE_HOST;
-    case 'C': return SPACE_CUDA;
-  }
+  if (strcmp(handle.name, "Cuda") == 0 || strcmp(handle.name, "CudaUVM") == 0 ||
+      strcmp(handle.name, "CudaHostPinned")==0 )
+    return SPACE_CUDA;
+  if (strcmp(handle.name, "SYCLDeviceUSM") == 0 ||
+      strcmp(handle.name, "SYCLSharedUSM") == 0)
+    return SPACE_SYCL;
+  if (strcmp(handle.name, "HIP") == 0 ||
+      strcmp(handle.name, "HIPHostPinned") == 0)
+    return SPACE_HIP;
+  if (strcmp(handle.name, "Host") == 0)
+    return SPACE_HOST;
+
   abort();
   return SPACE_HOST;
 }
@@ -94,6 +105,8 @@ const char* get_space_name(int space) {
   switch (space) {
     case SPACE_HOST: return "HOST";
     case SPACE_CUDA: return "CUDA";
+    case SPACE_SYCL: return "SYCL";
+    case SPACE_HIP: return "HIP";
   }
   abort();
   return nullptr;
