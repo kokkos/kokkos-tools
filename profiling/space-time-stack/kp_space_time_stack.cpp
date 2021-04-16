@@ -85,14 +85,14 @@ enum Space {
 enum { NSPACES = 4 };
 
 Space get_space(SpaceHandle const& handle) {
-  if (strcmp(handle.name, "Cuda") == 0 || strcmp(handle.name, "CudaUVM") == 0 ||
-      strcmp(handle.name, "CudaHostPinned")==0 )
+  // check that name starts with "Cuda"
+  if (strncmp(handle.name, "Cuda", 4) == 0)
     return SPACE_CUDA;
-  if (strcmp(handle.name, "SYCLDeviceUSM") == 0 ||
-      strcmp(handle.name, "SYCLSharedUSM") == 0)
+  // check that name starts with "SYCL"
+  if (strncmp(handle.name, "SYCL", 4) == 0)
     return SPACE_SYCL;
-  if (strcmp(handle.name, "HIP") == 0 ||
-      strcmp(handle.name, "HIPHostPinned") == 0)
+  // check that name starts with "HIP"
+  if (strncmp(handle.name, "HIP", 3) == 0)
     return SPACE_HIP;
   if (strcmp(handle.name, "Host") == 0)
     return SPACE_HOST;
