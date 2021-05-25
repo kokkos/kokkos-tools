@@ -17,5 +17,13 @@ make -f $ROOT_DIR/profiling/simple-kernel-timer/Makefile
 make -f $ROOT_DIR/profiling/space-time-stack/Makefile
 make -f $ROOT_DIR/profiling/systemtap-connector/Makefile
 make -f $ROOT_DIR/profiling/timemory-connector/Makefile
-make -f $ROOT_DIR/profiling/vtune-connector/Makefile
-make -f $ROOT_DIR/profiling/vtune-focused-connector/Makefile
+if [ -z "${VTUNE_HOME}" ]; then
+  echo ""
+  echo "========================================="
+  echo "Set VTUNE_HOME to build vtune connectors."
+  echo "========================================="
+  echo ""
+else
+  make -f $ROOT_DIR/profiling/vtune-connector/Makefile
+  make -f $ROOT_DIR/profiling/vtune-focused-connector/Makefile
+fi
