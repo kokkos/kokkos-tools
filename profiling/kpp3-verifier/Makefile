@@ -5,6 +5,10 @@ SHARED_CXXFLAGS=-shared -fPIC
 all: kp_ecp_kpp3.so
 
 MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
+ifneq (,$(findstring SYCL,$(MODE)))
+  CXX=clang++
+  CXXFLAGS+=-fsycl
+endif
 
 CXXFLAGS+=-I${MAKEFILE_PATH} -D${MODE}
 
