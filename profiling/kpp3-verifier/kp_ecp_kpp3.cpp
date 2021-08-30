@@ -55,6 +55,9 @@
 #include <sys/resource.h>
 #include <unistd.h>
 #include "kp_kernel_info.h"
+#ifdef SYCL
+#include<CL/sycl.hpp>
+#endif
 
 int num_spaces;
 std::vector<std::tuple<double, uint64_t, double> > space_size_track[16];
@@ -166,12 +169,43 @@ void extract_cpuinfo() {
 }
 
 void extract_gpuinfo() {
+  #ifdef NVIDIA
   // Try nvidia-smi
   {
       std::array<char, 128> buffer;
       std::string result;
 
-      auto pipe = popen("nvidia-smi -L", "r"); // get rid of shared_ptr
+      auto pipe = popen("nvidia-smi -L | grep GPU", "r"); // get rid of shared_ptr
+
+      if (!pipe) throw std::runtime_error("popen() failed!");
+
+      while (!feof(pipe)) {
+        if (fgets(buffer.data(), 128, pipe) != nullptr)
+            result += buffer.data();
+      }
+
+      auto rc = pclose(pipe);
+      if(rc == 0) {
+        printf("Success\n");
+        auto sub = result;
+        int gpu_pos = sub.find("GPU ");
+        while(gpu_pos<sub.length()) {
+          sub = sub.substr(gpu_pos);
+          std::cout<<"   "<<sub.substr(0,sub.find("(UUID")) << std::endl;
+          sub = sub.substr(sub.find("UUID"));
+          gpu_pos = sub.find("GPU ");
+        }
+      }
+      
+  }
+  #endif
+  #ifdef ROCM
+  // Try rocm-smi
+  {
+      std::array<char, 128> buffer;
+      std::string result;
+
+      auto pipe = popen("rocm-smi --showproductname | grep \"Card series:\"", "r"); // get rid of shared_ptr
 
       if (!pipe) throw std::runtime_error("popen() failed!");
 
@@ -183,15 +217,31 @@ void extract_gpuinfo() {
       auto rc = pclose(pipe);
       if(rc == 0) {
         auto sub = result;
-        int gpu_pos = sub.find("GPU ");
+        int gpu_pos = sub.find("GPU");
         while(gpu_pos<sub.length()) {
           sub = sub.substr(gpu_pos);
-          std::cout<<"   "<<sub.substr(0,sub.find("(UUID")) << std::endl;
-          sub = sub.substr(sub.find("UUID"));
-          gpu_pos = sub.find("GPU ");
+          auto sub2 = sub;
+          std::cout<<"   "<<sub2.substr(0,sub2.find(":")); 
+          sub2 = sub2.substr(sub2.find(":")+1);
+          sub2 = sub2.substr(sub2.find(":")+1);
+          std::cout<<": "<<sub2.substr(0,sub2.find("\n"))<<std::endl;
+          sub = sub2;
+          gpu_pos = sub2.find("GPU");
         }
       }
    }
+   #endif
+   #ifdef SYCL
+   for( const cl::sycl::platform& platform :
+     cl::sycl::platform::get_platforms() ) {
+     for( const cl::sycl::device& device : platform.get_devices() ) {
+       printf("Device[%i]: %s %s\n",
+         count, 
+         device.get_info< cl::sycl::info::device::vendor >().c_str(),
+         device.get_info< cl::sycl::info::device::name >().c_str());
+     }
+   }
+   #endif
 }
 
 extern "C" void kokkosp_finalize_library() {

@@ -6,7 +6,7 @@ all: kp_ecp_kpp3.so
 
 MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
 
-CXXFLAGS+=-I${MAKEFILE_PATH}
+CXXFLAGS+=-I${MAKEFILE_PATH} -D${MODE}
 
 
 kp_ecp_kpp3.so: ${MAKEFILE_PATH}kp_ecp_kpp3.cpp ${MAKEFILE_PATH}kp_kernel_info.h
