@@ -232,6 +232,7 @@ void extract_gpuinfo() {
    }
    #endif
    #ifdef SYCL
+   int count = 0;
    for( const cl::sycl::platform& platform :
      cl::sycl::platform::get_platforms() ) {
      for( const cl::sycl::device& device : platform.get_devices() ) {
@@ -239,6 +240,7 @@ void extract_gpuinfo() {
          count, 
          device.get_info< cl::sycl::info::device::vendor >().c_str(),
          device.get_info< cl::sycl::info::device::name >().c_str());
+       count++;
      }
    }
    #endif
@@ -267,7 +269,7 @@ extern "C" void kokkosp_finalize_library() {
   printf("Parallel Execution Summary:\n");
   printf("---------------------------\n");
   printf("\n");
-  printf("Kokkos executed a total of %llu kernels\n", uniqID);
+  printf("Kokkos executed a total of %lu kernels\n", uniqID);
   printf("\n");
   printf("20 kernels with the most aggregate time: \n\n");
   std::vector<KernelPerformanceInfo*> kernelList;
@@ -329,7 +331,7 @@ extern "C" void kokkosp_finalize_library() {
   &demangleStatus);
 
           if(0 == strcmp(outputDelimiter, " ")) {
-                  printf("%-52s%s%10llu%s%14.5f%s%6.2f%s%6.2f%s%14.5f%s%4s\n", (0 == demangleStatus) ?
+                  printf("%-52s%s%10lu%s%14.5f%s%6.2f%s%6.2f%s%14.5f%s%4s\n", (0 == demangleStatus) ?
   finalDemangle : kName.c_str(), outputDelimiter, kCallCount, outputDelimiter,
                           kTime,
                           outputDelimiter,
@@ -342,7 +344,7 @@ extern "C" void kokkosp_finalize_library() {
                           kType
                           );
           } else {
-                  printf("%s%s%llu%s%f%s%f%s%f%s%f%s%s\n",
+                  printf("%s%s%lu%s%f%s%f%s%f%s%f%s%s\n",
                           (0 == demangleStatus) ? finalDemangle : kName.c_str(),
                           outputDelimiter,
                           kCallCount,
@@ -367,8 +369,8 @@ extern "C" void kokkosp_finalize_library() {
 
   const double percentKokkos = (kernelTimes / totalExecuteTime) * 100.0;
   printf("Kokkos: Fraction in Parallel algorithms:   %15.6f \%\n", percentKokkos);
-  printf("Kokkos: Number of Unique kernels:          %22llu \n", (uint64_t) count_map.size());
-  printf("Kokkos: Parallel For Calls:                %22llu \n",
+  printf("Kokkos: Number of Unique kernels:          %22lu \n", (uint64_t) count_map.size());
+  printf("Kokkos: Parallel For Calls:                %22lu \n",
   uniqID);
 
   printf("\n\n");
@@ -461,41 +463,6 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
 extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
   currentEntry->addFromTimer();
 }
-
-extern "C" void kokkosp_push_profile_region(char* regionName) {
-  increment_counter_region(regionName, REGION);
-}
-
-extern "C" void kokkosp_pop_profile_region() {
-  current_region_level--;
-
-  // current_region_level is out of bounds, inform the user they
-  // called popRegion too many times.
-  if (current_region_level < 0) {
-    current_region_level = 0;
-    std::cerr << "WARNING:: Kokkos::Profiling::popRegion() called outside "
-              << " of an actve region. Previous regions: ";
-
-    /* This code block will walk back through the non-null regions
-     * pointers and print the names.  This takes advantage of a slight
-     * issue with regions logic: we never actually delete the
-     * KernelPerformanceInfo objects.  If that ever changes this needs
-     * to be updated.
-     */
-    for (int i = 0; i < 5; i++) {
-      if (regions[i] != 0) {
-        std::cerr << (i == 0 ? " " : ";") << regions[i]->getName();
-      } else {
-        break;
-      }
-    }
-    std::cerr << "\n";
-  } else {
-    // don't call addFromTimer if we are outside an active region
-    regions[current_region_level]->addFromTimer();
-  }
-}
-
 
 extern "C" void kokkosp_allocate_data(const SpaceHandle space,
                                       const char* label, const void* const ptr,
