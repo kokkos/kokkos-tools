@@ -44,9 +44,6 @@
 
 #include <cstdint>
 #include <iostream>
-#include <stack>
-
-static std::stack<roctx_range_id_t> kokkosp_regions;
 
 extern "C" void kokkosp_init_library(const int loadSeq,
                                      const uint64_t interfaceVer,
@@ -102,15 +99,7 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t /*kID*/) {
 }
 
 extern "C" void kokkosp_push_profile_region(char* name) {
-        kokkosp_regions.emplace(roctxRangeStartA(name));
+        roctxRangePush(name);
 }
 
-extern "C" void kokkosp_pop_profile_region() {
-        if (kokkosp_regions.empty()) {
-                std::cerr << "KokkosP: Error - popped region with no active "
-                             "regions pushed.\n";
-        } else {
-                roctxRangeStop(kokkosp_regions.top());
-                kokkosp_regions.pop();
-        }
-}
+extern "C" void kokkosp_pop_profile_region() { roctxRangePop(); }
