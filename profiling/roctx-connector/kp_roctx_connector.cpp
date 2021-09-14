@@ -44,6 +44,16 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string>
+#include <vector>
+
+namespace {
+struct Section {
+        std::string label;
+        roctx_range_id_t id;
+};
+std::vector<Section> kokkosp_sections;
+}  // namespace
 
 extern "C" void kokkosp_init_library(const int loadSeq,
                                      const uint64_t interfaceVer,
@@ -103,3 +113,24 @@ extern "C" void kokkosp_push_profile_region(char* name) {
 }
 
 extern "C" void kokkosp_pop_profile_region() { roctxRangePop(); }
+
+extern "C" void kokkosp_create_profile_section(const char* name,
+                                               uint32_t* sID) {
+        *sID = kokkosp_sections.size();
+        kokkosp_sections.push_back(
+            {std::string(name), static_cast<roctx_range_id_t>(-1)});
+}
+
+extern "C" void kokkosp_start_profile_section(const uint32_t sID) {
+        auto& section = kokkosp_sections[sID];
+        section.id = roctxRangeStart(section.label.c_str());
+}
+
+extern "C" void kokkosp_stop_profile_section(const uint32_t sID) {
+        auto const& section = kokkosp_sections[sID];
+        roctxRangeStop(section.id);
+}
+
+extern "C" void kokkosp_destroy_profile_section(const uint32_t sID) {
+        // do nothing
+}
