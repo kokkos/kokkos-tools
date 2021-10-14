@@ -1,0 +1,1 @@
+add_library(kp_kernel_timer_json SHARED kp_kernel_timer.cpp)

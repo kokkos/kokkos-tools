@@ -1,0 +1,1 @@
+add_library(kp_space_time_stack SHARED kp_space_time_stack.cpp)

@@ -1,0 +1,1 @@
+add_library(kp_kernel_filter SHARED kp_kernel_filter.cpp)
