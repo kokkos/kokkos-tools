@@ -5,12 +5,14 @@ project(KokkosTools CXX)
 # Set policies
 cmake_policy(SET CMP0054 NEW) # simplify if()
 cmake_policy(SET CMP0057 NEW) # support IN_LIST in if()
+cmake_policy(SET CMP0111 NEW) # error if library not found
 
 # Disable in-source builds to prevent source tree corruption.
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
   message(FATAL_ERROR "FATAL: In-source builds are not allowed. You should create a separate directory for build files.")
 endif()
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 # TODO: Configure based on Kokkos
 #       * check+test compile flags, especially ABI relevant
@@ -43,7 +45,7 @@ add_subdirectory(profiling/simple-kernel-timer)
 add_subdirectory(profiling/space-time-stack)
 
 # External lib connectors
-#add_subdirectory(profiling/papi-connector)
+add_subdirectory(profiling/papi-connector)
 #add_subdirectory(profiling/systemtap-connector)
 #add_subdirectory(profiling/variorum-connector)
 
