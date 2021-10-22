@@ -47,7 +47,7 @@ add_subdirectory(profiling/space-time-stack)
 # External lib connectors
 add_subdirectory(profiling/papi-connector)
 #add_subdirectory(profiling/systemtap-connector)
-#add_subdirectory(profiling/variorum-connector)
+add_subdirectory(profiling/variorum-connector)
 
 # Build external
 # TODO: tpls/Caliper
