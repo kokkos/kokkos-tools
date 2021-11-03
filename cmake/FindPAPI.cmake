@@ -17,14 +17,16 @@ This module defines the following variables:
 ``PAPI_FOUND``
   "True" if ``papi`` found.
 
-``PAPI_INCLUDE_DIRS``
+``PAPI_INCLUDE_DIR``
   where to find ``papi``/``papi.h``, etc.
 
-``PAPI_LIBRARIES``
+``PAPI_LIBRARY``
   List of libraries when using ``papi``.
 
 ``PAPI_VERSION_STRING``
   The version of ``papi`` found.
+
+This module defines ``PAPI::libpapi`` target for PAPI library.
 
 #]=======================================================================]
 
@@ -92,7 +94,7 @@ set_property(
 
 set_target_properties(
   PAPI::libpapi PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "${PAPI_INCLUDE_DIRS}"
+  INTERFACE_INCLUDE_DIRECTORIES "${PAPI_INCLUDE_DIR}"
   IMPORTED_LINK_INTERFACE_LANGUAGES "C"
   IMPORTED_LOCATION "${PAPI_LIBRARY}"
   IMPORTED_LOCATION_RELEASE "${PAPI_LIBRARY}"
