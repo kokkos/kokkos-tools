@@ -12,7 +12,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
   message(FATAL_ERROR "FATAL: In-source builds are not allowed. You should create a separate directory for build files.")
 endif()
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # TODO: Configure based on Kokkos
 #       * check+test compile flags, especially ABI relevant
