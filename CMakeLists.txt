@@ -50,7 +50,6 @@ add_subdirectory(profiling/papi-connector)
 add_subdirectory(profiling/variorum-connector)
 
 # Build external
-# TODO: tpls/Caliper
 # TODO: tpls/apex
 
 # GPU profilers
@@ -71,4 +70,53 @@ if(VTune_ROOT)
 else()
   message(WARNING "Set VTUNE_HOME in environment or VTune_ROOT in build options to build VTune connectors")
   set(VTune_ROOT "" CACHE STRING "Path to VTune Intel compiler")
+endif()
+
+# Note: Caliper docs https://software.llnl.gov/Caliper/build.html
+#       might miss some options, check the top CMakeLists.txt:
+#       https://github.com/LLNL/Caliper/blob/master/CMakeLists.txt
+macro(configure_caliper)
+  #set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS}) # Build shared (ON - default) or static library (OFF).
+  #set(BUILD_DOCS OFF)   # Build documentation.
+  #set(BUILD_TESTING OFF) # Build unit tests.
+  #set(WITH_FORTRAN OFF) # Build and install Fortran wrappers.
+  set(WITH_KOKKOS ON) # Enable Kokkos profiling support
+
+  # Build with support for the OpenMP tools interface.
+  ## TODO: Caliper fails with: omp-tools.h NOT found...
+  # find_package(OpenMP)
+  # if(OpenMP_FOUND)
+  #   set(WITH_OMPT ON)
+  # else()
+  #   set(WITH_OMPT OFF)
+  #   message(WARNING "OpenMP not found - turning OFF OpenMP-Tools support in Caliper")
+  # endif()
+
+  set(WITH_SAMPLER ON)  # Enable time-based sampling on Linux.
+  set(WITH_TOOLS ON)    # Build Caliper’s tools (i.e, cali-query and mpi-caliquery). Default: On.
+  set(WITH_MPI ${KOKKOS_ENABLE_MPI}) # Build with MPI support.
+  set(WITH_ROCM ${Kokkos_ENABLE_HIP}) # Enable AMD ROCtracer/RocTX support
+  set(WITH_NVTX ${Kokkos_ENABLE_CUDA}) # Build adapters to forward Caliper annotations to NVidia’s nvtx annotation API. Set CUDA_TOOLKIT_ROOT_DIR to the CUDA installation.
+  set(WITH_CUPTI ${Kokkos_ENABLE_CUDA}) # Enable support for CUDA performance analysis
+                                        # (wrapping of driver/runtime API calls and CUDA activity tracing).
+  # Enable PAPI hardware counter service (requires papi)
+  find_package(PAPI)
+  if(PAPI_FOUND)
+    cmake_path(GET PAPI_INCLUDE_DIR PARENT_PATH PAPI_PREFIX)
+    set(WITH_PAPI ON)
+  endif()
+  # Build adapters to forward Caliper annotations to Intel’s VTune annotation API.
+  if(VTune_ROOT)
+    set(WITH_VTUNE ON)
+    set(ITT_PREFIX ${VTune_ROOT}/sdk)
+    # TODO: Caliper doesn't seek ITT in ${VTune_ROOT}/sdk/lib64 or ${VTune_ROOT}/sdk/lib32 (only in .../lib)
+  else()
+    set(WITH_VTUNE OFF)
+  endif()
+endmacro()
+
+# Build TPLs
+if(KOKKOSTOOLS_ENABLE_CALIPER)
+  configure_caliper()
+  add_subdirectory(tpls/Caliper)
 endif()
