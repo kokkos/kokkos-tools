@@ -124,8 +124,32 @@ macro(configure_caliper)
   endif()
 endmacro()
 
+# Note: Apex docs http://uo-oaciss.github.io/apex/install/#standalone_installation
+macro(configure_apex)
+  #set(BUILD_STATIC_EXECUTABLES OFF)
+  set(APEX_WITH_PAPI ${PAPI_FOUND})
+  set(APEX_WITH_CUDA ${Kokkos_ENABLE_CUDA})
+  set(APEX_WITH_BFD ON)
+  #set(BFD_ROOT ...)
+  if(OMPT_FOUND)
+    set(APEX_WITH_OMPT ON)
+    # TODO: set(OMPT_ROOT ...) ?
+  else()
+    set(APEX_WITH_OMPT OFF)
+  endif()
+  # TODO: Apex tries to fetch TPLs and install them in /usr/lib
+  #       (normally failing) unless we disable them...
+  set(APEX_WITH_ACTIVEHARMONY OFF)
+  set(APEX_WITH_OTF2 OFF)
+  set(APEX_WITH_MPI OFF)
+endmacro()
+
 # Build TPLs
 if(KOKKOSTOOLS_ENABLE_CALIPER)
   configure_caliper()
   add_subdirectory(tpls/Caliper)
+endif()
+if(KOKKOSTOOLS_ENABLE_APEX)
+  configure_apex()
+  add_subdirectory(tpls/apex)
 endif()
