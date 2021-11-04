@@ -14,7 +14,21 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-# TODO: Configure based on Kokkos
+message(STATUS)
+message(STATUS Configuring Kokkos-Tools)
+message(STATUS)
+
+# Tools settings
+set(KOKKOSTOOLS_ENABLE_CALIPER ON CACHE BOOL "Enable building Caliper library")
+set(KOKKOSTOOLS_ENABLE_APEX    ON CACHE BOOL "Enable building Apex library")
+
+# Check Kokkos settings
+if(TARGET Kokkos::kokkos)
+  message(STATUS "Using Kokkos settings for KokkosTools (source: ${Kokkos_SOURCE_DIR})")
+else()
+  message(WARNING "Not using Kokkos for tools configuration\n\tNote: using settings from installed is Kokkos not yet supported")
+endif()
+  # TODO: Configure based on Kokkos
 #       * check+test compile flags, especially ABI relevant
 #       * use installed version if Kokkos_ROOT or Kokkos_DIR is defined
 #       * check if Kokkos was already included in build with add_subdirectory()
