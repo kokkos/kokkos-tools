@@ -30,6 +30,14 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_CXX_COMPILER ${Kokkos_CXX_COMPILER})
 set(CMAKE_CXX_STANDARD ${CMAKE_CXX_STANDARD_DEFAULT})
 
+# Libraries
+find_package(PAPI)
+if(PAPI_FOUND)
+  cmake_path(GET PAPI_INCLUDE_DIR PARENT_PATH PAPI_ROOT)
+endif()
+find_package(OpenMP)
+find_package(MPI)
+
 # Utilities
 add_subdirectory(common/kernel-filter)
 add_subdirectory(debugging/kernel-logger)
@@ -45,7 +53,12 @@ add_subdirectory(profiling/simple-kernel-timer)
 add_subdirectory(profiling/space-time-stack)
 
 # External lib connectors
-add_subdirectory(profiling/papi-connector)
+if(PAPI_FOUND)
+  add_subdirectory(profiling/papi-connector)
+else()
+  message(WARNING "PAPI library not found - skipping papi-connector")
+endif()
+
 #add_subdirectory(profiling/systemtap-connector)
 add_subdirectory(profiling/variorum-connector)
 
@@ -83,14 +96,11 @@ macro(configure_caliper)
   set(WITH_KOKKOS ON) # Enable Kokkos profiling support
 
   # Build with support for the OpenMP tools interface.
-  ## TODO: Caliper fails with: omp-tools.h NOT found...
-  # find_package(OpenMP)
-  # if(OpenMP_FOUND)
-  #   set(WITH_OMPT ON)
-  # else()
-  #   set(WITH_OMPT OFF)
-  #   message(WARNING "OpenMP not found - turning OFF OpenMP-Tools support in Caliper")
-  # endif()
+  if(OpenMP_FOUND)
+    set(WITH_OMPT ON)
+  else()
+    set(WITH_OMPT OFF)
+  endif()
 
   set(WITH_SAMPLER ON)  # Enable time-based sampling on Linux.
   set(WITH_TOOLS ON)    # Build Caliper’s tools (i.e, cali-query and mpi-caliquery). Default: On.
@@ -100,10 +110,9 @@ macro(configure_caliper)
   set(WITH_CUPTI ${Kokkos_ENABLE_CUDA}) # Enable support for CUDA performance analysis
                                         # (wrapping of driver/runtime API calls and CUDA activity tracing).
   # Enable PAPI hardware counter service (requires papi)
-  find_package(PAPI)
   if(PAPI_FOUND)
-    cmake_path(GET PAPI_INCLUDE_DIR PARENT_PATH PAPI_PREFIX)
     set(WITH_PAPI ON)
+    set(PAPI_PREFIX ${PAPI_ROOT})
   endif()
   # Build adapters to forward Caliper annotations to Intel’s VTune annotation API.
   if(VTune_ROOT)
