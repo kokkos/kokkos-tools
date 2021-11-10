@@ -19,8 +19,8 @@ message(STATUS Configuring Kokkos-Tools)
 message(STATUS)
 
 # Tools settings
-set(KOKKOSTOOLS_ENABLE_CALIPER ON CACHE BOOL "Enable building Caliper library")
-set(KOKKOSTOOLS_ENABLE_APEX    ON CACHE BOOL "Enable building Apex library")
+option(KOKKOSTOOLS_ENABLE_CALIPER "Enable building Caliper library" ON)
+option(KOKKOSTOOLS_ENABLE_APEX    "Enable building Apex library"    ON)
 
 # Check Kokkos settings
 if(TARGET Kokkos::kokkos)
