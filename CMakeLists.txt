@@ -107,40 +107,40 @@ endif()
 #       might miss some options, check the top CMakeLists.txt:
 #       https://github.com/LLNL/Caliper/blob/master/CMakeLists.txt
 macro(configure_caliper)
-  #set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS}) # Build shared (ON - default) or static library (OFF).
-  #set(BUILD_DOCS OFF)   # Build documentation.
-  #set(BUILD_TESTING OFF) # Build unit tests.
-  #set(WITH_FORTRAN OFF) # Build and install Fortran wrappers.
-  set(WITH_KOKKOS ON) # Enable Kokkos profiling support
+  set(CALIPER_OPTION_PREFIX ON)
+  set(CALIPER_BUILD_DOCS OFF)    # Build documentation.
+  set(CALIPER_BUILD_TESTING OFF) # Build unit tests.
+  set(CALIPER_WITH_FORTRAN OFF)  # Build and install Fortran wrappers.
+  set(CALIPER_WITH_KOKKOS ON)    # Enable Kokkos profiling support
 
   # Build with support for the OpenMP tools interface.
   if(OpenMP_FOUND)
-    set(WITH_OMPT ON)
+    set(CALIPER_WITH_OMPT ON)
   else()
-    set(WITH_OMPT OFF)
+    set(CALIPER_WITH_OMPT OFF)
   endif()
 
-  set(WITH_SAMPLER ON)  # Enable time-based sampling on Linux.
-  set(WITH_TOOLS ON)    # Build Caliper’s tools (i.e, cali-query and mpi-caliquery). Default: On.
-  set(WITH_MPI ${KOKKOS_ENABLE_MPI}) # Build with MPI support.
-  set(WITH_ROCM ${Kokkos_ENABLE_HIP}) # Enable AMD ROCtracer/RocTX support
-  set(WITH_NVTX ${Kokkos_ENABLE_CUDA}) # Build adapters to forward Caliper annotations to NVidia’s nvtx annotation API. Set CUDA_TOOLKIT_ROOT_DIR to the CUDA installation.
-  set(WITH_CUPTI ${Kokkos_ENABLE_CUDA}) # Enable support for CUDA performance analysis
+  set(CALIPER_WITH_SAMPLER ON)  # Enable time-based sampling on Linux.
+  set(CALIPER_WITH_TOOLS ON)    # Build Caliper’s tools (i.e, cali-query and mpi-caliquery). Default: On.
+  set(CALIPER_WITH_MPI ${KOKKOS_ENABLE_MPI}) # Build with MPI support.
+  set(CALIPER_WITH_ROCM ${Kokkos_ENABLE_HIP}) # Enable AMD ROCtracer/RocTX support
+  set(CALIPER_WITH_NVTX ${Kokkos_ENABLE_CUDA}) # Build adapters to forward Caliper annotations to NVidia’s nvtx annotation API. Set CUDA_TOOLKIT_ROOT_DIR to the CUDA installation.
+  set(CALIPER_WITH_CUPTI ${Kokkos_ENABLE_CUDA}) # Enable support for CUDA performance analysis
                                         # (wrapping of driver/runtime API calls and CUDA activity tracing).
   # Enable PAPI hardware counter service (requires papi)
   if(KokkosTools_ENABLE_PAPI)
-    set(WITH_PAPI ON)
+    set(CALIPER_WITH_PAPI ON)
     set(PAPI_PREFIX ${PAPI_ROOT})
   else()
-    set(WITH_PAPI OFF)
+    set(CALIPER_WITH_PAPI OFF)
   endif()
   # Build adapters to forward Caliper annotations to Intel’s VTune annotation API.
   if(VTune_ROOT)
-    set(WITH_VTUNE ON)
+    set(CALIPER_WITH_VTUNE ON)
     set(ITT_PREFIX ${VTune_ROOT}/sdk)
     # TODO: Caliper doesn't seek ITT in ${VTune_ROOT}/sdk/lib64 or ${VTune_ROOT}/sdk/lib32 (only in .../lib)
   else()
-    set(WITH_VTUNE OFF)
+    set(CALIPER_WITH_VTUNE OFF)
   endif()
 endmacro()
 
