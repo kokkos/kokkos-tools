@@ -7,7 +7,7 @@ Find the native PAPI headers and libraries.
 IMPORTED Targets
 ^^^^^^^^^^^^^^^^
 
-This module defines :prop_tgt:`IMPORTED` target ``PAPI::libpapi``, if PAPI has been found.
+This module defines :prop_tgt:`IMPORTED` target ``PAPI::PAPI``, if PAPI has been found.
 
 Result Variables
 ^^^^^^^^^^^^^^^^
@@ -26,7 +26,7 @@ This module defines the following variables:
 ``PAPI_VERSION_STRING``
   The version of ``papi`` found.
 
-This module defines ``PAPI::libpapi`` target for PAPI library.
+This module defines ``PAPI::PAPI`` target for PAPI library.
 
 #]=======================================================================]
 
@@ -72,21 +72,15 @@ find_package_handle_standard_args(
 
 
 # Skip target if already defined
-if(TARGET PAPI::libpapi)
+if(TARGET PAPI::PAPI)
   return()
 endif()
 
 # Set up imported target
-add_library(PAPI::libpapi UNKNOWN IMPORTED)
+add_library(PAPI::PAPI INTERFACE IMPORTED)
 
-set_property(
-  TARGET PAPI::libpapi APPEND PROPERTY
-  IMPORTED_CONFIGURATIONS RELEASE DEBUG)
+target_include_directories(PAPI::PAPI INTERFACE ${PAPI_INCLUDE_DIR})
+target_link_libraries(PAPI::PAPI INTERFACE ${PAPI_LIBRARY})
 
-set_target_properties(
-  PAPI::libpapi PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "${PAPI_INCLUDE_DIR}"
-  IMPORTED_LINK_INTERFACE_LANGUAGES "C"
-  IMPORTED_LOCATION "${PAPI_LIBRARY}"
-  IMPORTED_LOCATION_RELEASE "${PAPI_LIBRARY}"
-  IMPORTED_LOCATION_DEBUG "${PAPI_LIBRARY}")
+set(PAPI_INCLUDE_DIRS ${PAPI_INCLUDE_DIR})
+set(PAPI_LIBRARIES ${PAPI_LIBRARY})
