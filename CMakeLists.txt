@@ -19,6 +19,7 @@ message(STATUS Configuring Kokkos-Tools)
 message(STATUS)
 
 # Tools settings
+option(KokkosTools_ENABLE_PAPI    "Enable PAPI support"             ON)
 option(KokkosTools_ENABLE_CALIPER "Enable building Caliper library" ON)
 option(KokkosTools_ENABLE_APEX    "Enable building Apex library"    ON)
 
@@ -45,9 +46,12 @@ set(CMAKE_CXX_COMPILER ${Kokkos_CXX_COMPILER})
 set(CMAKE_CXX_STANDARD ${CMAKE_CXX_STANDARD_DEFAULT})
 
 # Libraries
-find_package(PAPI)
-if(PAPI_FOUND)
+if(KokkosTools_ENABLE_PAPI)
+  find_package(PAPI REQUIRED) # TODO: papi-connector requires v6.0 or newer
   cmake_path(GET PAPI_INCLUDE_DIR PARENT_PATH PAPI_ROOT)
+  message(STATUS "Found PAPI ${PAPI_VERSION_STRING} at ${PAPI_ROOT}")
+else()
+  message(STATUS "PAPI support disabled")
 endif()
 find_package(OpenMP)
 find_package(MPI)
@@ -67,10 +71,8 @@ add_subdirectory(profiling/simple-kernel-timer)
 add_subdirectory(profiling/space-time-stack)
 
 # External lib connectors
-if(PAPI_FOUND)
+if(KokkosTools_ENABLE_PAPI)
   add_subdirectory(profiling/papi-connector)
-else()
-  message(WARNING "PAPI library not found - skipping papi-connector")
 endif()
 
 #add_subdirectory(profiling/systemtap-connector)
@@ -124,9 +126,11 @@ macro(configure_caliper)
   set(WITH_CUPTI ${Kokkos_ENABLE_CUDA}) # Enable support for CUDA performance analysis
                                         # (wrapping of driver/runtime API calls and CUDA activity tracing).
   # Enable PAPI hardware counter service (requires papi)
-  if(PAPI_FOUND)
+  if(KokkosTools_ENABLE_PAPI)
     set(WITH_PAPI ON)
     set(PAPI_PREFIX ${PAPI_ROOT})
+  else()
+    set(WITH_PAPI OFF)
   endif()
   # Build adapters to forward Caliper annotations to Intel’s VTune annotation API.
   if(VTune_ROOT)
@@ -141,7 +145,7 @@ endmacro()
 # Note: Apex docs http://uo-oaciss.github.io/apex/install/#standalone_installation
 macro(configure_apex)
   #set(BUILD_STATIC_EXECUTABLES OFF)
-  set(APEX_WITH_PAPI ${PAPI_FOUND})
+  set(APEX_WITH_PAPI ${KokkosTools_ENABLE_PAPI})
   set(APEX_WITH_CUDA ${Kokkos_ENABLE_CUDA})
   set(APEX_WITH_BFD ON)
   #set(BFD_ROOT ...)
