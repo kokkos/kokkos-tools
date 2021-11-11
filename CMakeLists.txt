@@ -165,11 +165,11 @@ macro(configure_apex)
 endmacro()
 
 # Build TPLs
-if(KOKKOSTOOLS_ENABLE_CALIPER)
+if(KokkosTools_ENABLE_CALIPER)
   configure_caliper()
   add_subdirectory(tpls/Caliper)
 endif()
-if(KOKKOSTOOLS_ENABLE_APEX)
+if(KokkosTools_ENABLE_APEX)
   configure_apex()
   add_subdirectory(tpls/apex)
 endif()
