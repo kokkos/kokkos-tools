@@ -70,15 +70,6 @@ find_package_handle_standard_args(
   VERSION_VAR PAPI_VERSION_STRING
   HANDLE_COMPONENTS)
 
-# Handle missing library
-if(NOT PAPI_FOUND)
-  if(PAPI_FIND_REQUIRED)
-    message(FATAL_ERROR "PAPI library not found")
-  elseif(NOT PAPI_FIND_QUIETLY)
-    message(WARNING "PAPI library not found")
-  endif()
-  return()
-endif()
 
 # Skip target if already defined
 if(TARGET PAPI::libpapi)
