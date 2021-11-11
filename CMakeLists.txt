@@ -42,8 +42,10 @@ endif()
 # CXXFLAGS=-O3 -std=c++11 -g -shared -fPIC
 # -Wall -Wextra
 
-set(CMAKE_CXX_COMPILER ${Kokkos_CXX_COMPILER})
-set(CMAKE_CXX_STANDARD ${CMAKE_CXX_STANDARD_DEFAULT})
+# Note: default the compiler settings to what Kokkos set
+#       and allow user to override them with build options
+set(CMAKE_CXX_COMPILER "${Kokkos_CXX_COMPILER}"        CACHE STRING "C++ Compiler")
+set(CMAKE_CXX_STANDARD "${CMAKE_CXX_STANDARD_DEFAULT}" CACHE STRING "C++ Standard: 98, 11, 14, 17, 20 or 23")
 
 # Libraries
 if(KokkosTools_ENABLE_PAPI)
