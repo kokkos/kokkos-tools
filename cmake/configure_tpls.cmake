@@ -8,12 +8,8 @@ macro(configure_caliper)
   set(CALIPER_WITH_FORTRAN OFF)  # Build and install Fortran wrappers.
   set(CALIPER_WITH_KOKKOS ON)    # Enable Kokkos profiling support
 
-  # Build with support for the OpenMP tools interface.
-  if(OpenMP_FOUND)
-    set(CALIPER_WITH_OMPT ON)
-  else()
-    set(CALIPER_WITH_OMPT OFF)
-  endif()
+  # Note: Let Caliper figure that out or it may fail on missing omp-tools.h
+  # set(CALIPER_WITH_OMPT OFF) # Build with support for the OpenMP tools interface.
 
   set(CALIPER_WITH_SAMPLER ON)  # Enable time-based sampling on Linux.
   set(CALIPER_WITH_TOOLS ON)    # Build Caliper’s tools (i.e, cali-query and mpi-caliquery). Default: On.
@@ -46,12 +42,9 @@ macro(configure_apex)
   set(APEX_WITH_CUDA ${Kokkos_ENABLE_CUDA})
   set(APEX_WITH_BFD ON)
   #set(BFD_ROOT ...)
-  if(OMPT_FOUND)
-    set(APEX_WITH_OMPT ON)
-    # TODO: set(OMPT_ROOT ...) ?
-  else()
-    set(APEX_WITH_OMPT OFF)
-  endif()
+
+  set(APEX_WITH_OMPT OFF) # TODO: Apex fails on missing libomp.so
+
   # TODO: Apex tries to fetch TPLs and install them in /usr/lib
   #       (normally failing) unless we disable them...
   set(APEX_WITH_ACTIVEHARMONY OFF)
