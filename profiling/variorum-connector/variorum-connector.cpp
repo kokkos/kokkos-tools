@@ -181,6 +181,7 @@ char * variorum_json_call() {
 //Pre: None
 //Post: An output message if variourum returned an error or if it functioned correctly
 void variorum_call_mpi() {
+#if USE_MPI
      if(usingMPI == true) {
         int rank;
         std::string output;
@@ -239,7 +240,7 @@ void variorum_call_mpi() {
         }
         file.close();
     }
-    
+#endif
 }
 
 //Function: variorum_call
@@ -337,6 +338,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
             throw 20;
         }
         if (strcmp(usingMPIstr, "true") == 0) {
+#if USE_MPI
     		usingMPI = true;
             try{ 
                 char* perRankOutput = getenv("RANKED_OUTPUT");
@@ -355,6 +357,10 @@ extern "C" void kokkosp_init_library(const int loadSeq,
                 std::cout << "Ranked output will no be used, error setting paramters" << std::endl;
                 mpiOutPut = false;
             }
+#else
+    		usingMPI = false;
+            std::cout << "Ignoring MPI enabled in Variorum: the connector was built without MPI support" << std::endl;
+#endif
 	    }
     } catch (int e) {
         std::cout << "No MPI Option provided, not using per rank output" << std::endl;    
