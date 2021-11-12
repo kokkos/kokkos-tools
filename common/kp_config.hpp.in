@@ -1,0 +1,2 @@
+// Note: keep legacy 0|1 or update `#if USE_MPI` checks
+#define USE_MPI @USE_MPI@

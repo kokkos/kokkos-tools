@@ -15,9 +15,7 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
-#ifndef USE_MPI
-#define USE_MPI 1
-#endif
+#include "kp_config.hpp"
 
 #if USE_MPI
 #include <mpi.h>

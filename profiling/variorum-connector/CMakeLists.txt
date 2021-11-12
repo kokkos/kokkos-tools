@@ -20,3 +20,7 @@ find_package(
 add_library(variorum_connector SHARED variorum-connector.cpp)
 
 target_link_libraries(variorum_connector PRIVATE variorum::variorum)
+
+if(USE_MPI)
+  target_link_libraries(variorum_connector PRIVATE MPI::MPI_CXX)
+endif()

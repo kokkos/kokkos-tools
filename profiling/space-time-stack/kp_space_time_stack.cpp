@@ -57,9 +57,7 @@
 #include <algorithm>
 #include <cstring>
 
-#ifndef USE_MPI
-#define USE_MPI 1
-#endif
+#include "kp_config.hpp"
 
 #if USE_MPI
 #include <mpi.h>
