@@ -31,22 +31,18 @@ This module defines ``PAPI::PAPI`` target for PAPI library.
 #]=======================================================================]
 
 # Look for the header file.
-if(NOT PAPI_INCLUDE_DIR)
-  find_path(
-    PAPI_INCLUDE_DIR
-    NAMES papi.h
-    HINTS /usr/include /usr/local/include)
-  mark_as_advanced(PAPI_INCLUDE_DIR)
-endif()
+find_path(
+  PAPI_INCLUDE_DIR
+  NAMES papi.h
+  HINTS /usr/include /usr/local/include)
+mark_as_advanced(PAPI_INCLUDE_DIR)
 
-if(NOT PAPI_LIBRARY)
-  # Look for the library (sorted from most current/relevant entry to least).
-  find_library(
-    PAPI_LIBRARY
-    NAMES papi
-    HINTS /usr/lib /usr/local/lib)
-  mark_as_advanced(PAPI_LIBRARY)
-endif()
+# Look for the library (sorted from most current/relevant entry to least).
+find_library(
+  PAPI_LIBRARY
+  NAMES papi
+  HINTS /usr/lib /usr/local/lib)
+mark_as_advanced(PAPI_LIBRARY)
 
 #define PAPI_VERSION  			PAPI_VERSION_NUMBER(6,0,0,1)
 
