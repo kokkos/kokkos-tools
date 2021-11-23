@@ -431,6 +431,7 @@ struct StackNode {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
     std::queue<StackNode*> q;
+    std::set<std::pair<std::string, StackKind>> children_to_process;
     q.push(this);
     while (!q.empty()) {
       auto node = q.front(); q.pop();
@@ -445,37 +446,53 @@ struct StackNode {
       node->avg_runtime /= comm_size;
       MPI_Allreduce(MPI_IN_PLACE, &(node->total_kokkos_runtime),
           1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-      /* There may be kernels that were called on rank 0 but were not
-         called on certain other ranks.
-         We will count these and add empty entries in the other ranks.
-         There may also be kernels which were *not* called on rank 0 but
-         *were* called on certain other ranks.
-         We are *ignoring* these, because I can't think of an easy and
-         scalable way to combine that data */
-      int nchildren = int(node->children.size());
-      MPI_Bcast(&nchildren, 1, MPI_INT, 0, MPI_COMM_WORLD);
-      if (rank == 0) {
-        for (auto& child : node->children) {
-          int name_len = int(child.name.length());
-          MPI_Bcast(&name_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          auto name = child.name;
-          MPI_Bcast(&name[0], name_len, MPI_CHAR, 0, MPI_COMM_WORLD);
-          int kind = child.kind;
-          MPI_Bcast(&kind, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          q.push(const_cast<StackNode*>(&child));
-        }
-      } else {
-        for (int i = 0; i < nchildren; ++i) {
-          int name_len;
-          MPI_Bcast(&name_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          std::string name(size_t(name_len), '?');
-          MPI_Bcast(&name[0], name_len, MPI_CHAR, 0, MPI_COMM_WORLD);
-          int kind;
-          MPI_Bcast(&kind, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          auto child = node->get_child(std::move(name), StackKind(kind));
-          q.push(child);
-        }
+      /* Not all children necessarily exist on every rank. To handle this we will:
+         1) Build a set of the child node names on each rank.
+         2) Start with rank 0, broadcast all of it's child names and add them to the
+            queue, removing them from the set of names to be processed.
+            If a child doesn't exist on a rank we add an empty node for it.
+         3) Do a check for the lowest rank that has any remaining unprocessed children
+            and repeat step 2 broadcasting from that rank until we process all children
+            from all ranks.
+       */
+      children_to_process.clear();
+      for (auto& child : node->children) {
+        children_to_process.emplace(child.name, child.kind);
       }
+
+      int bcast_rank = 0;
+      do
+      {
+        int nchildren_to_process = int(children_to_process.size());
+        MPI_Bcast(&nchildren_to_process, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+        if (rank == bcast_rank) {
+          for (auto& child_info : children_to_process) {
+            std::string child_name = child_info.first;
+            int kind = child_info.second;
+            int name_len = child_name.length();
+            MPI_Bcast(&name_len, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+            MPI_Bcast(&child_name[0], name_len, MPI_CHAR, bcast_rank, MPI_COMM_WORLD);
+            MPI_Bcast(&kind, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+            auto * child = node->get_child(std::move(child_name), StackKind(kind));
+            q.push(child);
+          }
+          children_to_process.clear();
+        } else {
+          for (int i = 0; i < nchildren_to_process; ++i) {
+            int name_len;
+            MPI_Bcast(&name_len, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+            std::string name(size_t(name_len), '?');
+            MPI_Bcast(&name[0], name_len, MPI_CHAR, bcast_rank, MPI_COMM_WORLD);
+            int kind;
+            MPI_Bcast(&kind, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+            auto child = node->get_child(std::move(name), StackKind(kind));
+            q.push(child);
+            children_to_process.erase({child->name, child->kind});
+          }
+        }
+        int local_next_bcast_rank = children_to_process.empty() ? comm_size : rank;
+        MPI_Allreduce(&local_next_bcast_rank, &bcast_rank, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+      } while(bcast_rank < comm_size);
     }
 #else
     std::queue<StackNode*> q;
