@@ -21,6 +21,9 @@ message(STATUS)
 message(STATUS Configuring Kokkos-Tools)
 message(STATUS)
 
+# Common settings
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
 # Tools settings
 option(KokkosTools_ENABLE_PAPI    "Enable PAPI support"             ON)
 option(KokkosTools_ENABLE_MPI     "Enable MPI support"              ON)
