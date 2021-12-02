@@ -25,6 +25,7 @@ message(STATUS)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 # Tools settings
+option(KokkosTools_ENABLE_SINGLE  "Build single library interfacing all profilers and dispatching at runtime" OFF)
 option(KokkosTools_ENABLE_PAPI    "Enable PAPI support"             ON)
 option(KokkosTools_ENABLE_MPI     "Enable MPI support"              ON)
 option(KokkosTools_ENABLE_CALIPER "Enable building Caliper library" ON)
@@ -82,8 +83,12 @@ else()
 endif()
 
 # Config file
+set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
 configure_file(common/kp_config.hpp.in common/kp_config.hpp)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/common)
+set(COMMON_HEADERS_PATH ${CMAKE_CURRENT_BINARY_DIR}/common)
+include_directories(${COMMON_HEADERS_PATH})
+
+set(SINGLELIB_PROFILERS "")
 
 # Utilities
 add_subdirectory(common/kernel-filter)
@@ -135,8 +140,17 @@ endif()
 if(KokkosTools_ENABLE_CALIPER)
   configure_caliper()
   add_subdirectory(tpls/Caliper)
+  list(APPEND SINGLELIB_PROFILERS "caliper")
 endif()
 if(KokkosTools_ENABLE_APEX)
   configure_apex()
   add_subdirectory(tpls/apex)
+endif()
+
+# Build single library interface (once we have everything set up)
+if(KokkosTools_ENABLE_SINGLE)
+  message(STATUS "Building single KokkosTools library")
+  add_subdirectory(profiling/all)
+else()
+  message(STATUS "Single KokkosTools library skipped")
 endif()
