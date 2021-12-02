@@ -13,7 +13,7 @@ macro(configure_caliper)
 
   set(CALIPER_WITH_SAMPLER ON)  # Enable time-based sampling on Linux.
   set(CALIPER_WITH_TOOLS ON)    # Build Caliper’s tools (i.e, cali-query and mpi-caliquery). Default: On.
-  set(CALIPER_WITH_MPI ${KOKKOS_ENABLE_MPI}) # Build with MPI support.
+  set(CALIPER_WITH_MPI ${KokkosTools_ENABLE_MPI}) # Build with MPI support.
   set(CALIPER_WITH_ROCM ${Kokkos_ENABLE_HIP}) # Enable AMD ROCtracer/RocTX support
   set(CALIPER_WITH_NVTX ${Kokkos_ENABLE_CUDA}) # Build adapters to forward Caliper annotations to NVidia’s nvtx annotation API. Set CUDA_TOOLKIT_ROOT_DIR to the CUDA installation.
   set(CALIPER_WITH_CUPTI ${Kokkos_ENABLE_CUDA}) # Enable support for CUDA performance analysis
@@ -41,6 +41,7 @@ macro(configure_apex)
   set(APEX_WITH_PAPI ${KokkosTools_ENABLE_PAPI})
   set(APEX_WITH_CUDA ${Kokkos_ENABLE_CUDA})
   set(APEX_WITH_BFD ON)
+  set(APEX_WITH_MPI ${KokkosTools_ENABLE_MPI})
   #set(BFD_ROOT ...)
 
   set(APEX_WITH_OMPT OFF) # TODO: Apex fails on missing libomp.so
@@ -49,5 +50,4 @@ macro(configure_apex)
   #       (normally failing) unless we disable them...
   set(APEX_WITH_ACTIVEHARMONY OFF)
   set(APEX_WITH_OTF2 OFF)
-  set(APEX_WITH_MPI OFF)
 endmacro()
