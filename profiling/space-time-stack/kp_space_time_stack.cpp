@@ -44,15 +44,18 @@
 #include <iostream>
 #include <ios>
 #include <iomanip>
+#include <fstream>
 #include <cstdlib>
 #include <memory>
 #include <string>
 #include <set>
 #include <cassert>
 #include <queue>
+#include <regex>
 #include <sstream>
 #include <sys/resource.h>
 #include <algorithm>
+#include <cstring>
 
 #ifndef USE_MPI
 #define USE_MPI 1
@@ -76,16 +79,26 @@ struct SpaceHandle {
 
 enum Space {
   SPACE_HOST,
-  SPACE_CUDA
+  SPACE_CUDA,
+  SPACE_HIP,
+  SPACE_SYCL
 };
 
-enum { NSPACES = 2 };
+enum { NSPACES = 4 };
 
 Space get_space(SpaceHandle const& handle) {
-  switch (handle.name[0]) {
-    case 'H': return SPACE_HOST;
-    case 'C': return SPACE_CUDA;
-  }
+  // check that name starts with "Cuda"
+  if (strncmp(handle.name, "Cuda", 4) == 0)
+    return SPACE_CUDA;
+  // check that name starts with "SYCL"
+  if (strncmp(handle.name, "SYCL", 4) == 0)
+    return SPACE_SYCL;
+  // check that name starts with "HIP"
+  if (strncmp(handle.name, "HIP", 3) == 0)
+    return SPACE_HIP;
+  if (strcmp(handle.name, "Host") == 0)
+    return SPACE_HOST;
+
   abort();
   return SPACE_HOST;
 }
@@ -94,6 +107,8 @@ const char* get_space_name(int space) {
   switch (space) {
     case SPACE_HOST: return "HOST";
     case SPACE_CUDA: return "CUDA";
+    case SPACE_SYCL: return "SYCL";
+    case SPACE_HIP: return "HIP";
   }
   abort();
   return nullptr;
@@ -259,6 +274,89 @@ struct StackNode {
     }
     return inv_root;
   }
+  void print_recursive_json(
+      std::ostream& os, StackNode const* parent, double tree_time) const {
+    static bool add_comma = false;
+    auto percent = (total_runtime / tree_time) * 100.0;
+    if (percent < 0.1) return;
+    if (!name.empty()) {
+      if (add_comma) os << ",\n";
+      add_comma = true;
+      os << "{\n";
+      auto imbalance = (max_runtime / avg_runtime - 1.0) * 100.0;
+      os << "\"average-time\" : ";
+      os << std::scientific << std::setprecision(2);
+      os << avg_runtime << ",\n";
+      os << std::fixed << std::setprecision(1);
+      auto percent_kokkos = (total_kokkos_runtime / total_runtime) * 100.0;
+
+      os << "\"percent\" : " << percent << ",\n";
+      os << "\"percent-kokkos\" : " << percent_kokkos << ",\n";
+      os << "\"imbalance\" : " << imbalance << ",\n";
+
+      // Sum over kids if we're a region
+      if (kind==STACK_REGION) {
+        double child_runtime = 0.0;
+        for (auto& child : children) {
+          child_runtime += child.total_runtime;
+        }
+        auto remainder = (1.0 - child_runtime / total_runtime) * 100.0;
+        double kps = total_number_of_kernel_calls / avg_runtime;
+        os << "\"remainder\" : " << remainder << ",\n";
+        os <<  std::scientific << std::setprecision(2);
+        os << "\"kernels-per-second\" : " << kps << ",\n";
+      }
+      else
+      {
+        os << "\"remainder\" : \"N/A\",\n";
+        os << "\"kernels-per-second\" : \"N/A\",\n";
+      }
+      os << "\"number-of-calls\" : " << number_of_calls << ",\n";
+      auto name_escape_double_quote_twices = std::regex_replace(name, std::regex("\""), "\\\"");
+      os << "\"name\" : \"" << name_escape_double_quote_twices << "\",\n";
+      os << "\"parent-id\" : \"" << parent << "\",\n";
+      os << "\"id\" : \"" << this << "\",\n";
+
+      os << "\"kernel-type\" : ";
+      switch (kind) {
+        case STACK_FOR: os << "\"for\""; break;
+        case STACK_REDUCE: os << "\"reduce\""; break;
+        case STACK_SCAN: os << "\"scan\""; break;
+        case STACK_REGION: os << "\"region\""; break;
+        case STACK_COPY: os << "\"copy\""; break;
+      };
+
+      os << "\n}";
+    }
+    if (children.empty()) return;
+    auto by_time = [](StackNode const* a, StackNode const* b) {
+      if (a->total_runtime != b->total_runtime) {
+        return a->total_runtime > b->total_runtime;
+      }
+      return a->name < b->name;
+    };
+    std::set<StackNode const*, decltype(by_time)> children_by_time(by_time);
+    for (auto& child : children) {
+      children_by_time.insert(&child);
+    }
+    auto last = children_by_time.end();
+    --last;
+    for (auto it = children_by_time.begin(); it != children_by_time.end(); ++it) {
+      auto child = *it;
+      child->print_recursive_json(
+          os, this, tree_time);
+    }
+  }
+  void print_json(std::ostream& os) const {
+    std::ios saved_state(nullptr);
+    saved_state.copyfmt(os);
+    os << "{\n";
+    os << "\"space-time-stack-data\" : [\n";
+    print_recursive_json(os, nullptr, total_runtime);
+    os << '\n';
+    os << "]\n}\n";
+    os.copyfmt(saved_state);
+  }
   void print_recursive(
       std::ostream& os, std::string my_indent, std::string const& child_indent, double tree_time) const {
     auto percent = (total_runtime / tree_time) * 100.0;
@@ -333,6 +431,7 @@ struct StackNode {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
     std::queue<StackNode*> q;
+    std::set<std::pair<std::string, StackKind>> children_to_process;
     q.push(this);
     while (!q.empty()) {
       auto node = q.front(); q.pop();
@@ -347,37 +446,53 @@ struct StackNode {
       node->avg_runtime /= comm_size;
       MPI_Allreduce(MPI_IN_PLACE, &(node->total_kokkos_runtime),
           1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-      /* There may be kernels that were called on rank 0 but were not
-         called on certain other ranks.
-         We will count these and add empty entries in the other ranks.
-         There may also be kernels which were *not* called on rank 0 but
-         *were* called on certain other ranks.
-         We are *ignoring* these, because I can't think of an easy and
-         scalable way to combine that data */
-      int nchildren = int(node->children.size());
-      MPI_Bcast(&nchildren, 1, MPI_INT, 0, MPI_COMM_WORLD);
-      if (rank == 0) {
-        for (auto& child : node->children) {
-          int name_len = int(child.name.length());
-          MPI_Bcast(&name_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          auto name = child.name;
-          MPI_Bcast(&name[0], name_len, MPI_CHAR, 0, MPI_COMM_WORLD);
-          int kind = child.kind;
-          MPI_Bcast(&kind, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          q.push(const_cast<StackNode*>(&child));
-        }
-      } else {
-        for (int i = 0; i < nchildren; ++i) {
-          int name_len;
-          MPI_Bcast(&name_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          std::string name(size_t(name_len), '?');
-          MPI_Bcast(&name[0], name_len, MPI_CHAR, 0, MPI_COMM_WORLD);
-          int kind;
-          MPI_Bcast(&kind, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          auto child = node->get_child(std::move(name), StackKind(kind));
-          q.push(child);
-        }
+      /* Not all children necessarily exist on every rank. To handle this we will:
+         1) Build a set of the child node names on each rank.
+         2) Start with rank 0, broadcast all of it's child names and add them to the
+            queue, removing them from the set of names to be processed.
+            If a child doesn't exist on a rank we add an empty node for it.
+         3) Do a check for the lowest rank that has any remaining unprocessed children
+            and repeat step 2 broadcasting from that rank until we process all children
+            from all ranks.
+       */
+      children_to_process.clear();
+      for (auto& child : node->children) {
+        children_to_process.emplace(child.name, child.kind);
       }
+
+      int bcast_rank = 0;
+      do
+      {
+        int nchildren_to_process = int(children_to_process.size());
+        MPI_Bcast(&nchildren_to_process, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+        if (rank == bcast_rank) {
+          for (auto& child_info : children_to_process) {
+            std::string child_name = child_info.first;
+            int kind = child_info.second;
+            int name_len = child_name.length();
+            MPI_Bcast(&name_len, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+            MPI_Bcast(&child_name[0], name_len, MPI_CHAR, bcast_rank, MPI_COMM_WORLD);
+            MPI_Bcast(&kind, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+            auto * child = node->get_child(std::move(child_name), StackKind(kind));
+            q.push(child);
+          }
+          children_to_process.clear();
+        } else {
+          for (int i = 0; i < nchildren_to_process; ++i) {
+            int name_len;
+            MPI_Bcast(&name_len, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+            std::string name(size_t(name_len), '?');
+            MPI_Bcast(&name[0], name_len, MPI_CHAR, bcast_rank, MPI_COMM_WORLD);
+            int kind;
+            MPI_Bcast(&kind, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+            auto child = node->get_child(std::move(name), StackKind(kind));
+            q.push(child);
+            children_to_process.erase({child->name, child->kind});
+          }
+        }
+        int local_next_bcast_rank = children_to_process.empty() ? comm_size : rank;
+        MPI_Allreduce(&local_next_bcast_rank, &bcast_rank, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+      } while(bcast_rank < comm_size);
     }
 #else
     std::queue<StackNode*> q;
@@ -521,8 +636,22 @@ struct State {
     }
     stack_frame->end(end_time);
     stack_root.adopt();
-    auto inv_stack_root = stack_root.invert();
     stack_root.reduce_over_mpi();
+    if (getenv("KOKKOS_PROFILE_EXPORT_JSON")) {
+#if USE_MPI
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      if (rank == 0) {
+#endif
+        std::ofstream fout("noname.json");
+        stack_root.print_json(fout);
+#if USE_MPI
+      }
+#endif
+        return;
+    }
+
+    auto inv_stack_root = stack_root.invert();
     inv_stack_root.reduce_over_mpi();
 #if USE_MPI
     int rank;

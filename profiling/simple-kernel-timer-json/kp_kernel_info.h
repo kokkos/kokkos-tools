@@ -204,7 +204,7 @@ class KernelPerformanceInfo {
 			fprintf(output, "%s\"time-per-call\"  : %16.8f,\n", indentBuffer, (time /
 				static_cast<double>(std::max(
 					static_cast<uint64_t>(1), callCount))));
-			fprintf(output, "%s\"kernel-type\"    : \"%s\",\n", indentBuffer,
+			fprintf(output, "%s\"kernel-type\"    : \"%s\"\n", indentBuffer,
 				(kType == PARALLEL_FOR) ? "PARALLEL-FOR" :
 				(kType == PARALLEL_REDUCE) ? "PARALLEL-REDUCE" : "PARALLEL-SCAN");
 
