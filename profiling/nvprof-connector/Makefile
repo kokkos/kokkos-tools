@@ -9,7 +9,6 @@ all: kp_nvprof_connector.so
 MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
 
 CXXFLAGS+=-I${MAKEFILE_PATH}
-CXXFLAGS+=-I${KOKKOS_ROOT}/include
 
 kp_nvprof_connector.so: ${MAKEFILE_PATH}kp_nvprof_connector.cpp
 	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) \

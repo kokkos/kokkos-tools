@@ -50,7 +50,12 @@
 #include <iostream>
 
 #include "nvToolsExt.h"
-#include "impl/Kokkos_Profiling_C_Interface.h"
+
+struct Kokkos_Tools_ToolSettings
+{
+  bool requires_global_fencing;
+  bool padding[255];
+};
 
 extern "C" void kokkosp_request_tool_settings(const uint32_t, Kokkos_Tools_ToolSettings* settings) {
   settings->requires_global_fencing = false;
