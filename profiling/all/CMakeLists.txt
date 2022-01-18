@@ -13,7 +13,7 @@ target_include_directories(${LIBNAME}
           # $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>
 
 if(SINGLELIB_PROFILERS)
-  target_link_libraries(${LIBNAME} PRIVATE ${SINGLELIB_PROFILERS})
+  target_link_libraries(${LIBNAME} PUBLIC ${SINGLELIB_PROFILERS})
 endif()
 
 # install(TARGETS ${LIBNAME} EXPORT KokkosTools::KokkosTools

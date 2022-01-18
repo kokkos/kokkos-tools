@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 project(KokkosTools CXX)
 
 # Include utilities
+include(cmake/utils.cmake)
 include(cmake/configure_tpls.cmake)
 
 # Set policies
@@ -91,7 +92,7 @@ configure_file(common/kp_config.hpp.in common/kp_config.hpp)
 set(COMMON_HEADERS_PATH ${CMAKE_CURRENT_BINARY_DIR}/common)
 include_directories(${COMMON_HEADERS_PATH})
 
-set(SINGLELIB_PROFILERS "")
+set(SINGLELIB_PROFILERS "" CACHE STRING "" FORCE)
 
 # Utilities
 add_subdirectory(common/kernel-filter)
@@ -151,7 +152,7 @@ endif()
 
 # Build single library interface (once we have everything set up)
 if(KokkosTools_ENABLE_SINGLE)
-  message(STATUS "Building single KokkosTools library")
+  message(STATUS "Building single KokkosTools library with profilers: ${SINGLELIB_PROFILERS}")
   add_subdirectory(profiling/all)
 else()
   message(STATUS "Single KokkosTools library skipped")

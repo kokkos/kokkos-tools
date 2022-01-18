@@ -44,6 +44,7 @@
 #define KOKKOSTOOLS_ALL_HPP
 
 #include "kp_config.hpp"
+#include "impl/Kokkos_Profiling_Interface.hpp" // Note: impl/... is used inside the header
 
 namespace KokkosTools {
 

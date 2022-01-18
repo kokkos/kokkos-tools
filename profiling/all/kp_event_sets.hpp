@@ -40,39 +40,22 @@
 // ************************************************************************
 //@HEADER
 
-#include <stdexcept>
-#include <string>
-#include <cstring>
+#ifndef KOKKOSTOOLS_ALLEVENTSETS_HPP
+#define KOKKOSTOOLS_ALLEVENTSETS_HPP
 
-#include "kp_all.hpp"
-#include "kp_event_sets.hpp"
+#include "impl/Kokkos_Profiling_Interface.hpp" // Note: impl/... is used inside the header
 
-using EventSet = Kokkos::Tools::Experimental::EventSet;
+namespace KokkosTools::KernelTimer {
+  Kokkos::Tools::Experimental::EventSet get_event_set();
+}
+namespace KokkosTools::KernelTimerJSON {
+  Kokkos::Tools::Experimental::EventSet get_event_set();
+}
 
-namespace KokkosTools {
-
-EventSet activate_tool(const char* profiler, const char* config_str)
-{
-  // default = no profiling
-  EventSet eventSet;
-  memset(&eventSet, 0, sizeof(eventSet));
-
-  std::string name = profiler;
-  if (name == "kernel-timer") {
-    eventSet = KernelTimer::get_event_set();
-  } else if (name == "kernel-timer-json") {
-    eventSet = KernelTimerJSON::get_event_set();
-  } else if (name == "caliper") {
 #ifdef KOKKOSTOOLS_HAS_CALIPER
-    eventSet = cali::get_event_set(config_str);
-#else
-    throw std::runtime_error("Profiler not supported: caliper (KokkosTools library was built without Caliper)");
+namespace cali {
+  extern Kokkos::Tools::Experimental::EventSet get_event_set(const char* config_str);
+}
 #endif
-  } else if (name != "") {
-    throw std::runtime_error(std::string("Profiler not supported: ") + name + std::string(" (unknown tool)"));
-	}
 
-  return eventSet;
-}
-
-}
+#endif
