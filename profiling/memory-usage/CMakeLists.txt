@@ -1,1 +1,1 @@
-add_library(kp_memory_usage SHARED kp_memory_usage.cpp)
+kp_add_library(kp_memory_usage SHARED kp_memory_usage.cpp)

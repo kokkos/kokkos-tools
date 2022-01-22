@@ -52,6 +52,10 @@ namespace KokkosTools::KernelTimerJSON {
   Kokkos::Tools::Experimental::EventSet get_event_set();
 }
 
+namespace KokkosTools::MemoryUsage {
+  Kokkos::Tools::Experimental::EventSet get_event_set();
+}
+
 #ifdef KOKKOSTOOLS_HAS_CALIPER
 namespace cali {
   extern Kokkos::Tools::Experimental::EventSet get_event_set(const char* config_str);
