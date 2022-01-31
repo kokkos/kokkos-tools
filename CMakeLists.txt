@@ -82,6 +82,9 @@ else()
   set(USE_MPI 0)
 endif()
 
+# make Kokkos profiling interface available for native profilers
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiling/all)
+
 # Config file
 set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
 configure_file(common/kp_config.hpp.in common/kp_config.hpp)
@@ -104,7 +107,6 @@ else()
 endif()
 add_subdirectory(profiling/memory-usage)
 add_subdirectory(profiling/chrome-tracing)
-add_subdirectory(profiling/simple-kernel-timer-json)
 add_subdirectory(profiling/simple-kernel-timer)
 add_subdirectory(profiling/space-time-stack)
 

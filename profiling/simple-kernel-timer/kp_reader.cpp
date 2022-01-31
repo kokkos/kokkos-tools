@@ -47,11 +47,9 @@
 #include <algorithm>
 #include <map>
 
-#include "kp_kernel_info.h"
+#include "kp_shared.h"
 
-bool compareKernelPerformanceInfo(KernelPerformanceInfo* left, KernelPerformanceInfo* right) {
-	return left->getTime() > right->getTime();
-};
+using namespace KokkosTools::KernelTimer;
 
 int find_index(std::vector<KernelPerformanceInfo*>& kernels,
 	const char* kernelName) {

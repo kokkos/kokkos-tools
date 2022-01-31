@@ -50,7 +50,9 @@
 #include <fstream>
 #include <iostream>
 
-#include "kp_kernel_info.h"
+#include "kp_shared.h"
+
+using namespace KokkosTools::KernelTimer;
 
 // clang-format on
 bool is_region(KernelPerformanceInfo const& kp) {
@@ -85,10 +87,6 @@ inline void write_json(std::ostream& os, KernelPerformanceInfo const& kp,
         os << indent << '}';
 }
 // clang-format off
-
-bool compareKernelPerformanceInfo(KernelPerformanceInfo* left, KernelPerformanceInfo* right) {
-	return left->getTime() > right->getTime();
-};
 
 int find_index(std::vector<KernelPerformanceInfo*>& kernels,
 	const char* kernelName) {
