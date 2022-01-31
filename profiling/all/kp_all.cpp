@@ -51,7 +51,7 @@ using EventSet = Kokkos::Tools::Experimental::EventSet;
 
 namespace KokkosTools {
 
-EventSet activate_tool(const char* profiler, const char* config_str)
+EventSet get_event_set(const char* profiler, const char* config_str)
 {
   // default = no profiling
   EventSet eventSet;

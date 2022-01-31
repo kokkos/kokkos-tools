@@ -48,7 +48,7 @@
 
 namespace KokkosTools {
 
-Kokkos::Tools::Experimental::EventSet activate_tool(const char *profiler, const char *options);
+Kokkos::Tools::Experimental::EventSet get_event_set(const char *profiler, const char *options);
 
 }
 
