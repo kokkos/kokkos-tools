@@ -51,9 +51,9 @@
 #include <cstdio>
 #include <inttypes.h>
 
-struct SpaceHandle {
-  char name[64];
-};
+#include "impl/Kokkos_Profiling_Interface.hpp"
+
+using SpaceHandle = Kokkos_Profiling_SpaceHandle;
 
 char space_name[16][64];
 

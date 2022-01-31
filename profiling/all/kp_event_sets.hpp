@@ -52,6 +52,10 @@ namespace KokkosTools::KernelTimerJSON {
   Kokkos::Tools::Experimental::EventSet get_event_set();
 }
 
+namespace KokkosTools::MemoryEvents {
+  Kokkos::Tools::Experimental::EventSet get_event_set();
+}
+
 namespace KokkosTools::MemoryUsage {
   Kokkos::Tools::Experimental::EventSet get_event_set();
 }

@@ -62,6 +62,8 @@ EventSet get_event_set(const char* profiler, const char* config_str)
     eventSet = KernelTimer::get_event_set();
   } else if (name == "kernel-timer-json") {
     eventSet = KernelTimerJSON::get_event_set();
+  } else if (name == "memory-events") {
+    eventSet = MemoryEvents::get_event_set();
   } else if (name == "memory-usage") {
     eventSet = MemoryUsage::get_event_set();
   } else if (name == "caliper") {
