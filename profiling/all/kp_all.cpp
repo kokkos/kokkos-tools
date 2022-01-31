@@ -66,6 +66,10 @@ EventSet get_event_set(const char* profiler, const char* config_str)
     eventSet = MemoryEvents::get_event_set();
   } else if (name == "memory-usage") {
     eventSet = MemoryUsage::get_event_set();
+  } else if (name == "highwater-mark") {
+    eventSet = HighwaterMark::get_event_set();
+  } else if (name == "highwater-mark-mpi") {
+    eventSet = HighwaterMarkMPI::get_event_set();
   } else if (name == "caliper") {
 #ifdef KOKKOSTOOLS_HAS_CALIPER
     eventSet = cali::get_event_set(config_str);

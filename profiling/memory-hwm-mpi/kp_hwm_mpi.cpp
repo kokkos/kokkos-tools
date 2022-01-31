@@ -44,7 +44,12 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cinttypes>
+#include <cstring>
 #include <mpi.h>
+
+#include "impl/Kokkos_Profiling_Interface.hpp"
+
+namespace KokkosTools::HighwaterMarkMPI {
 
 static int world_rank = 0;
 static int world_size = 1;
@@ -56,10 +61,10 @@ static int world_size = 1;
 #    define RU_MAXRSS_UNITS 1
 #endif
 
-extern "C" void kokkosp_init_library(const int loadSeq,
+void kokkosp_init_library(const int loadSeq,
   const uint64_t interfaceVer,
   const uint32_t devInfoCount,
-  void* deviceInfo) {
+  Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
   int mpi_is_initialized;
   MPI_Initialized(&mpi_is_initialized);
   if (!mpi_is_initialized) {
@@ -75,7 +80,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   }
 }
 
-extern "C" void kokkosp_finalize_library() {
+void kokkosp_finalize_library() {
   if (world_rank == 0) {
     printf("\n");
     printf("KokkosP: Finalization of profiling library.\n");
@@ -106,3 +111,31 @@ extern "C" void kokkosp_finalize_library() {
     printf("\n");
   }
 }
+
+Kokkos::Tools::Experimental::EventSet get_event_set() {
+    Kokkos::Tools::Experimental::EventSet my_event_set;
+    memset(&my_event_set, 0, sizeof(my_event_set)); // zero any pointers not set here
+    my_event_set.init = kokkosp_init_library;
+    my_event_set.finalize = kokkosp_finalize_library;
+    return my_event_set;
+}
+
+} // namespace KokkosTools::HighwaterMarkMPI
+
+
+extern "C" {
+
+__attribute__((weak))
+void kokkosp_init_library(const int loadSeq,
+	const uint64_t interfaceVer,
+	const uint32_t devInfoCount,
+	Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+	KokkosTools::HighwaterMarkMPI::kokkosp_init_library(loadSeq, interfaceVer, devInfoCount, deviceInfo);
+}
+
+__attribute__((weak))
+void kokkosp_finalize_library() {
+	KokkosTools::HighwaterMarkMPI::kokkosp_finalize_library();
+}
+
+} // extern "C"
