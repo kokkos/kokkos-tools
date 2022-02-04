@@ -58,6 +58,7 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(MemoryEvents)
 KOKKOSTOOLS_EXTERN_EVENT_SET(MemoryUsage)
 KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMark)
 KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMarkMPI)
+KOKKOSTOOLS_EXTERN_EVENT_SET(ChromeTracing)
 
 #ifdef KOKKOSTOOLS_HAS_CALIPER
 namespace cali {
@@ -87,6 +88,7 @@ EventSet get_event_set(const char* profiler, const char* config_str)
     {"memory-usage", MemoryUsage::get_event_set()},
     {"highwater-mark-mpi", HighwaterMarkMPI::get_event_set()},
     {"highwater-mark", HighwaterMark::get_event_set()},
+    {"chrome-tracing", ChromeTracing::get_event_set()},
 #ifdef KOKKOSTOOLS_HAS_CALIPER
     {"caliper", cali::get_event_set(config_str)},
 #endif
