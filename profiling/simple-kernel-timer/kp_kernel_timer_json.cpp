@@ -45,9 +45,8 @@
 #include <string>
 #include <unistd.h>
 
+#include "kp_core.hpp"
 #include "kp_shared.h"
-
-#include "impl/Kokkos_Profiling_Interface.hpp"
 
 using namespace KokkosTools::KernelTimer;
 
@@ -188,52 +187,19 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // namespace KokkosTools::KernelTimer
+} // namespace KokkosTools::KernelTimerJSON
 
 extern "C" {
 
-__attribute__((weak))
-void kokkosp_init_library(const int loadSeq,
-	const uint64_t interfaceVer,
-	const uint32_t devInfoCount,
-	Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+namespace impl = KokkosTools::KernelTimerJSON;
 
-	KokkosTools::KernelTimerJSON::kokkosp_init_library(loadSeq, interfaceVer, devInfoCount, deviceInfo);
-}
-
-__attribute__((weak))
-void kokkosp_finalize_library() {
-	KokkosTools::KernelTimerJSON::kokkosp_finalize_library();
-}
-
-__attribute__((weak))
-void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
-	KokkosTools::KernelTimerJSON::kokkosp_begin_parallel_for(name, devID, kID);
-}
-
-__attribute__((weak))
-void kokkosp_end_parallel_for(const uint64_t kID) {
-	KokkosTools::KernelTimerJSON::kokkosp_end_parallel_for(kID);
-}
-
-__attribute__((weak))
-void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID, uint64_t* kID) {
-	KokkosTools::KernelTimerJSON::kokkosp_begin_parallel_scan(name, devID, kID);
-}
-
-__attribute__((weak))
-void kokkosp_end_parallel_scan(const uint64_t kID) {
-	KokkosTools::KernelTimerJSON::kokkosp_end_parallel_scan(kID);
-}
-
-__attribute__((weak))
-void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID, uint64_t* kID) {
-	KokkosTools::KernelTimerJSON::kokkosp_begin_parallel_reduce(name, devID, kID);
-}
-
-__attribute__((weak))
-void kokkosp_end_parallel_reduce(const uint64_t kID) {
-	KokkosTools::KernelTimerJSON::kokkosp_end_parallel_reduce(kID);
-}
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
+EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
+EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
+EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
 
 } // extern "C"

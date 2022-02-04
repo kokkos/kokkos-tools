@@ -43,9 +43,27 @@
 #include <stdexcept>
 #include <string>
 #include <cstring>
+#include <map>
 
 #include "kp_all.hpp"
-#include "kp_event_sets.hpp"
+
+#define KOKKOSTOOLS_EXTERN_EVENT_SET(NAMESPACE) \
+namespace KokkosTools::NAMESPACE { \
+  extern Kokkos::Tools::Experimental::EventSet get_event_set(); \
+}
+
+KOKKOSTOOLS_EXTERN_EVENT_SET(KernelTimer)
+KOKKOSTOOLS_EXTERN_EVENT_SET(KernelTimerJSON)
+KOKKOSTOOLS_EXTERN_EVENT_SET(MemoryEvents)
+KOKKOSTOOLS_EXTERN_EVENT_SET(MemoryUsage)
+KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMark)
+KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMarkMPI)
+
+#ifdef KOKKOSTOOLS_HAS_CALIPER
+namespace cali {
+  extern Kokkos::Tools::Experimental::EventSet get_event_set(const char* config_str);
+}
+#endif
 
 using EventSet = Kokkos::Tools::Experimental::EventSet;
 
@@ -53,33 +71,37 @@ namespace KokkosTools {
 
 EventSet get_event_set(const char* profiler, const char* config_str)
 {
-  // default = no profiling
-  EventSet eventSet;
-  memset(&eventSet, 0, sizeof(eventSet));
-
   std::string name = profiler;
-  if (name == "kernel-timer") {
-    eventSet = KernelTimer::get_event_set();
-  } else if (name == "kernel-timer-json") {
-    eventSet = KernelTimerJSON::get_event_set();
-  } else if (name == "memory-events") {
-    eventSet = MemoryEvents::get_event_set();
-  } else if (name == "memory-usage") {
-    eventSet = MemoryUsage::get_event_set();
-  } else if (name == "highwater-mark") {
-    eventSet = HighwaterMark::get_event_set();
-  } else if (name == "highwater-mark-mpi") {
-    eventSet = HighwaterMarkMPI::get_event_set();
-  } else if (name == "caliper") {
+  if (name == "caliper") {
 #ifdef KOKKOSTOOLS_HAS_CALIPER
-    eventSet = cali::get_event_set(config_str);
+    return cali::get_event_set(config_str);
 #else
     throw std::runtime_error("Profiler not supported: caliper (KokkosTools library was built without Caliper)");
 #endif
-  } else if (name != "") {
+  }
+
+  std::map<std::string, EventSet> handlers = {
+    {"kernel-timer", KernelTimer::get_event_set()},
+    {"kernel-timer-json", KernelTimerJSON::get_event_set()},
+    {"memory-events", MemoryEvents::get_event_set()},
+    {"memory-usage", MemoryUsage::get_event_set()},
+    {"highwater-mark-mpi", HighwaterMarkMPI::get_event_set()},
+    {"highwater-mark", HighwaterMark::get_event_set()},
+#ifdef KOKKOSTOOLS_HAS_CALIPER
+    {"caliper", cali::get_event_set(config_str)},
+#endif
+  };
+  auto e = handlers.find(name);
+  if (e != handlers.end())
+    return e->second;
+
+  if (name != "") {
     throw std::runtime_error(std::string("Profiler not supported: ") + name + std::string(" (unknown tool)"));
 	}
 
+  // default = no profiling
+  EventSet eventSet;
+  memset(&eventSet, 0, sizeof(eventSet));
   return eventSet;
 }
 

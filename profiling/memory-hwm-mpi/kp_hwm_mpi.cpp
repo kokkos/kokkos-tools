@@ -44,10 +44,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cinttypes>
-#include <cstring>
 #include <mpi.h>
 
-#include "impl/Kokkos_Profiling_Interface.hpp"
+#include "kp_core.hpp"
 
 namespace KokkosTools::HighwaterMarkMPI {
 
@@ -125,17 +124,10 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
 
 extern "C" {
 
-__attribute__((weak))
-void kokkosp_init_library(const int loadSeq,
-	const uint64_t interfaceVer,
-	const uint32_t devInfoCount,
-	Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
-	KokkosTools::HighwaterMarkMPI::kokkosp_init_library(loadSeq, interfaceVer, devInfoCount, deviceInfo);
-}
+namespace impl = KokkosTools::HighwaterMarkMPI; 
 
-__attribute__((weak))
-void kokkosp_finalize_library() {
-	KokkosTools::HighwaterMarkMPI::kokkosp_finalize_library();
-}
+EXPOSE_INIT(impl::kokkosp_init_library) 
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+
 
 } // extern "C"

@@ -47,13 +47,10 @@
 #define MEMOP_PUSH_REGION 3
 #define MEMOP_POP_REGION 4
 
-#include <cstring>
 #include <cstdio>
 #include <inttypes.h>
 
-#include "impl/Kokkos_Profiling_Interface.hpp"
-
-using SpaceHandle = Kokkos_Profiling_SpaceHandle;
+#include "kp_core.hpp"
 
 char space_name[16][64];
 

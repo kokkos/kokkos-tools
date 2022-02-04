@@ -53,10 +53,9 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
+#include "kp_core.hpp"
 #include "kp_memory_events.hpp"
 #include "kp_timer.hpp"
-
-#include "impl/Kokkos_Profiling_Interface.hpp"
 
 namespace KokkosTools::MemoryEvents {
 
@@ -205,37 +204,13 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
 
 extern "C" {
 
-__attribute__((weak))
-void kokkosp_init_library(const int loadSeq,
-	const uint64_t interfaceVer,
-	const uint32_t devInfoCount,
-	Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
-	KokkosTools::MemoryEvents::kokkosp_init_library(loadSeq, interfaceVer, devInfoCount, deviceInfo);
-}
+namespace impl = KokkosTools::MemoryEvents;
 
-__attribute__((weak))
-void kokkosp_finalize_library() {
-	KokkosTools::MemoryEvents::kokkosp_finalize_library();
-}
-
-__attribute__((weak))
-void kokkosp_allocate_data(const SpaceHandle space, const char* label, const void* const ptr, const uint64_t size) {
-  KokkosTools::MemoryEvents::kokkosp_allocate_data(space, label, ptr, size);
-}
-
-__attribute__((weak))
-void kokkosp_deallocate_data(const SpaceHandle space, const char* label, const void* const ptr, const uint64_t size) {
-  KokkosTools::MemoryEvents::kokkosp_deallocate_data(space, label, ptr, size);
-}
-
-__attribute__((weak))
-void kokkosp_push_profile_region(const char* name) {
-  KokkosTools::MemoryEvents::kokkosp_push_profile_region(name);
-}
-
-__attribute__((weak))
-void kokkosp_pop_profile_region() {
-  KokkosTools::MemoryEvents::kokkosp_pop_profile_region();
-}
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_ALLOCATE(impl::kokkosp_allocate_data)
+EXPOSE_DEALLOCATE(impl::kokkosp_deallocate_data)
+EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
+EXPOSE_POP_REGION(impl::kokkosp_pop_profile_region)
 
 } // extern "C"

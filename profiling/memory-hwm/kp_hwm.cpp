@@ -54,7 +54,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include "impl/Kokkos_Profiling_Interface.hpp"
+#include "kp_core.hpp"
 
 namespace KokkosTools::HighwaterMark {
 
@@ -95,22 +95,17 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // namespace KokkosTools::HighwaterMark
+// static auto event_set = get_event_set();
 
+} // namespace KokkosTools::HighwaterMark
 
 extern "C" {
 
-__attribute__((weak))
-void kokkosp_init_library(const int loadSeq,
-	const uint64_t interfaceVer,
-	const uint32_t devInfoCount,
-	Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
-	KokkosTools::HighwaterMark::kokkosp_init_library(loadSeq, interfaceVer, devInfoCount, deviceInfo);
-}
+namespace impl = KokkosTools::HighwaterMark;
 
-__attribute__((weak))
-void kokkosp_finalize_library() {
-	KokkosTools::HighwaterMark::kokkosp_finalize_library();
-}
+EXPOSE_INIT(impl::kokkosp_init_library) 
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+
+// EXPOSE_KOKKOS_INTERFACE(KokkosTools::HighwaterMark::event_set)
 
 } // extern "C"
