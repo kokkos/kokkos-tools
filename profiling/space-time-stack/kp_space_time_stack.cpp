@@ -57,7 +57,7 @@
 #include <algorithm>
 #include <cstring>
 
-#include "kp_config.hpp"
+#include "kp_core.hpp"
 
 #if USE_MPI
 #include <mpi.h>
@@ -65,15 +65,7 @@
 
 #include <chrono>
 
-namespace {
-
-struct KokkosPDeviceInfo {
-  std::uint32_t deviceID;
-};
-
-struct SpaceHandle {
-  char name[64];
-};
+namespace KokkosTools::SpaceTimeStack {
 
 enum Space {
   SPACE_HOST,
@@ -514,10 +506,10 @@ struct StackNode {
 
 struct Allocation {
   std::string name;
-  void* ptr;
+  const void* ptr;
   std::uint64_t size;
   StackNode* frame;
-  Allocation(std::string&& name_in, void* ptr_in, std::uint64_t size_in,
+  Allocation(std::string&& name_in, const void* ptr_in, std::uint64_t size_in,
       StackNode* frame_in):
     name(std::move(name_in)),ptr(ptr_in),size(size_in),frame(frame_in) {
   }
@@ -531,14 +523,14 @@ struct Allocations {
   std::uint64_t total_size;
   std::set<Allocation> alloc_set;
   Allocations():total_size(0) {}
-  void allocate(std::string&& name, void* ptr, std::uint64_t size,
+  void allocate(std::string&& name, const void* ptr, std::uint64_t size,
       StackNode* frame) {
     auto res = alloc_set.emplace(
         Allocation(std::move(name), ptr, size, frame));
     assert(res.second);
     total_size += size;
   }
-  void deallocate(std::string&& name, void* ptr, std::uint64_t size,
+  void deallocate(std::string&& name, const void* ptr, std::uint64_t size,
       StackNode* frame) {
     auto key = Allocation(std::move(name), ptr, size, frame);
     auto it = alloc_set.find(key);
@@ -722,14 +714,14 @@ struct State {
   void pop_region() {
     end_frame(now());
   }
-  void allocate(Space space, const char* name, void* ptr, std::uint64_t size) {
+  void allocate(Space space, const char* name, const void* ptr, std::uint64_t size) {
     current_allocations[space].allocate(
         std::string(name), ptr, size, stack_frame);
     if (current_allocations[space].total_size > hwm_allocations[space].total_size) {
       hwm_allocations[space] = current_allocations[space];
     }
   }
-  void deallocate(Space space, const char* name, void* ptr, std::uint64_t size) {
+  void deallocate(Space space, const char* name, const void* ptr, std::uint64_t size) {
     current_allocations[space].deallocate(
         std::string(name), ptr, size, stack_frame);
   }
@@ -752,72 +744,70 @@ struct State {
 
 State* global_state = nullptr;
 
-}  // end anonymous namespace
-
-extern "C" void kokkosp_init_library(
-    int loadseq, uint64_t, uint32_t ndevinfos, KokkosPDeviceInfo* devinfos) {
-  (void)loadseq;
-  (void)ndevinfos;
-  (void)devinfos;
+void kokkosp_init_library(
+    int /* loadseq */,
+    uint64_t /* interfaceVer */,
+    uint32_t /* ndevinfos */,
+    Kokkos_Profiling_KokkosPDeviceInfo* /* devinfos */) {
   global_state = new State();
 }
 
-extern "C" void kokkosp_finalize_library() {
+void kokkosp_finalize_library() {
   delete global_state;
   global_state = nullptr;
 }
 
-extern "C" void kokkosp_begin_parallel_for(
+void kokkosp_begin_parallel_for(
     const char* name, std::uint32_t devid, std::uint64_t* kernid) {
   (void) devid;
   *kernid = global_state->begin_kernel(name, STACK_FOR);
 }
 
-extern "C" void kokkosp_begin_parallel_reduce(
+void kokkosp_begin_parallel_reduce(
     const char* name, std::uint32_t devid, std::uint64_t* kernid) {
   (void) devid;
   *kernid = global_state->begin_kernel(name, STACK_REDUCE);
 }
 
-extern "C" void kokkosp_begin_parallel_scan(
+void kokkosp_begin_parallel_scan(
     const char* name, std::uint32_t devid, std::uint64_t* kernid) {
   (void) devid;
   *kernid = global_state->begin_kernel(name, STACK_SCAN);
 }
 
-extern "C" void kokkosp_end_parallel_for(std::uint64_t kernid) {
+void kokkosp_end_parallel_for(std::uint64_t kernid) {
   global_state->end_kernel(kernid);
 }
 
-extern "C" void kokkosp_end_parallel_reduce(std::uint64_t kernid) {
+void kokkosp_end_parallel_reduce(std::uint64_t kernid) {
   global_state->end_kernel(kernid);
 }
 
-extern "C" void kokkosp_end_parallel_scan(std::uint64_t kernid) {
+void kokkosp_end_parallel_scan(std::uint64_t kernid) {
   global_state->end_kernel(kernid);
 }
 
-extern "C" void kokkosp_push_profile_region(const char* name) {
+void kokkosp_push_profile_region(const char* name) {
   global_state->push_region(name);
 }
 
-extern "C" void kokkosp_pop_profile_region() {
+void kokkosp_pop_profile_region() {
   global_state->pop_region();
 }
 
-extern "C" void kokkosp_allocate_data(
-    SpaceHandle handle, const char* name, void* ptr, uint64_t size) {
+void kokkosp_allocate_data(
+    SpaceHandle handle, const char* name, const void* ptr, uint64_t size) {
   auto space = get_space(handle);
   global_state->allocate(space, name, ptr, size);
 }
 
-extern "C" void kokkosp_deallocate_data(
-    SpaceHandle handle, const char* name, void* ptr, uint64_t size) {
+void kokkosp_deallocate_data(
+    SpaceHandle handle, const char* name, const void* ptr, uint64_t size) {
   auto space = get_space(handle);
   global_state->deallocate(space, name, ptr, size);
 }
 
-extern "C" void kokkosp_begin_deep_copy(
+void kokkosp_begin_deep_copy(
     SpaceHandle dst_handle, const char* dst_name, const void* dst_ptr,
     SpaceHandle src_handle, const char* src_name, const void* src_ptr,
     uint64_t size) {
@@ -827,6 +817,47 @@ extern "C" void kokkosp_begin_deep_copy(
       src_space, src_name, src_ptr, size);
 }
 
-extern "C" void kokkosp_end_deep_copy() {
+void kokkosp_end_deep_copy() {
   global_state->end_deep_copy();
 }
+
+Kokkos::Tools::Experimental::EventSet get_event_set() {
+    Kokkos::Tools::Experimental::EventSet my_event_set;
+    memset(&my_event_set, 0, sizeof(my_event_set)); // zero any pointers not set here
+    my_event_set.init = kokkosp_init_library;
+    my_event_set.finalize = kokkosp_finalize_library;
+    my_event_set.push_region = kokkosp_push_profile_region;
+    my_event_set.pop_region = kokkosp_pop_profile_region;
+    my_event_set.allocate_data = kokkosp_allocate_data;
+    my_event_set.deallocate_data = kokkosp_deallocate_data;
+    my_event_set.begin_deep_copy = kokkosp_begin_deep_copy;
+    my_event_set.end_deep_copy = kokkosp_end_deep_copy;
+    my_event_set.begin_parallel_for = kokkosp_begin_parallel_for;
+    my_event_set.begin_parallel_reduce = kokkosp_begin_parallel_reduce;
+    my_event_set.begin_parallel_scan = kokkosp_begin_parallel_scan;
+    my_event_set.end_parallel_for = kokkosp_end_parallel_for;
+    my_event_set.end_parallel_reduce = kokkosp_end_parallel_reduce;
+    my_event_set.end_parallel_scan = kokkosp_end_parallel_scan;
+    return my_event_set;
+}
+
+} // KokkosTools::SpaceTimeStack
+
+extern "C" {
+
+namespace impl = KokkosTools::SpaceTimeStack;
+
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
+EXPOSE_POP_REGION(impl::kokkosp_pop_profile_region)
+EXPOSE_ALLOCATE(impl::kokkosp_allocate_data)
+EXPOSE_DEALLOCATE(impl::kokkosp_deallocate_data)
+EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
+EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
+EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
+EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+
+} // extern "C"
