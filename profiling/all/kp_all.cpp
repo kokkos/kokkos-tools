@@ -60,7 +60,9 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMark)
 KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMarkMPI)
 KOKKOSTOOLS_EXTERN_EVENT_SET(ChromeTracing)
 KOKKOSTOOLS_EXTERN_EVENT_SET(SpaceTimeStack)
-
+#ifdef KOKKOSTOOLS_HAS_VARIORUM
+  KOKKOSTOOLS_EXTERN_EVENT_SET(VariorumConnector)
+#endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
 namespace cali {
   extern Kokkos::Tools::Experimental::EventSet get_event_set(const char* config_str);
@@ -73,15 +75,6 @@ namespace KokkosTools {
 
 EventSet get_event_set(const char* profiler, const char* config_str)
 {
-  std::string name = profiler;
-  if (name == "caliper") {
-#ifdef KOKKOSTOOLS_HAS_CALIPER
-    return cali::get_event_set(config_str);
-#else
-    throw std::runtime_error("Profiler not supported: caliper (KokkosTools library was built without Caliper)");
-#endif
-  }
-
   std::map<std::string, EventSet> handlers = {
     {"kernel-timer", KernelTimer::get_event_set()},
     {"kernel-timer-json", KernelTimerJSON::get_event_set()},
@@ -91,16 +84,20 @@ EventSet get_event_set(const char* profiler, const char* config_str)
     {"highwater-mark", HighwaterMark::get_event_set()},
     {"chrome-tracing", ChromeTracing::get_event_set()},
     {"space-time-stack", SpaceTimeStack::get_event_set()},
+#ifdef KOKKOSTOOLS_HAS_VARIORUM
+    {"variorum", VariorumConnector::get_event_set()},
+#endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
     {"caliper", cali::get_event_set(config_str)},
 #endif
   };
-  auto e = handlers.find(name);
+  auto e = handlers.find(profiler);
   if (e != handlers.end())
     return e->second;
 
-  if (name != "") {
-    throw std::runtime_error(std::string("Profiler not supported: ") + name + std::string(" (unknown tool)"));
+  if (strlen(profiler) > 0) {
+    const auto msg = std::string("Profiler not supported: ") + profiler + " (unknown tool)";
+    throw std::runtime_error(msg);
 	}
 
   // default = no profiling

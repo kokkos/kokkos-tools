@@ -66,12 +66,13 @@ extern "C" {
 #include <jansson.h>
 }
 
-#include "kp_config.hpp"
+#include "kp_core.hpp"
 
 #if USE_MPI
 #include <mpi.h>
 #endif
 
+namespace KokkosTools::VariorumConnector {
 
 bool filterKernels;
 uint64_t nextKernelID;
@@ -265,8 +266,8 @@ void variorum_call() {
 }
 
 
-extern "C" void kokkosp_init_library(const int loadSeq,
-	const uint64_t interfaceVer, const uint32_t devInfoCount, void* deviceInfo) {
+void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
+    const uint32_t devInfoCount, Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
     
     char * outputPathChar;
     try {
@@ -372,7 +373,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
     
 }
 
-extern "C" void kokkosp_finalize_library() {
+void kokkosp_finalize_library() {
 
     if(usingMPI) {
         variorum_call_mpi();
@@ -389,7 +390,7 @@ extern "C" void kokkosp_finalize_library() {
     std::cout << "The kokkos library was alive for " << total_time << " seconds." << std::endl;
 }
 
-extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
+void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
     std::cout << "Device ID: " << devID << "\n";
     if(usingMPI) {
         variorum_call_mpi();
@@ -399,7 +400,7 @@ extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devI
     }
 }
 
-extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
+void kokkosp_end_parallel_for(const uint64_t kID) {
     if(usingMPI) {
         variorum_call_mpi();
     }
@@ -408,7 +409,7 @@ extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
     }
 }
 
-extern "C" void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID, uint64_t* kID) {
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID, uint64_t* kID) {
 	std::cout << "Device ID: " << devID << "\n";
     if(usingMPI) {
         variorum_call_mpi();
@@ -418,7 +419,7 @@ extern "C" void kokkosp_begin_parallel_scan(const char* name, const uint32_t dev
     }
 }
 
-extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
+void kokkosp_end_parallel_scan(const uint64_t kID) {
     if(usingMPI) {
         variorum_call_mpi();
     }
@@ -427,7 +428,7 @@ extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
     }	
 }
 
-extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID, uint64_t* kID) {
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID, uint64_t* kID) {
     std::cout << "Device ID: " << devID << "\n";
     if(usingMPI) {
         variorum_call_mpi();
@@ -437,7 +438,7 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t d
     }
 }
 
-extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
+void kokkosp_end_parallel_reduce(const uint64_t kID) {
     if(usingMPI) {
         variorum_call_mpi();
     }
@@ -446,4 +447,33 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
     }
 }
 
+Kokkos::Tools::Experimental::EventSet get_event_set() {
+    Kokkos::Tools::Experimental::EventSet my_event_set;
+    memset(&my_event_set, 0, sizeof(my_event_set)); // zero any pointers not set here
+    my_event_set.init = kokkosp_init_library;
+    my_event_set.finalize = kokkosp_finalize_library;
+    my_event_set.begin_parallel_for = kokkosp_begin_parallel_for;
+    my_event_set.begin_parallel_reduce = kokkosp_begin_parallel_reduce;
+    my_event_set.begin_parallel_scan = kokkosp_begin_parallel_scan;
+    my_event_set.end_parallel_for = kokkosp_end_parallel_for;
+    my_event_set.end_parallel_reduce = kokkosp_end_parallel_reduce;
+    my_event_set.end_parallel_scan = kokkosp_end_parallel_scan;
+    return my_event_set;
+}
 
+} // namespace KokkosTools::VariorumConnector
+
+extern "C" {
+
+namespace impl = KokkosTools::VariorumConnector;
+
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
+EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
+EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
+EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+
+} // extern "C"

@@ -2,3 +2,4 @@
 #define USE_MPI @USE_MPI@
 
 #cmakedefine KOKKOSTOOLS_HAS_CALIPER
+#cmakedefine KOKKOSTOOLS_HAS_VARIORUM

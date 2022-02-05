@@ -82,12 +82,13 @@ if(KokkosTools_ENABLE_MPI)
 else()
   set(USE_MPI 0)
 endif()
+include(profiling/variorum-connector/configure_variorum.cmake)
+set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
 
 # make Kokkos profiling interface available for native profilers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiling/all)
 
 # Config file
-set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
 configure_file(common/kp_config.hpp.in common/kp_config.hpp)
 set(COMMON_HEADERS_PATH ${CMAKE_CURRENT_BINARY_DIR}/common)
 include_directories(${COMMON_HEADERS_PATH})
@@ -117,7 +118,9 @@ if(KokkosTools_ENABLE_PAPI)
 endif()
 
 #add_subdirectory(profiling/systemtap-connector)
-add_subdirectory(profiling/variorum-connector)
+if(KOKKOSTOOLS_HAS_VARIORUM)
+  add_subdirectory(profiling/variorum-connector)
+endif()
 
 # GPU profilers
 if(KOKKOS_ENABLE_CUDA)
