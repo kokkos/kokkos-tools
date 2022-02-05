@@ -129,4 +129,24 @@ void kokkosp_begin_deep_copy(SpaceHandle dst_handle, \
 
 #define EXPOSE_END_DEEP_COPY(FUNC_NAME) EXPOSE_NOARGFUNCTION(kokkosp_end_deep_copy, FUNC_NAME)
 
+#define EXPOSE_CREATE_PROFILE_SECTION(FUNC_NAME) \
+__attribute__((weak)) \
+void kokkosp_create_profile_section(const char* name, uint32_t* sec_id) { FUNC_NAME(name, sec_id); }
+
+#define EXPOSE_START_PROFILE_SECTION(FUNC_NAME) \
+__attribute__((weak)) \
+void kokkosp_start_profile_section(const uint32_t sec_id) { FUNC_NAME(sec_id); }
+
+#define EXPOSE_STOP_PROFILE_SECTION(FUNC_NAME) \
+__attribute__((weak)) \
+void kokkosp_stop_profile_section(const uint32_t sec_id) { FUNC_NAME(sec_id); }
+
+#define EXPOSE_DESTROY_PROFILE_SECTION(FUNC_NAME) \
+__attribute__((weak)) \
+void kokkosp_destroy_profile_section(const uint32_t sec_id) { FUNC_NAME(sec_id); }
+
+#define EXPOSE_PROFILE_EVENT(FUNC_NAME) \
+__attribute__((weak)) \
+void kokkosp_profile_event(const char* name) { FUNC_NAME(name); }
+
 #endif // KOKKOSTOOLS_KOKKOSINTERFACE_HPP

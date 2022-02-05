@@ -60,6 +60,7 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMark)
 KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMarkMPI)
 KOKKOSTOOLS_EXTERN_EVENT_SET(ChromeTracing)
 KOKKOSTOOLS_EXTERN_EVENT_SET(SpaceTimeStack)
+KOKKOSTOOLS_EXTERN_EVENT_SET(SystemtapConnector)
 #ifdef KOKKOSTOOLS_HAS_VARIORUM
   KOKKOSTOOLS_EXTERN_EVENT_SET(VariorumConnector)
 #endif
@@ -84,6 +85,7 @@ EventSet get_event_set(const char* profiler, const char* config_str)
     {"highwater-mark", HighwaterMark::get_event_set()},
     {"chrome-tracing", ChromeTracing::get_event_set()},
     {"space-time-stack", SpaceTimeStack::get_event_set()},
+    {"systemtap-connector", SystemtapConnector::get_event_set()},
 #ifdef KOKKOSTOOLS_HAS_VARIORUM
     {"variorum", VariorumConnector::get_event_set()},
 #endif

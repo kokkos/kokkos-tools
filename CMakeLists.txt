@@ -117,7 +117,7 @@ if(KokkosTools_ENABLE_PAPI)
   add_subdirectory(profiling/papi-connector)
 endif()
 
-#add_subdirectory(profiling/systemtap-connector)
+add_subdirectory(profiling/systemtap-connector)
 if(KOKKOSTOOLS_HAS_VARIORUM)
   add_subdirectory(profiling/variorum-connector)
 endif()
