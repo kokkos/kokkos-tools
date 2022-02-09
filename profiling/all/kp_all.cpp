@@ -81,7 +81,9 @@ EventSet get_event_set(const char* profiler, const char* config_str)
     {"kernel-timer-json", KernelTimerJSON::get_event_set()},
     {"memory-events", MemoryEvents::get_event_set()},
     {"memory-usage", MemoryUsage::get_event_set()},
+#if USE_MPI
     {"highwater-mark-mpi", HighwaterMarkMPI::get_event_set()},
+#endif
     {"highwater-mark", HighwaterMark::get_event_set()},
     {"chrome-tracing", ChromeTracing::get_event_set()},
     {"space-time-stack", SpaceTimeStack::get_event_set()},
