@@ -49,6 +49,8 @@
 
 #include "ittnotify.h"
 
+namespace KokkosTools::VTuneFocusedConnector {
+
 enum KernelExecutionType {
 	PARALLEL_FOR = 0,
 	PARALLEL_REDUCE = 1,
@@ -93,5 +95,6 @@ class KernelVTuneFocusedConnectorInfo {
 		__itt_domain* domain;
 		__itt_string_handle* domainNameHandle;
 };
+} // namespace KokkosTools::VTuneFocusedConnector
 
 #endif

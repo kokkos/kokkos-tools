@@ -49,6 +49,8 @@
 
 #include "ittnotify.h"
 
+namespace KokkosTools::VTuneConnector {
+
 enum KernelExecutionType {
 	PARALLEL_FOR = 0,
 	PARALLEL_REDUCE = 1,
@@ -94,4 +96,6 @@ class KernelVTuneConnectorInfo {
 		__itt_string_handle* domainNameHandle;
 };
 
-#endif
+} // namespace KokkosTools::VTuneConnector
+
+#endif // _H_KOKKOSP_KERNEL_VTUNE_CONNECTOR_INFO

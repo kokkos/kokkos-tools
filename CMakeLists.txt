@@ -88,6 +88,18 @@ include(cmake/configure_variorum.cmake)
 
 set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
 
+if(DEFINED ENV{VTUNE_HOME})
+  set(VTune_ROOT $ENV{VTUNE_HOME})
+endif()
+if(VTune_ROOT)
+  find_package(ITT REQUIRED)
+  set(KOKKOSTOOLS_HAS_VTUNE ON)
+else()
+  message(WARNING "Set VTUNE_HOME in environment or VTune_ROOT in build options to build VTune connectors")
+  set(VTune_ROOT "" CACHE STRING "Path to VTune Intel compiler")
+  set(KOKKOSTOOLS_HAS_VTUNE OFF)
+endif()
+
 # make Kokkos profiling interface available for native profilers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiling/all)
 
@@ -134,15 +146,9 @@ if(KOKKOS_ENABLE_HIP)
   #add_subdirectory(profiling/roctx-connector)
 endif()
 
-if(DEFINED ENV{VTUNE_HOME})
-  set(VTune_ROOT $ENV{VTUNE_HOME})
-endif()
-if(VTune_ROOT)
-  #add_subdirectory(profiling/vtune-connector)
-  #add_subdirectory(profiling/vtune-focused-connector)
-else()
-  message(WARNING "Set VTUNE_HOME in environment or VTune_ROOT in build options to build VTune connectors")
-  set(VTune_ROOT "" CACHE STRING "Path to VTune Intel compiler")
+if(KOKKOSTOOLS_HAS_VTUNE)
+  add_subdirectory(profiling/vtune-connector)
+  add_subdirectory(profiling/vtune-focused-connector)
 endif()
 
 # Build TPLs

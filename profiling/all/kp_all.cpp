@@ -61,6 +61,10 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMarkMPI)
 KOKKOSTOOLS_EXTERN_EVENT_SET(ChromeTracing)
 KOKKOSTOOLS_EXTERN_EVENT_SET(SpaceTimeStack)
 KOKKOSTOOLS_EXTERN_EVENT_SET(SystemtapConnector)
+#ifdef KOKKOSTOOLS_HAS_VTUNE
+  KOKKOSTOOLS_EXTERN_EVENT_SET(VTuneConnector)
+  KOKKOSTOOLS_EXTERN_EVENT_SET(VTuneFocusedConnector)
+#endif
 #ifdef KOKKOSTOOLS_HAS_VARIORUM
   KOKKOSTOOLS_EXTERN_EVENT_SET(VariorumConnector)
 #endif
@@ -90,6 +94,10 @@ EventSet get_event_set(const char* profiler, const char* config_str)
     {"systemtap-connector", SystemtapConnector::get_event_set()},
 #ifdef KOKKOSTOOLS_HAS_VARIORUM
     {"variorum", VariorumConnector::get_event_set()},
+#endif
+#ifdef KOKKOSTOOLS_HAS_VTUNE
+    {"vtune-connector", VTuneConnector::get_event_set()},
+    {"vtune-focused-connector", VTuneFocusedConnector::get_event_set()},
 #endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
     {"caliper", cali::get_event_set(config_str)},
