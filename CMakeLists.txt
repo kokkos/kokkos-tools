@@ -75,6 +75,7 @@ if(KokkosTools_ENABLE_PAPI)
 else()
   message(STATUS "PAPI support disabled")
 endif()
+
 if(KokkosTools_ENABLE_MPI)
   find_package(MPI REQUIRED)
   message(STATUS "Found MPI ${MPI_CXX_VERSION}: ${MPI_CXX_LIBRARIES}")
@@ -82,7 +83,9 @@ if(KokkosTools_ENABLE_MPI)
 else()
   set(USE_MPI 0)
 endif()
-include(profiling/variorum-connector/configure_variorum.cmake)
+
+include(cmake/configure_variorum.cmake)
+
 set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
 
 # make Kokkos profiling interface available for native profilers
