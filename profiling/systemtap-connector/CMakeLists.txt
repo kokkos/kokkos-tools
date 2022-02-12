@@ -9,7 +9,7 @@ add_custom_command(OUTPUT ${PROBES_OBJECT}
 add_library(kp_systemtap_probe OBJECT IMPORTED)
 set_property(TARGET kp_systemtap_probe PROPERTY IMPORTED_OBJECTS ${PROBES_OBJECT})
 
-kp_add_library(kp_systemtap_connector SHARED kp_systemtap_connector.cpp ${PROBES_HEADER}
+kp_add_library(kp_systemtap_connector kp_systemtap_connector.cpp ${PROBES_HEADER}
   $<TARGET_OBJECTS:kp_systemtap_probe>)
 set_property(SOURCE ${PROBES_HEADER} PROPERTY HEADER_FILE_ONLY ON)
 

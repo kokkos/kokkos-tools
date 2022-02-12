@@ -1,5 +1,5 @@
-function(kp_add_library TARGET MODE)
-  add_library(${TARGET} ${MODE} ${ARGN}) # SOURCES = ${ARGN}
+function(kp_add_library TARGET)
+  add_library(${TARGET} ${KOKKOSTOOLS_LIBRARY_MODE} ${ARGN}) # SOURCES = ${ARGN}
 
   # add this library to the list of profilers linked to single library
   list(APPEND SINGLELIB_PROFILERS ${TARGET})

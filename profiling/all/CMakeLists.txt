@@ -5,7 +5,7 @@ set(LIBNAME kokkostools)
 #  return()
 #endif()
 
-add_library(${LIBNAME} SHARED kp_all.cpp)
+add_library(${LIBNAME} ${KOKKOSTOOLS_LIBRARY_MODE} kp_all.cpp)
 
 target_include_directories(${LIBNAME}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>

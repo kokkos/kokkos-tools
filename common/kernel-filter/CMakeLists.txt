@@ -1,1 +1,1 @@
-add_library(kp_kernel_filter SHARED kp_kernel_filter.cpp)
+add_library(kp_kernel_filter ${KOKKOSTOOLS_LIBRARY_MODE} kp_kernel_filter.cpp)

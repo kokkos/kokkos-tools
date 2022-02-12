@@ -1,1 +1,1 @@
-kp_add_library(kp_hwm SHARED kp_hwm.cpp)
+kp_add_library(kp_hwm kp_hwm.cpp)
