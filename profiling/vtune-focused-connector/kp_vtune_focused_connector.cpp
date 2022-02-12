@@ -46,7 +46,6 @@
 #include <cstring>
 #include <unordered_map>
 #include <string>
-#include <cxxabi.h>
 
 #include "kp_core.hpp"
 #include "kp_vtune_focused_connector_domain.h"

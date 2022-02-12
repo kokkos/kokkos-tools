@@ -50,6 +50,31 @@
 
 using Kokkos::Tools::SpaceHandle;
 
+#ifdef WIN32
+
+  #define EXPOSE_INIT(FUNC_NAME)
+  #define EXPOSE_NOARGFUNCTION(HANDLER_NAME, FUNC_NAME)
+  #define EXPOSE_FINALIZE(FUNC_NAME)
+  #define EXPOSE_ALLOCATE(FUNC_NAME)
+  #define EXPOSE_DEALLOCATE(FUNC_NAME)
+  #define EXPOSE_PUSH_REGION(FUNC_NAME)
+  #define EXPOSE_POP_REGION(FUNC_NAME)
+  #define EXPOSE_BEGIN_PARALLEL_FOR(FUNC_NAME)
+  #define EXPOSE_END_PARALLEL_FOR(FUNC_NAME)
+  #define EXPOSE_BEGIN_PARALLEL_SCAN(FUNC_NAME)
+  #define EXPOSE_END_PARALLEL_SCAN(FUNC_NAME)
+  #define EXPOSE_BEGIN_PARALLEL_REDUCE(FUNC_NAME)
+  #define EXPOSE_END_PARALLEL_REDUCE(FUNC_NAME)
+  #define EXPOSE_BEGIN_DEEP_COPY(FUNC_NAME)
+  #define EXPOSE_END_DEEP_COPY(FUNC_NAME)
+  #define EXPOSE_CREATE_PROFILE_SECTION(FUNC_NAME)
+  #define EXPOSE_START_PROFILE_SECTION(FUNC_NAME)
+  #define EXPOSE_STOP_PROFILE_SECTION(FUNC_NAME)
+  #define EXPOSE_DESTROY_PROFILE_SECTION(FUNC_NAME)
+  #define EXPOSE_PROFILE_EVENT(FUNC_NAME)
+
+#else
+
 #define EXPOSE_INIT(FUNC_NAME) \
 __attribute__((weak)) \
 void kokkosp_init_library(const int loadSeq, \
@@ -148,5 +173,6 @@ void kokkosp_destroy_profile_section(const uint32_t sec_id) { FUNC_NAME(sec_id);
 #define EXPOSE_PROFILE_EVENT(FUNC_NAME) \
 __attribute__((weak)) \
 void kokkosp_profile_event(const char* name) { FUNC_NAME(name); }
+#endif
 
 #endif // KOKKOSTOOLS_KOKKOSINTERFACE_HPP

@@ -52,6 +52,7 @@ namespace KokkosTools::NAMESPACE { \
   extern Kokkos::Tools::Experimental::EventSet get_event_set(); \
 }
 
+#ifndef WIN32
 KOKKOSTOOLS_EXTERN_EVENT_SET(KernelTimer)
 KOKKOSTOOLS_EXTERN_EVENT_SET(KernelTimerJSON)
 KOKKOSTOOLS_EXTERN_EVENT_SET(MemoryEvents)
@@ -61,6 +62,7 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMarkMPI)
 KOKKOSTOOLS_EXTERN_EVENT_SET(ChromeTracing)
 KOKKOSTOOLS_EXTERN_EVENT_SET(SpaceTimeStack)
 KOKKOSTOOLS_EXTERN_EVENT_SET(SystemtapConnector)
+#endif
 #ifdef KOKKOSTOOLS_HAS_VTUNE
   KOKKOSTOOLS_EXTERN_EVENT_SET(VTuneConnector)
   KOKKOSTOOLS_EXTERN_EVENT_SET(VTuneFocusedConnector)
@@ -80,29 +82,30 @@ namespace KokkosTools {
 
 EventSet get_event_set(const char* profiler, const char* config_str)
 {
-  std::map<std::string, EventSet> handlers = {
-    {"kernel-timer", KernelTimer::get_event_set()},
-    {"kernel-timer-json", KernelTimerJSON::get_event_set()},
-    {"memory-events", MemoryEvents::get_event_set()},
-    {"memory-usage", MemoryUsage::get_event_set()},
+  std::map<std::string, EventSet> handlers;
+#ifndef WIN32
+  handlers["kernel-timer"] = KernelTimer::get_event_set();
+  handlers["kernel-timer-json"] = KernelTimerJSON::get_event_set();
+  handlers["memory-events"] = MemoryEvents::get_event_set();
+  handlers["memory-usage"] = MemoryUsage::get_event_set();
 #if USE_MPI
-    {"highwater-mark-mpi", HighwaterMarkMPI::get_event_set()},
+  handlers["highwater-mark-mpi"] = HighwaterMarkMPI::get_event_set();
 #endif
-    {"highwater-mark", HighwaterMark::get_event_set()},
-    {"chrome-tracing", ChromeTracing::get_event_set()},
-    {"space-time-stack", SpaceTimeStack::get_event_set()},
-    {"systemtap-connector", SystemtapConnector::get_event_set()},
+  handlers["highwater-mark"] = HighwaterMark::get_event_set();
+  handlers["chrome-tracing"] = ChromeTracing::get_event_set();
+  handlers["space-time-stack"] = SpaceTimeStack::get_event_set();
+  handlers["systemtap-connector"] = SystemtapConnector::get_event_set();
+#endif
 #ifdef KOKKOSTOOLS_HAS_VARIORUM
-    {"variorum", VariorumConnector::get_event_set()},
+  handlers["variorum"] = VariorumConnector::get_event_set();
 #endif
 #ifdef KOKKOSTOOLS_HAS_VTUNE
-    {"vtune-connector", VTuneConnector::get_event_set()},
-    {"vtune-focused-connector", VTuneFocusedConnector::get_event_set()},
+  handlers["vtune-connector"] = VTuneConnector::get_event_set();
+  handlers["vtune-focused-connector"] = VTuneFocusedConnector::get_event_set();
 #endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
-    {"caliper", cali::get_event_set(config_str)},
+  handlers["caliper"] = cali::get_event_set(config_str);
 #endif
-  };
   auto e = handlers.find(profiler);
   if (e != handlers.end())
     return e->second;

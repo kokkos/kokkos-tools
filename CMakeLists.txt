@@ -24,6 +24,9 @@ message(STATUS)
 
 # Common settings
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+if(WIN32)
+  set(BUILD_SHARED_LIBS OFF) # We need to add __declspec(dllexport/dllimport) for Windows DLLs
+endif()
 if(BUILD_SHARED_LIBS)
   set(KOKKOSTOOLS_LIBRARY_MODE SHARED)
 else()
@@ -115,29 +118,39 @@ include_directories(${COMMON_HEADERS_PATH})
 
 set(SINGLELIB_PROFILERS "" CACHE STRING "" FORCE)
 
+if(WIN32)
+  message(STATUS "Windows target detected - skipping Unix-only tools")
+endif()
+
 # Utilities
-add_subdirectory(common/kernel-filter)
+if(NOT WIN32)
+  add_subdirectory(common/kernel-filter)
+endif()
 add_subdirectory(debugging/kernel-logger)
 
 # Profilers
-add_subdirectory(profiling/memory-events)
-add_subdirectory(profiling/memory-hwm)
-if(USE_MPI)
-  add_subdirectory(profiling/memory-hwm-mpi)
-else()
-  message(STATUS "Skipping memory-hwm-mpi (MPI disabled)")
+if(NOT WIN32)
+  add_subdirectory(profiling/simple-kernel-timer)
+  add_subdirectory(profiling/memory-hwm)
+  if(USE_MPI)
+    add_subdirectory(profiling/memory-hwm-mpi)
+  else()
+    message(STATUS "Skipping memory-hwm-mpi (MPI disabled)")
+  endif()
+  add_subdirectory(profiling/memory-events)
+  add_subdirectory(profiling/memory-usage)
+  add_subdirectory(profiling/chrome-tracing)
+  add_subdirectory(profiling/space-time-stack)
 endif()
-add_subdirectory(profiling/memory-usage)
-add_subdirectory(profiling/chrome-tracing)
-add_subdirectory(profiling/simple-kernel-timer)
-add_subdirectory(profiling/space-time-stack)
 
 # External lib connectors
 if(KokkosTools_ENABLE_PAPI)
   add_subdirectory(profiling/papi-connector)
 endif()
 
-add_subdirectory(profiling/systemtap-connector)
+if(NOT WIN32)
+  add_subdirectory(profiling/systemtap-connector)
+endif()
 if(KOKKOSTOOLS_HAS_VARIORUM)
   add_subdirectory(profiling/variorum-connector)
 endif()

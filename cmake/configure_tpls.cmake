@@ -11,7 +11,9 @@ macro(configure_caliper)
   # Note: Let Caliper figure that out or it may fail on missing omp-tools.h
   # set(CALIPER_WITH_OMPT OFF) # Build with support for the OpenMP tools interface.
 
-  set(CALIPER_WITH_SAMPLER ON)  # Enable time-based sampling on Linux.
+  if(NOT WIN32)
+    set(CALIPER_WITH_SAMPLER ON)  # Enable time-based sampling on Linux.
+  endif()
   set(CALIPER_WITH_TOOLS ON)    # Build Caliper’s tools (i.e, cali-query and mpi-caliquery). Default: On.
   set(CALIPER_WITH_MPI ${KokkosTools_ENABLE_MPI}) # Build with MPI support.
   set(CALIPER_WITH_ROCM ${Kokkos_ENABLE_HIP}) # Enable AMD ROCtracer/RocTX support
