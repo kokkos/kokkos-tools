@@ -6,7 +6,6 @@ macro(configure_caliper)
   set(CALIPER_BUILD_DOCS OFF)    # Build documentation.
   set(CALIPER_BUILD_TESTING OFF) # Build unit tests.
   set(CALIPER_WITH_FORTRAN OFF)  # Build and install Fortran wrappers.
-  set(CALIPER_WITH_KOKKOS ON)    # Enable Kokkos profiling support
 
   # Note: Let Caliper figure that out or it may fail on missing omp-tools.h
   # set(CALIPER_WITH_OMPT OFF) # Build with support for the OpenMP tools interface.
@@ -16,10 +15,18 @@ macro(configure_caliper)
   endif()
   set(CALIPER_WITH_TOOLS ON)    # Build Caliper’s tools (i.e, cali-query and mpi-caliquery). Default: On.
   set(CALIPER_WITH_MPI ${KokkosTools_ENABLE_MPI}) # Build with MPI support.
-  set(CALIPER_WITH_ROCM ${Kokkos_ENABLE_HIP}) # Enable AMD ROCtracer/RocTX support
-  set(CALIPER_WITH_NVTX ${Kokkos_ENABLE_CUDA}) # Build adapters to forward Caliper annotations to NVidia’s nvtx annotation API. Set CUDA_TOOLKIT_ROOT_DIR to the CUDA installation.
-  set(CALIPER_WITH_CUPTI ${Kokkos_ENABLE_CUDA}) # Enable support for CUDA performance analysis
-                                        # (wrapping of driver/runtime API calls and CUDA activity tracing).
+  if(Kokkos_FOUND)
+    set(CALIPER_WITH_KOKKOS ON)                   # Enable Kokkos profiling support
+    set(CALIPER_WITH_ROCM ${Kokkos_ENABLE_HIP})   # Enable AMD ROCtracer/RocTX support
+    set(CALIPER_WITH_NVTX ${Kokkos_ENABLE_CUDA})  # Build adapters to forward Caliper annotations to NVidia’s
+                                                  # nvtx annotation API.
+    set(CALIPER_WITH_CUPTI ${Kokkos_ENABLE_CUDA}) # Enable support for CUDA performance analysis (wrapping of
+                                                  # driver/runtime API calls and CUDA activity tracing).
+  else()
+    set(CALIPER_WITH_KOKKOS OFF)
+    # TODO: detect CUDA / HIP ?
+  endif()
+
   # Enable PAPI hardware counter service (requires papi)
   if(KokkosTools_ENABLE_PAPI)
     set(CALIPER_WITH_PAPI ON)
@@ -40,7 +47,11 @@ endmacro()
 macro(configure_apex)
   #set(BUILD_STATIC_EXECUTABLES OFF)
   set(APEX_WITH_PAPI ${KokkosTools_ENABLE_PAPI})
-  set(APEX_WITH_CUDA ${Kokkos_ENABLE_CUDA})
+  if(Kokkos_FOUND)
+    set(APEX_WITH_CUDA ${Kokkos_ENABLE_CUDA})
+  else()
+    # TODO: detect CUDA ?
+  endif()
   set(APEX_WITH_BFD ON)
   set(APEX_WITH_MPI ${KokkosTools_ENABLE_MPI})
   #set(BFD_ROOT ...)

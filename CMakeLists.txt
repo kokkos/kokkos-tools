@@ -44,35 +44,27 @@ option(KokkosTools_ENABLE_APEX    "Enable building Apex library"    ON)
 option(KokkosTools_REUSE_KOKKOS_COMPILER "Set the compiler and flags based on installed Kokkos settings" OFF)
 mark_as_advanced(KokkosTools_REUSE_KOKKOS_COMPILER)
 
-# Fetch Kokkos options
-if(TARGET Kokkos::kokkos)
-  # Kokkos is built within same parent project and was already configured
-  # (all options are set, compiler and flags are set).
-  message(STATUS "Detected Kokkos being built within same parent project: ${Kokkos_SOURCE_DIR}")
-elseif(Kokkos_ROOT)
-  # Extract configuration (options, compiler, etc.) from Kokkos installed at Kokkos_ROOT
-  find_package(Kokkos REQUIRED)
-  message(STATUS "Fetching Kokkos configuration from: ${Kokkos_ROOT}")
-
-  #-------------------------------------------------------------------------#
-  # TODO: Lookup options we need to use or propagete to Caliper, Apex, etc. (OpenMP, CUDA, etc.)
-  #       see KokkosConfigCommon.cmake and KokkosTargets.cmake in .../install/kokkos/lib/cmake/
-  message(FATAL_ERROR "NOT_IMPLEMENTED: make sure we extract and set everything right")
-  #-------------------------------------------------------------------------#
-
+# Fetch Kokkos options:
+acquire_kokkos_config()
+if(DEFINED Kokkos_FOUND_MSG)
+  message(STATUS "${Kokkos_FOUND_MSG}: ${Kokkos_INSTALL_DIR}\n"
+    "\t\tDevices: ${Kokkos_DEVICES}\n"
+    "\t\tArchitecture: ${Kokkos_ARCH}\n"
+    "\t\tTPLs: ${Kokkos_TPLS}\n"
+    "\t\tCompiler: ${Kokkos_CXX_COMPILER} (${Kokkos_CXX_COMPILER_ID})\n"
+    "\t\tCMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}\n"
+    "\t\tOptions: ${Kokkos_OPTIONS}")
   # Synchronize compiler and flags (only when explicitly requested)
   if(KokkosTools_REUSE_KOKKOS_COMPILER)
     set(CMAKE_CXX_COMPILER "${Kokkos_CXX_COMPILER}"        CACHE STRING "C++ Compiler")
     set(CMAKE_CXX_STANDARD "${CMAKE_CXX_STANDARD_DEFAULT}" CACHE STRING "C++ Standard: 98, 11, 14, 17, 20 or 23")
   endif()
 else()
-  # Tools are built without referring to Kokkos
-  message(WARNING "Kokkos NOT found, using reasonable defaults for options")
-
-  #-------------------------------------------------------------------------#
-  # Note: original CMakes used: CXXFLAGS=-O3 -std=c++11 -g -shared -fPIC -Wall -Wextra
-  message(FATAL_ERROR "NOT_IMPLEMENTED: set reasonable defaults and test this scenario")
-  #-------------------------------------------------------------------------#
+  if(KokkosTools_REUSE_KOKKOS_COMPILER)
+    message(FATAL_ERROR "Kokkos not found: can't reuse Kokkos compiler (which was explicitly"
+                        "requested with KokkosTools_REUSE_KOKKOS_COMPILER=ON)")
+  endif()
+  message(STATUS "Kokkos NOT found")
 endif()
 
 # Libraries
