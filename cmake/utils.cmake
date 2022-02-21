@@ -6,6 +6,10 @@ function(kp_add_library TARGET)
   set(SINGLELIB_PROFILERS ${SINGLELIB_PROFILERS} CACHE STRING "" FORCE)
 endfunction()
 
+macro(set_cache NAME VAL)
+  set(${NAME} ON CACHE BOOL "")
+endmacro()
+
 function(acquire_kokkos_config)
   if(NOT TARGET Kokkos::kokkos)
     find_package(Kokkos QUIET)
@@ -28,6 +32,7 @@ function(acquire_kokkos_config)
   foreach(VAR_NAME Kokkos_FOUND_MSG Kokkos_INSTALL_DIR
       # Settings exported by Kokkos
       Kokkos_DEVICES Kokkos_ARCH Kokkos_TPLS Kokkos_CXX_COMPILER Kokkos_CXX_COMPILER_ID Kokkos_OPTIONS
+      Kokkos_ENABLE_OPENMP Kokkos_ENABLE_CUDA Kokkos_ENABLE_HIP
       # Kokkos exports the flags as well
       CMAKE_CXX_FLAGS)
     set(${VAR_NAME} ${${VAR_NAME}} PARENT_SCOPE)

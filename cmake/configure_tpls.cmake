@@ -43,23 +43,36 @@ macro(configure_caliper)
   endif()
 endmacro()
 
-# Note: Apex docs http://uo-oaciss.github.io/apex/install/#standalone_installation
+# Alter some Apex defaults, based on Kokkos and Tools settings
+# See http://uo-oaciss.github.io/apex/install/#standalone_installation
 macro(configure_apex)
-  #set(BUILD_STATIC_EXECUTABLES OFF)
-  set(APEX_WITH_PAPI ${KokkosTools_ENABLE_PAPI})
-  if(Kokkos_FOUND)
-    set(APEX_WITH_CUDA ${Kokkos_ENABLE_CUDA})
+  if(BUILD_SHARED_LIBS)
+    set_cache(BUILD_STATIC_EXECUTABLES OFF)
   else()
-    # TODO: detect CUDA ?
+    set_cache(BUILD_STATIC_EXECUTABLES ON)
   endif()
-  set(APEX_WITH_BFD ON)
-  set(APEX_WITH_MPI ${KokkosTools_ENABLE_MPI})
-  #set(BFD_ROOT ...)
+  set_cache(APEX_WITH_PAPI ${KokkosTools_ENABLE_PAPI})
+  set_cache(APEX_WITH_MPI ${KokkosTools_ENABLE_MPI})
 
-  set(APEX_WITH_OMPT OFF) # TODO: Apex fails on missing libomp.so
+  ## TODO: Build Binutils if not installed (detect?) and the compiler is NOT gcc/clang/icc (check CMake vars)
+  # set(BFD_ROOT /path/to/binutils)
+  # option(APEX_BUILD_BFD "Build Binutils library if not found" ON)
 
-  # TODO: Apex tries to fetch TPLs and install them in /usr/lib
-  #       (normally failing) unless we disable them...
-  set(APEX_WITH_ACTIVEHARMONY OFF)
-  set(APEX_WITH_OTF2 OFF)
+  ## TODO: Build OMPT if compilers >= [gcc/clang/icc] and we're NOT offloading to GPU
+  ## Note: OMPT should work nice with Intel compiler
+  # option(APEX_BUILD_OMPT "Build OpenMP runtime with OMPT if support not found" ON)
+
+  if(Kokkos_ENABLE_CUDA)
+    option(APEX_WITH_CUDA "Enable CUDA (CUPTI) support" ON)
+    # TODO: check if we need to set CUPTI_ROOT and/or NVML_ROOT here
+  endif()
+
+  if(Kokkos_ENABLE_HIP)
+    option(APEX_WITH_HIP "Enable HIP (ROCTRACER) support" ON)
+    ## TODO: check/set paths (we can skip roctracer, rocprofiler, rocm_smi if they're located in ${ROCM_PATH})
+    # set(ROCM_ROOT ${ROCM_PATH})
+    # set(ROCTX_ROOT ${ROCM_PATH}/roctracer)
+    # set(ROCTRACER_ROOT ${ROCM_PATH}/roctracer)
+    # set(RSMI_ROOT ${ROCM_PATH}/rocm_smi)
+  endif()
 endmacro()
