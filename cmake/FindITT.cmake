@@ -50,8 +50,8 @@ else()
 endif()
 
 # Set up imported target
-if(NOT TARGET ittnotify)
-  add_library(ittnotify INTERFACE IMPORTED)
-  target_include_directories(ittnotify INTERFACE ${ITT_INCLUDE_DIR})
-  target_link_libraries(ittnotify INTERFACE ${ITT_LIBRARY})
+if(NOT TARGET ittapi) # Note: "ittnotify" is a target created by Apex
+  add_library(ittapi INTERFACE IMPORTED)
+  target_include_directories(ittapi INTERFACE ${ITT_INCLUDE_DIR})
+  target_link_libraries(ittapi INTERFACE ${ITT_LIBRARY})
 endif()
