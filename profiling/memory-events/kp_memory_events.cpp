@@ -59,6 +59,8 @@
 
 namespace KokkosTools::MemoryEvents {
 
+char space_name[16][64];
+
 std::vector<EventRecord> events;
 
 int num_spaces;

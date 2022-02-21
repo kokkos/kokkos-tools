@@ -52,7 +52,9 @@
 
 #include "kp_core.hpp"
 
-char space_name[16][64];
+namespace KokkosTools::MemoryEvents {
+
+extern char space_name[16][64];
 
 struct EventRecord {
   const void* ptr;
@@ -85,3 +87,4 @@ struct EventRecord {
   }
 };
 
+} // namespace KokkosTools::MemoryEvents

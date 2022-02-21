@@ -54,10 +54,11 @@
 #include <unistd.h>
 
 #include "kp_core.hpp"
-#include "kp_memory_events.hpp"
 #include "kp_timer.hpp"
 
 namespace KokkosTools::MemoryUsage {
+
+char space_name[16][64];
 
 int num_spaces;
 std::vector<std::tuple<double,uint64_t,double> > space_size_track[16];
