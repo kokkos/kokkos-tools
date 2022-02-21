@@ -14,6 +14,7 @@ else()
   set(MSG_NOTFOUND "check Variorum_ROOT (${Variorum_ROOT})")
 endif()
 
+set(Variorum_DIR ${Variorum_ROOT}/lib/cmake)
 find_package(Variorum QUIET)
 
 if(Variorum_FOUND)

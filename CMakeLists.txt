@@ -72,8 +72,10 @@ if(KokkosTools_ENABLE_PAPI)
   find_package(PAPI REQUIRED) # TODO: papi-connector requires v6.0 or newer
   cmake_path(GET PAPI_INCLUDE_DIR PARENT_PATH PAPI_ROOT)
   message(STATUS "Found PAPI ${PAPI_VERSION_STRING} at ${PAPI_ROOT}")
+  set(KokkosTools_HAS_PAPI ON)
 else()
   message(STATUS "PAPI support disabled")
+  set(KokkosTools_HAS_PAPI OFF)
 endif()
 
 if(KokkosTools_ENABLE_MPI)
