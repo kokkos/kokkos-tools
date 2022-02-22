@@ -53,7 +53,8 @@
 #include "probes.h"
 #include "kp_core.hpp"
 
-namespace KokkosTools::SystemtapConnector {
+namespace KokkosTools {
+namespace SystemtapConnector {
 
 static uint64_t next_kernid;
 static uint32_t next_sec_id;
@@ -228,7 +229,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // namespace KokkosTools::SystemtapConnector
+}} // namespace KokkosTools::SystemtapConnector
 
 
 extern "C" {

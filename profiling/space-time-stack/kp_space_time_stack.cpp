@@ -65,7 +65,8 @@
 
 #include <chrono>
 
-namespace KokkosTools::SpaceTimeStack {
+namespace KokkosTools {
+namespace SpaceTimeStack {
 
 enum Space {
   SPACE_HOST,
@@ -841,7 +842,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // KokkosTools::SpaceTimeStack
+}} // KokkosTools::SpaceTimeStack
 
 extern "C" {
 

@@ -48,7 +48,8 @@
 
 #include "kp_core.hpp"
 
-namespace KokkosTools::HighwaterMarkMPI {
+namespace KokkosTools {
+namespace HighwaterMarkMPI {
 
 static int world_rank = 0;
 static int world_size = 1;
@@ -119,7 +120,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // namespace KokkosTools::HighwaterMarkMPI
+}} // namespace KokkosTools::HighwaterMarkMPI
 
 
 extern "C" {

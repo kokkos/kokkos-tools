@@ -42,7 +42,8 @@
 
 #include "kp_shared.h"
 
-namespace KokkosTools::KernelTimer {
+namespace KokkosTools {
+namespace KernelTimer {
 
 uint64_t uniqID = 0;
 KernelPerformanceInfo* currentEntry;
@@ -52,4 +53,4 @@ char* outputDelimiter;
 int current_region_level = 0;
 KernelPerformanceInfo* regions[512];
 
-} // namespace KokkosTools::KernelTimer
+}} // namespace KokkosTools::KernelTimer

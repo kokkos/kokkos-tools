@@ -50,7 +50,8 @@
 #include "kp_core.hpp"
 #include "kp_vtune_focused_connector_domain.h"
 
-namespace KokkosTools::VTuneFocusedConnector {
+namespace KokkosTools {
+namespace VTuneFocusedConnector {
 
 static KernelVTuneFocusedConnectorInfo* currentKernel;
 static std::unordered_map<std::string, KernelVTuneFocusedConnectorInfo*> domain_map;
@@ -154,7 +155,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
 	return my_event_set;
 }
 
-} // namespace KokkosTools::VTuneFocusedConnector
+}} // namespace KokkosTools::VTuneFocusedConnector
 
 extern "C" {
 

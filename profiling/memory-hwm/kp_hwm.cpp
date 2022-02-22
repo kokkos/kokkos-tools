@@ -56,7 +56,8 @@
 
 #include "kp_core.hpp"
 
-namespace KokkosTools::HighwaterMark {
+namespace KokkosTools {
+namespace HighwaterMark {
 
 static uint64_t uniqID = 0;
 
@@ -97,7 +98,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
 
 // static auto event_set = get_event_set();
 
-} // namespace KokkosTools::HighwaterMark
+}} // namespace KokkosTools::HighwaterMark
 
 extern "C" {
 

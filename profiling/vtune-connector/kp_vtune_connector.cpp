@@ -50,7 +50,8 @@
 #include "kp_core.hpp"
 #include "kp_vtune_connector_domain.h"
 
-namespace KokkosTools::VTuneConnector {
+namespace KokkosTools {
+namespace VTuneConnector {
 
 static KernelVTuneConnectorInfo* currentKernel;
 static std::unordered_map<std::string, KernelVTuneConnectorInfo*> domain_map;
@@ -166,7 +167,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // namespace KokkosTools::VTuneConnector
+}} // namespace KokkosTools::VTuneConnector
 
 extern "C" {
 

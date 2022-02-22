@@ -57,7 +57,8 @@
 #include "kp_memory_events.hpp"
 #include "kp_timer.hpp"
 
-namespace KokkosTools::MemoryEvents {
+namespace KokkosTools {
+namespace MemoryEvents {
 
 char space_name[16][64];
 
@@ -202,7 +203,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // namespace KokkosTools::MemoryEvents
+}} // namespace KokkosTools::MemoryEvents
 
 extern "C" {
 

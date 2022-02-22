@@ -72,7 +72,8 @@ extern "C" {
 #include <mpi.h>
 #endif
 
-namespace KokkosTools::VariorumConnector {
+namespace KokkosTools {
+namespace VariorumConnector {
 
 bool filterKernels;
 uint64_t nextKernelID;
@@ -461,7 +462,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // namespace KokkosTools::VariorumConnector
+}} // namespace KokkosTools::VariorumConnector
 
 extern "C" {
 

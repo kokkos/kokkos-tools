@@ -48,7 +48,8 @@
 #include "kp_core.hpp"
 #include "kp_shared.h"
 
-namespace KokkosTools::KernelTimer {
+namespace KokkosTools {
+namespace KernelTimer {
 
 void kokkosp_init_library(const int loadSeq,
 	const uint64_t interfaceVer,
@@ -309,7 +310,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // namespace KokkosTools::KernelTimer
+}} // namespace KokkosTools::KernelTimer
 
 extern "C" {
 

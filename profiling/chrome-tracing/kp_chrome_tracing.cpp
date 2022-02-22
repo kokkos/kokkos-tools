@@ -23,7 +23,8 @@
 
 #include <chrono>
 
-namespace KokkosTools::ChromeTracing {
+namespace KokkosTools {
+namespace ChromeTracing {
 
 enum Space {
   SPACE_HOST,
@@ -262,7 +263,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // namespace KokkosTools::ChromeTracing
+}} // namespace KokkosTools::ChromeTracing
 
 extern "C" {
 

@@ -48,9 +48,9 @@
 #include "kp_all.hpp"
 
 #define KOKKOSTOOLS_EXTERN_EVENT_SET(NAMESPACE) \
-namespace KokkosTools::NAMESPACE { \
+namespace KokkosTools { namespace NAMESPACE { \
   extern Kokkos::Tools::Experimental::EventSet get_event_set(); \
-}
+}}
 
 #ifndef WIN32
 KOKKOSTOOLS_EXTERN_EVENT_SET(KernelTimer)

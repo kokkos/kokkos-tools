@@ -50,7 +50,8 @@
 
 using namespace KokkosTools::KernelTimer;
 
-namespace KokkosTools::KernelTimerJSON {
+namespace KokkosTools {
+namespace KernelTimerJSON {
 
 void kokkosp_init_library(const int loadSeq,
 	const uint64_t interfaceVer,
@@ -187,7 +188,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // namespace KokkosTools::KernelTimerJSON
+}} // namespace KokkosTools::KernelTimerJSON
 
 extern "C" {
 

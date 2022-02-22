@@ -56,7 +56,8 @@
 #include "kp_core.hpp"
 #include "kp_timer.hpp"
 
-namespace KokkosTools::MemoryUsage {
+namespace KokkosTools {
+namespace MemoryUsage {
 
 char space_name[16][64];
 
@@ -163,7 +164,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
     return my_event_set;
 }
 
-} // namespace KokkosTools::MemoryUsage
+}} // namespace KokkosTools::MemoryUsage
 
 extern "C" {
 
