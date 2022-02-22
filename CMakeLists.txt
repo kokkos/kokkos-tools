@@ -39,6 +39,7 @@ option(KokkosTools_ENABLE_PAPI    "Enable PAPI support"             ON)
 option(KokkosTools_ENABLE_MPI     "Enable MPI support"              ON)
 option(KokkosTools_ENABLE_CALIPER "Enable building Caliper library" ON)
 option(KokkosTools_ENABLE_APEX    "Enable building Apex library"    ON)
+option(KokkosTools_ENABLE_EXAMPLES "Build examples"                 OFF)
 
 # Advanced settings
 option(KokkosTools_REUSE_KOKKOS_COMPILER "Set the compiler and flags based on installed Kokkos settings" OFF)
@@ -195,4 +196,14 @@ if(KokkosTools_ENABLE_SINGLE)
   add_subdirectory(profiling/all)
 else()
   message(STATUS "Single KokkosTools library skipped")
+endif()
+
+# Build examples
+if(KokkosTools_ENABLE_EXAMPLES)
+  if(NOT KokkosTools_ENABLE_SINGLE)
+    message(WARNING "This example requires KokkosTools built with single library interface (KokkosTools_ENABLE_SINGLE=ON)")
+  else()
+    enable_testing()
+    add_subdirectory(example)
+  endif()
 endif()
