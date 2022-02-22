@@ -72,7 +72,7 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(SystemtapConnector)
 #endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
 namespace cali {
-  extern Kokkos::Tools::Experimental::EventSet get_event_set(const char* config_str);
+  extern Kokkos::Tools::Experimental::EventSet get_kokkos_event_set(const char* config_str);
 }
 #endif
 
@@ -104,7 +104,7 @@ EventSet get_event_set(const char* profiler, const char* config_str)
   handlers["vtune-focused-connector"] = VTuneFocusedConnector::get_event_set();
 #endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
-  handlers["caliper"] = cali::get_event_set(config_str);
+  handlers["caliper"] = cali::get_kokkos_event_set(config_str);
 #endif
   auto e = handlers.find(profiler);
   if (e != handlers.end())
