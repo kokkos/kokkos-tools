@@ -74,17 +74,18 @@ struct KokkosPDeviceInfo {
 };
 
 struct SpaceHandle {
-  char name[64];                                                                        
+  char name[64];
 };
 
 enum Space {
   SPACE_HOST,
   SPACE_CUDA,
   SPACE_HIP,
-  SPACE_SYCL
+  SPACE_SYCL,
+  SPACE_OMPT
 };
 
-enum { NSPACES = 4 };
+enum { NSPACES = 5 };
 
 Space get_space(SpaceHandle const& handle) {
   // check that name starts with "Cuda"
@@ -93,6 +94,9 @@ Space get_space(SpaceHandle const& handle) {
   // check that name starts with "SYCL"
   if (strncmp(handle.name, "SYCL", 4) == 0)
     return SPACE_SYCL;
+  // check that name starts with "OpenMPTarget"
+  if (strncmp(handle.name, "OpenMPTarget", 12) == 0)
+    return SPACE_OMPT;
   // check that name starts with "HIP"
   if (strncmp(handle.name, "HIP", 3) == 0)
     return SPACE_HIP;
@@ -108,6 +112,7 @@ const char* get_space_name(int space) {
     case SPACE_HOST: return "HOST";
     case SPACE_CUDA: return "CUDA";
     case SPACE_SYCL: return "SYCL";
+    case SPACE_OMPT: return "OpenMPTarget";
     case SPACE_HIP: return "HIP";
   }
   abort();
@@ -223,7 +228,7 @@ struct StackNode {
   }
   void begin() {
     number_of_calls++;
-    
+
     // Regions are not kernels, so we don't tally those
     if(kind==STACK_FOR || kind==STACK_REDUCE || kind==STACK_SCAN || kind==STACK_COPY)
       total_number_of_kernel_calls++;
@@ -369,7 +374,7 @@ struct StackNode {
       os << std::fixed << std::setprecision(1);
       auto percent_kokkos = (total_kokkos_runtime / total_runtime) * 100.0;
 
-      // Sum over kids if we're a region 
+      // Sum over kids if we're a region
       if (kind==STACK_REGION) {
         double child_runtime = 0.0;
         for (auto& child : children) {
