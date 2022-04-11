@@ -190,11 +190,3 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
                 }
        	}
 }
-
-extern "C" void kokkosp_push_profile_region(char* regionName) {
-
-}
-
-extern "C" void kokkosp_pop_profile_region() {
-
-}
