@@ -1,14 +1,8 @@
 
-#include <stdio.h>
-#include <inttypes.h>
-#include <execinfo.h>
+#include <cstdio>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <map>
-#include <vector>
-#include <algorithm>
-#include <string>
-#include <iostream>
 #include <dlfcn.h>
 
 static uint64_t uniqID = 0;
