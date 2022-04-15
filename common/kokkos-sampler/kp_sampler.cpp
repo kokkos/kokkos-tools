@@ -104,7 +104,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 	}
 
 	if( tool_verbosity > 0 ) {
-		printf("KokkosP: Sampling rate set to: %llu\n", tool_sample_rate );
+		printf("KokkosP: Sampling rate set to: %s\n", tool_sample_rate );
 	}
 }
 
