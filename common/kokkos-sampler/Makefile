@@ -3,9 +3,7 @@ CXXFLAGS=-O3 -std=c++11 -g \
 	-I$(OVIS_DIR)/include/ -I./include
 SHARED_CXXFLAGS=-shared -fPIC
 LDFLAGS=-L$(OVIS_DIR)/lib
-LIBS=-lldmsd_stream -lldms -lrt
-
-all: kp_kernel_ldms.so
+LIBS=-lrt
 
 MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
 
