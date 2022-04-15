@@ -1,8 +1,7 @@
 CXX=g++
 CXXFLAGS=-O3 -std=c++11 -g \
-	-I$(OVIS_DIR)/include/ -I./include
+	-I./include
 SHARED_CXXFLAGS=-shared -fPIC
-LDFLAGS=-L$(OVIS_DIR)/lib
 LIBS=-lrt
 
 MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
