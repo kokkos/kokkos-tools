@@ -121,6 +121,21 @@ void kokkosp_stop_profile_section(const uint32_t sID) {
   nvtxRangeEnd(section.id);
 }
 
+void kokkosp_profile_event(const char* name) { nvtxMarkA(name); }
+
+void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
+                         uint64_t* handle) {
+  if (nullptr == name) {
+    name = "anonymous. Kokkos fence";
+  }
+  nvtxRangeId_t id = nvtxRangeStartA(name);
+  *handle          = id;  // handle will be provided back to end_fence
+}
+void kokkosp_end_fence(uint64_t handle) {
+  nvtxRangeId_t id = handle;
+  nvtxRangeEnd(id);
+}
+
 }  // namespace NVProfConnector
 }  // namespace KokkosTools
 
