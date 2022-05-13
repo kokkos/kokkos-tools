@@ -70,6 +70,10 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(SystemtapConnector)
 #ifdef KOKKOSTOOLS_HAS_VARIORUM
   KOKKOSTOOLS_EXTERN_EVENT_SET(VariorumConnector)
 #endif
+#ifdef KOKKOSTOOLS_HAS_NVPROF
+  KOKKOSTOOLS_EXTERN_EVENT_SET(NVProfConnector)
+  KOKKOSTOOLS_EXTERN_EVENT_SET(NVProfFocusedConnector)
+#endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
 namespace cali {
   extern Kokkos::Tools::Experimental::EventSet get_kokkos_event_set(const char* config_str);
@@ -105,6 +109,10 @@ EventSet get_event_set(const char* profiler, const char* config_str)
 #endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
   handlers["caliper"] = cali::get_kokkos_event_set(config_str);
+#endif
+#ifdef KOKKOSTOOLS_HAS_NVPROF
+  handlers["nvprof-connector"] = NVProfConnector::get_event_set();
+  handlers["nvprof-focused-connector"] = NVProfFocusedConnector::get_event_set();
 #endif
   auto e = handlers.find(profiler);
   if (e != handlers.end())

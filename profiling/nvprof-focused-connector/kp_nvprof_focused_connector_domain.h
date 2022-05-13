@@ -49,6 +49,9 @@
 
 #include "nvToolsExt.h"
 
+namespace KokkosTools {
+namespace NVProfFocusedConnector {
+
 enum KernelExecutionType {
 	PARALLEL_FOR = 0,
 	PARALLEL_REDUCE = 1,
@@ -113,3 +116,5 @@ class KernelNVProfFocusedConnectorInfo {
 };
 
 #endif
+
+}} // KokkosTools::NVProfFocusedConnector

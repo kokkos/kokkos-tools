@@ -1,6 +1,7 @@
 // Note: keep legacy 0|1 or update `#if USE_MPI` checks
 #define USE_MPI @USE_MPI@
 
+#cmakedefine KOKKOSTOOLS_HAS_NVPROF
 #cmakedefine KOKKOSTOOLS_HAS_CALIPER
 #cmakedefine KOKKOSTOOLS_HAS_VARIORUM
 #cmakedefine KOKKOSTOOLS_HAS_VTUNE

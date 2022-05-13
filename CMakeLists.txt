@@ -90,6 +90,7 @@ endif()
 include(cmake/configure_variorum.cmake)
 
 set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
+set(KOKKOSTOOLS_HAS_NVPROF ${Kokkos_ENABLE_CUDA})
 
 if(DEFINED ENV{VTUNE_HOME})
   set(VTune_ROOT $ENV{VTUNE_HOME})
@@ -151,9 +152,9 @@ if(KOKKOSTOOLS_HAS_VARIORUM)
 endif()
 
 # GPU profilers
-if(KOKKOS_ENABLE_CUDA)
-  #add_subdirectory(profiling/nvprof-connector)
-  #add_subdirectory(profiling/nvprof-focused-connector)
+if(Kokkos_ENABLE_CUDA)
+  add_subdirectory(profiling/nvprof-connector)
+  add_subdirectory(profiling/nvprof-focused-connector)
 endif()
 if(KOKKOS_ENABLE_HIP)
   #add_subdirectory(profiling/roctx-connector)
