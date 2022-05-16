@@ -1,5 +1,8 @@
 # shared global objects
 add_library(kp_kernel_shared STATIC kp_shared.cpp)
+list(APPEND EXPORT_TARGETS kp_kernel_shared)
+set(EXPORT_TARGETS ${EXPORT_TARGETS} CACHE STRING "" FORCE)
+
 if(NOT MSVC)
   set_property(TARGET kp_kernel_shared PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()

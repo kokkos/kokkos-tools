@@ -114,6 +114,13 @@ include_directories(${COMMON_HEADERS_PATH})
 
 set(SINGLELIB_PROFILERS "" CACHE STRING "" FORCE)
 
+# Export settings
+include(GNUInstallDirs)
+set(EXPORT_NAME KokkosToolsConfig)
+set(EXPORT_INCLUDE_DIR ${CMAKE_INSTALL_INCLUDEDIR})
+set(EXPORT_LIB_DIR ${CMAKE_INSTALL_LIBDIR})
+set(EXPORT_TARGETS "" CACHE STRING "" FORCE)
+
 if(WIN32)
   message(STATUS "Windows target detected - skipping Unix-only tools")
 endif()
@@ -175,8 +182,9 @@ if(KokkosTools_ENABLE_CALIPER)
   else()
     configure_caliper()
     add_subdirectory(tpls/Caliper)
+    list(APPEND EXPORT_TARGETS caliper)
   endif()
-  list(APPEND SINGLELIB_PROFILERS "caliper")
+  list(APPEND SINGLELIB_PROFILERS caliper)
 endif()
 
 # Find or build Apex
@@ -208,3 +216,10 @@ if(KokkosTools_ENABLE_EXAMPLES)
     add_subdirectory(example)
   endif()
 endif()
+
+# Install exports
+install(TARGETS ${EXPORT_TARGETS} EXPORT ${EXPORT_NAME})
+install(EXPORT ${EXPORT_NAME}
+  NAMESPACE KokkosTools::
+  DESTINATION ${EXPORT_LIB_DIR}/cmake)
+install(CODE "SET(KokkosTools_HAS_MPI ${USE_MPI})")

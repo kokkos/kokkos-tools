@@ -4,6 +4,10 @@ function(kp_add_library TARGET)
   # add this library to the list of profilers linked to single library
   list(APPEND SINGLELIB_PROFILERS ${TARGET})
   set(SINGLELIB_PROFILERS ${SINGLELIB_PROFILERS} CACHE STRING "" FORCE)
+
+  # add this library to exported targets
+  list(APPEND EXPORT_TARGETS ${TARGET})
+  set(EXPORT_TARGETS ${EXPORT_TARGETS} CACHE STRING "" FORCE)
 endfunction()
 
 macro(set_cache NAME VAL)
