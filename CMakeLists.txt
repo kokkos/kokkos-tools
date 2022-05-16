@@ -27,11 +27,6 @@ option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 if(WIN32)
   set(BUILD_SHARED_LIBS OFF) # We need to add __declspec(dllexport/dllimport) for Windows DLLs
 endif()
-if(BUILD_SHARED_LIBS)
-  set(KOKKOSTOOLS_LIBRARY_MODE SHARED)
-else()
-  set(KOKKOSTOOLS_LIBRARY_MODE STATIC)
-endif()
 
 # Tools settings
 option(KokkosTools_ENABLE_SINGLE  "Build single library interfacing all profilers and dispatching at runtime" OFF)
