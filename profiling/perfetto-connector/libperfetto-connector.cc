@@ -29,8 +29,7 @@ PERFETTO_DEFINE_CATEGORIES(
     perfetto::Category("kokkos.regions").SetDescription(
         "Kokkos Region Events"));
 PERFETTO_TRACK_EVENT_STATIC_STORAGE();
-perfetto::TraceConfig cfg;
-std::unique_ptr<perfetto::TracingSession> tracing_session;
+std::unique_ptr<perfetto::TracingSession> kokkosp_perfetto_tracing_session;
 int fd;
 extern "C" void kokkosp_init_library(const int loadSeq,
                                      const uint64_t interfaceVer,
@@ -57,17 +56,16 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   track_event_cfg.add_enabled_categories("kokkos.regions");
   ds_cfg->set_name("track_event");
   ds_cfg->set_track_event_config_raw(track_event_cfg.SerializeAsString());
-  tracing_session = 
-        	      std::move(perfetto::Tracing::NewTrace());
-  tracing_session->Setup(cfg, fd);
-  tracing_session->StartBlocking();
+  kokkosp_perfetto_tracing_session = perfetto::Tracing::NewTrace();
+  kokkosp_perfetto_tracing_session->Setup(cfg, fd);
+  kokkosp_perfetto_tracing_session->StartBlocking();
 }
 
 extern "C" void kokkosp_finalize_library() {
   printf("-----------------------------------------------------------\n");
   printf("KokkosP: Finalization of Perfetto Connector. Complete.\n");
   printf("-----------------------------------------------------------\n");
-  tracing_session->StopBlocking();
+  kokkosp_perfetto_tracing_session->StopBlocking();
   close(fd);
 }
 
@@ -101,7 +99,7 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t) {
   TRACE_EVENT_END("kokkos.kernels");
 }
 
-extern "C" void kokkosp_push_profile_region(char* regionName) {
+extern "C" void kokkosp_push_profile_region(const char* regionName) {
   TRACE_EVENT_BEGIN("kokkos.regions", perfetto::StaticString(regionName));
 }
 
