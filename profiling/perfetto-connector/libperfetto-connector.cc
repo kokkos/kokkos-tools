@@ -19,7 +19,7 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
                                               uint64_t*);
 extern "C" void kokkosp_end_parallel_reduce(const uint64_t);
 extern "C" void kokkosp_push_profile_region(
-    char* regionName);
+    const char* regionName);
 extern "C" void kokkosp_pop_profile_region();
 
 
