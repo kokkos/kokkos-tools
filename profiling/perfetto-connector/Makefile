@@ -4,9 +4,9 @@ CXXFLAGS := -O3 -std=c++17 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden
 
 default: all
 
-all: library strip
+all: libperfetto-connector.so strip
 
-library: libperfetto-connector.cpp
+libperfetto-connector.so: libperfetto-connector.cpp
 	$(CXX) $(CXXFLAGS) -I. libperfetto-connector.cpp perfetto.cc -shared -o libperfetto-connector.so
 
 strip: libperfetto-connector.so
