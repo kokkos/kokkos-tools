@@ -1,6 +1,17 @@
 
-CXX := g++
-CXXFLAGS := -O3 -std=c++17 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -W -Wall
+OS = $(shell uname)
+ifeq ($(OS), Linux)
+	CXX := g++
+	STRIPFLAGS := -w -K kokkosp_*
+	CXXFLAGS_EXTRA :=
+else
+	CXX := clang++
+	STRIPFLAGS := -x
+	CXXFLAGS_EXTRA := -Wno-unused-const-variable
+endif
+CXXFLAGS := -O3 -std=c++17 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -W -Wall $(CXXFLAGS_EXTRA)
+
+.PHONY: strip library clean
 
 default: all
 
@@ -10,9 +21,11 @@ libperfetto-connector.so: libperfetto-connector.cpp
 	$(CXX) $(CXXFLAGS) -I. libperfetto-connector.cpp perfetto.cc -shared -o libperfetto-connector.so
 
 strip: libperfetto-connector.so
-	strip -w -K kokkosp_* libperfetto-connector.so
+	strip $(STRIPFLAGS) libperfetto-connector.so
 
 clean:
 	rm -f libperfetto-connector.so
+
+library: libperfetto-connector.so
 
 .SILENT: clean
