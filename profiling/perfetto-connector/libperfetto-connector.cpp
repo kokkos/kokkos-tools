@@ -173,7 +173,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
 void kokkosp_finalize_library() {
   std::cout << "-----------------------------------------------------------\n"
-            << "KokkosP: Finalizing Perfetto Connector... " << std::flush;
+            << "KokkosP: Finalizing Perfetto Connector... " << std::endl;
 
   perfetto::TrackEvent::Flush();
   tracing_session->FlushBlocking();
