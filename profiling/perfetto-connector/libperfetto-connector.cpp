@@ -2,19 +2,24 @@
 #include "perfetto.h"
 #include <unistd.h>
 #include <fcntl.h>
-#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <ios>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <type_traits>
 #include <string_view>
 #include <vector>
+#include <iostream>
 
 #define KOKKOSP_PUBLIC_API __attribute__((visibility("default")))
 
 extern "C" {
+struct SpaceHandle {
+  char name[64];
+};
+
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t, void*) KOKKOSP_PUBLIC_API;
 void kokkosp_finalize_library() KOKKOSP_PUBLIC_API;
@@ -29,20 +34,69 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t,
 void kokkosp_end_parallel_reduce(const uint64_t) KOKKOSP_PUBLIC_API;
 void kokkosp_push_profile_region(const char* regionName) KOKKOSP_PUBLIC_API;
 void kokkosp_pop_profile_region() KOKKOSP_PUBLIC_API;
+void kokkosp_begin_deep_copy(SpaceHandle, const char*, const void*, SpaceHandle,
+                             const char*, const void*,
+                             uint64_t) KOKKOSP_PUBLIC_API;
+void kokkosp_end_deep_copy() KOKKOSP_PUBLIC_API;
+void kokkosp_allocate_data(const SpaceHandle, const char*, const void* const,
+                           const uint64_t) KOKKOSP_PUBLIC_API;
+void kokkosp_deallocate_data(const SpaceHandle, const char*, const void* const,
+                             const uint64_t) KOKKOSP_PUBLIC_API;
+void kokkosp_profile_event(const char*) KOKKOSP_PUBLIC_API;
+void kokkosp_dual_view_sync(const char*, const void* const,
+                            bool) KOKKOSP_PUBLIC_API;
+void kokkosp_dual_view_modify(const char*, const void* const,
+                              bool) KOKKOSP_PUBLIC_API;
 }
 
 PERFETTO_DEFINE_CATEGORIES(
-    perfetto::Category("kokkos.kernels").SetDescription("Kokkos Kernel Events"),
-    perfetto::Category("kokkos.regions")
-        .SetDescription("Kokkos Region Events"));
+    perfetto::Category("kokkos.parallel_for")
+        .SetDescription("Kokkos Parallel For Region"),
+    perfetto::Category("kokkos.parallel_reduce")
+        .SetDescription("Kokkos Parallel Reduce Region"),
+    perfetto::Category("kokkos.parallel_scan")
+        .SetDescription("Kokkos Parallel Scan Region"),
+    perfetto::Category("kokkos.fence")
+        .SetDescription("Kokkos Synchronization Fence"),
+    perfetto::Category("kokkos.deep_copy")
+        .SetDescription("Kokkos Deep Data Copy"),
+    perfetto::Category("kokkos.allocate")
+        .SetDescription("Kokkos Data Allocation"),
+    perfetto::Category("kokkos.deallocate")
+        .SetDescription("Kokkos Data Deallocation"),
+    perfetto::Category("kokkos.profile_event")
+        .SetDescription("Kokkos User-defined Profiling Event"),
+    perfetto::Category("kokkos.dual_view_sync")
+        .SetDescription("Kokkos Dual View Synchronization"),
+    perfetto::Category("kokkos.dual_view_modify")
+        .SetDescription("Kokkos Dual View Modification"),
+    perfetto::Category("kokkos.region")
+        .SetDescription("Kokkos User-defined Region"));
 PERFETTO_TRACK_EVENT_STATIC_STORAGE();
 
 namespace {
 auto tracing_session = std::unique_ptr<perfetto::TracingSession>{};
 
 template <typename Tp>
-auto get_env(std::string_view _env_name, Tp _default) {
-  const char* _env_val = std::getenv(_env_name.data());
+auto add_annotation(perfetto::EventContext& ctx, const char* _name, Tp&& _val) {
+  auto* _dbg = ctx.event()->add_debug_annotations();
+  _dbg->set_name(_name);
+
+  using type = std::remove_const_t<std::decay_t<Tp>>;
+  if constexpr (std::is_same<type, char*>::value)
+    _dbg->set_string_value(_val);
+  else if constexpr (std::is_integral<type>::value &&
+                     std::is_unsigned<type>::value)
+    _dbg->set_uint_value(_val);
+  else if constexpr (std::is_pointer<type>::value)
+    _dbg->set_pointer_value(reinterpret_cast<uint64_t>(_val));
+  else
+    static_assert(std::is_empty<type>::value, "Error! unsupported data type");
+}
+
+template <typename Tp>
+auto get_env(const std::string& _env_name, Tp _default) {
+  const char* _env_val = std::getenv(_env_name.c_str());
 
   if (_env_val) {
     std::stringstream _ss{};
@@ -70,10 +124,10 @@ extern "C" {
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t, void*) {
-  printf("-----------------------------------------------------------\n");
-  printf("KokkosP: Perfetto Connector (sequence is %d, version: %lu)\n",
-         loadSeq, interfaceVer);
-  printf("-----------------------------------------------------------\n");
+  std::cout << "-----------------------------------------------------------\n"
+            << "KokkosP: Perfetto Connector (sequence is " << loadSeq
+            << ", version: " << interfaceVer << ")\n"
+            << "-----------------------------------------------------------\n";
 
   perfetto::TracingInitArgs args{};
   perfetto::TraceConfig cfg{};
@@ -118,16 +172,14 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 }
 
 void kokkosp_finalize_library() {
-  printf("-----------------------------------------------------------\n");
-  printf("KokkosP: Finalizing Perfetto Connector... ");
-  fflush(stdout);
+  std::cout << "-----------------------------------------------------------\n"
+            << "KokkosP: Finalizing Perfetto Connector... " << std::flush;
 
   perfetto::TrackEvent::Flush();
   tracing_session->FlushBlocking();
   tracing_session->StopBlocking();
 
-  printf("Reading trace data... ");
-  fflush(stdout);
+  std::cout << "Reading trace data... " << std::flush;
 
   std::vector<char> _trace_data{tracing_session->ReadTraceBlocking()};
 
@@ -137,46 +189,97 @@ void kokkosp_finalize_library() {
 
     std::ofstream _ofs{_fname};
     if (_ofs) {
-      printf("Writing '%s'... ", _fname.c_str());
-      fflush(stdout);
+      std::cout << "Writing '" << _fname << "'... " << std::flush;
       _ofs.write(&_trace_data[0], _trace_data.size());
     } else
-      fprintf(stderr, "Error opening %s!\n", _fname.c_str());
+      std::cerr << "Error opening " << _fname << std::endl;
   }
 
-  printf("Done\n");
-  printf("-----------------------------------------------------------\n");
-  fflush(stdout);
+  std::cout << "Done\n"
+            << "-----------------------------------------------------------"
+            << std::endl;
 }
 
-void kokkosp_begin_parallel_for(const char* name, const uint32_t, uint64_t*) {
-  TRACE_EVENT_BEGIN("kokkos.kernels", perfetto::StaticString(name));
+void kokkosp_begin_parallel_for(const char* name, const uint32_t dev_id,
+                                uint64_t*) {
+  TRACE_EVENT_BEGIN("kokkos.parallel_for", perfetto::StaticString{name},
+                    "device", dev_id);
 }
 
 void kokkosp_end_parallel_for(const uint64_t) {
-  TRACE_EVENT_END("kokkos.kernels");
+  TRACE_EVENT_END("kokkos.parallel_for");
 }
 
-void kokkosp_begin_parallel_scan(const char* name, const uint32_t, uint64_t*) {
-  TRACE_EVENT_BEGIN("kokkos.kernels", perfetto::StaticString(name));
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t dev_id,
+                                 uint64_t*) {
+  TRACE_EVENT_BEGIN("kokkos.parallel_scan", perfetto::StaticString{name},
+                    "device", dev_id);
 }
 
 void kokkosp_end_parallel_scan(const uint64_t) {
-  TRACE_EVENT_END("kokkos.kernels");
+  TRACE_EVENT_END("kokkos.parallel_scan");
 }
 
-void kokkosp_begin_parallel_reduce(const char* name, const uint32_t,
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t dev_id,
                                    uint64_t*) {
-  TRACE_EVENT_BEGIN("kokkos.kernels", perfetto::StaticString(name));
+  TRACE_EVENT_BEGIN("kokkos.parallel_reduce", perfetto::StaticString{name},
+                    "device", dev_id);
 }
 
 void kokkosp_end_parallel_reduce(const uint64_t) {
-  TRACE_EVENT_END("kokkos.kernels");
+  TRACE_EVENT_END("kokkos.parallel_reduce");
 }
 
-void kokkosp_push_profile_region(const char* regionName) {
-  TRACE_EVENT_BEGIN("kokkos.regions", perfetto::StaticString(regionName));
+void kokkosp_push_profile_region(const char* name) {
+  TRACE_EVENT_BEGIN("kokkos.region", perfetto::StaticString{name});
 }
 
-void kokkosp_pop_profile_region() { TRACE_EVENT_END("kokkos.regions"); }
+void kokkosp_pop_profile_region() { TRACE_EVENT_END("kokkos.region"); }
+
+void kokkosp_begin_deep_copy(SpaceHandle dst_handle, const char* dst_name,
+                             const void* dst_ptr, SpaceHandle src_handle,
+                             const char* src_name, const void* src_ptr,
+                             uint64_t size) {
+  TRACE_EVENT_BEGIN("kokkos.deep_copy", nullptr,
+                    [&](perfetto::EventContext ctx) {
+                      std::stringstream _name;
+                      _name << dst_name << "->" << src_name;
+                      ctx.event()->set_name(_name.str());
+                      add_annotation(ctx, "size", size);
+                      add_annotation(ctx, "dest_type", dst_handle.name);
+                      add_annotation(ctx, "src_type", src_handle.name);
+                      add_annotation(ctx, "dest_address", dst_ptr);
+                      add_annotation(ctx, "src_address", src_ptr);
+                    });
+}
+
+void kokkosp_end_deep_copy() { TRACE_EVENT_END("kokkos.deep_copy"); }
+
+void kokkosp_allocate_data(const SpaceHandle space, const char* name,
+                           const void* const, const uint64_t size) {
+  TRACE_EVENT_INSTANT("kokkos.allocate", perfetto::StaticString{name}, "type",
+                      space.name, "size", size);
+}
+
+void kokkosp_deallocate_data(const SpaceHandle space, const char* name,
+                             const void* const, const uint64_t size) {
+  TRACE_EVENT_INSTANT("kokkos.deallocate", perfetto::StaticString{name}, "type",
+                      space.name, "size", size);
+}
+
+void kokkosp_profile_event(const char* name) {
+  TRACE_EVENT_INSTANT("kokkos.profile_event", perfetto::StaticString{name});
+}
+
+void kokkosp_dual_view_sync(const char* name, const void* const ptr,
+                            bool is_device) {
+  TRACE_EVENT_INSTANT("kokkos.dual_view_sync", perfetto::StaticString{name},
+                      "address", ptr, "is_device", is_device);
+}
+
+void kokkosp_dual_view_modify(const char* name, const void* const ptr,
+                              bool is_device) {
+  TRACE_EVENT_INSTANT("kokkos.dual_view_modify", perfetto::StaticString{name},
+                      "address", ptr, "is_device", is_device);
+}
 }
