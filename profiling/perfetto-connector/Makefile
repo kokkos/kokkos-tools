@@ -18,7 +18,7 @@ default: all
 all: libperfetto-connector.so strip
 
 libperfetto-connector.so: libperfetto-connector.cpp
-	$(CXX) $(CXXFLAGS) -I. libperfetto-connector.cpp perfetto.cc -shared -o libperfetto-connector.so
+	$(CXX) $(CXXFLAGS) -Iperfetto libperfetto-connector.cpp perfetto/perfetto.cc -shared -o libperfetto-connector.so
 
 strip: libperfetto-connector.so
 	strip $(STRIPFLAGS) libperfetto-connector.so
