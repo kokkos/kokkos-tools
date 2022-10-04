@@ -42,6 +42,8 @@
 
 #include <cstdio>
 #include <cstdint>
+#include <vector>
+#include <string>
 
 #include "nvToolsExt.h"
 
@@ -114,3 +116,29 @@ extern "C" void kokkosp_push_profile_region(char* regionName) {
 extern "C" void kokkosp_pop_profile_region() {
   nvtxRangePop();
 }
+
+namespace {
+struct Section {
+        std::string label;
+        nvtxRangeId_t id;
+};
+std::vector<Section> kokkosp_sections;
+}  // namespace
+
+extern "C" void kokkosp_create_profile_section(const char* name,
+                                               uint32_t* sID) {
+        *sID = kokkosp_sections.size();
+        kokkosp_sections.push_back(
+            {std::string(name), static_cast<nvtxRangeId_t>(-1)});
+}
+
+extern "C" void kokkosp_start_profile_section(const uint32_t sID) {
+        auto& section = kokkosp_sections[sID];
+        section.id = nvtxRangeStartA(section.label.c_str());
+}
+
+extern "C" void kokkosp_stop_profile_section(const uint32_t sID) {
+        auto const& section = kokkosp_sections[sID];
+        nvtxRangeEnd(section.id);
+}
+
