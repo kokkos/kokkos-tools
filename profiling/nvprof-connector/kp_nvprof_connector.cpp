@@ -40,14 +40,8 @@
 // ************************************************************************
 //@HEADER
 
-#include <stdio.h>
-#include <inttypes.h>
-#include <cstdlib>
-#include <cstring>
-#include <unordered_map>
-#include <stack>
-#include <string>
-#include <iostream>
+#include <cstdio>
+#include <cstdint>
 
 #include "nvToolsExt.h"
 
