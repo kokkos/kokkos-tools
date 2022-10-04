@@ -55,6 +55,18 @@ struct Section {
 std::vector<Section> kokkosp_sections;
 }  // namespace
 
+
+struct Kokkos_Tools_ToolSettings
+{
+        bool requires_global_fencing;
+        bool padding[255];
+};
+
+extern "C" void kokkosp_request_tool_settings(const uint32_t,
+                                              Kokkos_Tools_ToolSettings* settings) {
+        settings->requires_global_fencing = false;
+}
+
 extern "C" void kokkosp_init_library(const int loadSeq,
                                      const uint64_t interfaceVer,
                                      const uint32_t /*devInfoCount*/,
