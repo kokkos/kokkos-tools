@@ -146,3 +146,13 @@ extern "C" void kokkosp_stop_profile_section(const uint32_t sID) {
 extern "C" void kokkosp_destroy_profile_section(const uint32_t sID) {
         // do nothing
 }
+
+extern "C" void kokkosp_begin_fence(const char* name,
+		                    const uint32_t /*devID*/,
+		                    uint64_t* fID) {
+        *fID = roctxRangeStart(name);
+}
+
+extern "C" void kokkosp_end_fence(const uint64_t fID) {
+        roctxRangeStop(fID);
+}
