@@ -117,7 +117,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 	// initialize regions to 0s so we know if there is an object there
 	memset(&regions[0], 0, 512 * sizeof(KernelPerformanceInfo*));
 
-	printf("KokkosP: Example Library Initialized (sequence is %d, version: %llu)\n", loadSeq, interfaceVer);
+	printf("KokkosP: Simple Kernel Timer Library Initialized (sequence is %d, version: %llu)\n", loadSeq, interfaceVer);
 
 	initTime = seconds();
 }
