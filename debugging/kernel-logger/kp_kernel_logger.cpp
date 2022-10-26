@@ -55,7 +55,7 @@ struct SpaceHandle {
 
 void kokkosp_print_region_stack_indent(const int level) {
 	printf("KokkosP: ");
-	
+
 	for(int i = 0; i < level; i++) {
 		printf("  ");
 	}
@@ -79,7 +79,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 	const uint32_t devInfoCount,
 	void* deviceInfo) {
 
-	printf("KokkosP: Example Library Initialized (sequence is %d, version: %llu)\n", loadSeq, interfaceVer);
+	printf("KokkosP: Kernel Logger Library Initialized (sequence is %d, version: %llu)\n", loadSeq, interfaceVer);
 	uniqID = 0;
 	
 }
