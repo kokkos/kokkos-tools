@@ -71,7 +71,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
   if (world_rank == 0) {
-    printf("KokkosP: Example Library Initialized (sequence is %d, version: %" PRIu64 ")\n", loadSeq, interfaceVer);
+    printf("KokkosP: High Water Mark Library Initialized (sequence is %d, version: %" PRIu64 ")\n", loadSeq, interfaceVer);
   }
 }
 
