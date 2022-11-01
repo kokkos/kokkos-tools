@@ -61,7 +61,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 	const uint32_t devInfoCount,
 	void* deviceInfo) {
 
-	printf("KokkosP: Kokkos High Water Mark Library Initialized (sequence is %d, version: %llu)\n", loadSeq, interfaceVer);
+	printf("KokkosP: High Water Mark Library Initialized (sequence is %d, version: %llu)\n", loadSeq, interfaceVer);
 }
 
 // darwin report rusage.ru_maxrss in bytes
