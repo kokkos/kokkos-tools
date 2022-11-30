@@ -138,8 +138,10 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
 
 extern "C" void kokkosp_begin_fence(const char* name, const uint32_t devID, uint64_t* kID) {
 	*kID = uniqID++;
+	
+	kokkosp_print_region_stack_indent(1);
 
-	printf("KokkosP: Executing fence on device %d with unique execution identifier %llu\n",
+	printf("Executing fence on device %d with unique execution identifier %llu\n",
 		devID, *kID);
 
 	int level = kokkosp_print_region_stack();
@@ -148,8 +150,10 @@ extern "C" void kokkosp_begin_fence(const char* name, const uint32_t devID, uint
 	printf("%s\n", name);
 }
 
-extern "C" void kokkosp_end_fence(const uint64_t kID) {
-	printf("KokkosP: Execution of fence %llu is completed.\n", kID);
+extern "C" void kokkosp_end_fence(const uint64_t kID) { 
+	
+	kokkosp_print_region_stack_indent(1);
+	printf("Execution of fence %llu is completed.\n", kID);
 }
 
 extern "C" void kokkosp_push_profile_region(char* regionName) {
