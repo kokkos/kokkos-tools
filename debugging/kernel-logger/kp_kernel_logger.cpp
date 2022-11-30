@@ -141,7 +141,8 @@ extern "C" void kokkosp_begin_fence(const char* name, const uint32_t devID, uint
 }
 
 extern "C" void kokkosp_end_fence(const uint64_t kID) {
-  printf("KokkosP: Execution of fence %llu is completed.\n", kID);
+       if(! (kID == std::numeric_limits<uint64_t>::max() )
+	printf("KokkosP: Execution of fence %llu is completed.\n", kID);
 }
 
 extern "C" void kokkosp_push_profile_region(char* regionName) {
