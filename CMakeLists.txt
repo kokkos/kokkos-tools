@@ -217,3 +217,4 @@ install(EXPORT ${EXPORT_NAME}
   NAMESPACE KokkosTools::
   DESTINATION ${EXPORT_LIB_DIR}/cmake)
 install(CODE "SET(KokkosTools_HAS_MPI ${USE_MPI})")
+
