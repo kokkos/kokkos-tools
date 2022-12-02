@@ -156,7 +156,7 @@ extern "C" void kokkosp_begin_fence(const char* name, const uint32_t devID, uint
 }
 
 extern "C" void kokkosp_end_fence(const uint64_t kID) {
-       if(! (kID == std::numeric_limits<uint64_t>::max() )
+       if(kID != std::numeric_limits<uint64_t>::max() ) 
 	printf("KokkosP: Execution of fence %llu is completed.\n", kID);
 }
 
