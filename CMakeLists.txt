@@ -30,12 +30,11 @@ endif()
 
 # Tools settings
 option(KokkosTools_ENABLE_SINGLE  "Build single library interfacing all profilers and dispatching at runtime" OFF)
-option(KokkosTools_ENABLE_PAPI    "Enable PAPI support"             ON)
-option(KokkosTools_ENABLE_MPI     "Enable MPI support"              ON)
-option(KokkosTools_ENABLE_CALIPER "Enable building Caliper library" ON)
-option(KokkosTools_ENABLE_APEX    "Enable building Apex library"    ON)
+option(KokkosTools_ENABLE_PAPI    "Enable PAPI support"             OFF)
+option(KokkosTools_ENABLE_MPI     "Enable MPI support"              OFF)
+option(KokkosTools_ENABLE_CALIPER "Enable building Caliper library" OFF)
+option(KokkosTools_ENABLE_APEX    "Enable building Apex library"    OFF)
 option(KokkosTools_ENABLE_EXAMPLES "Build examples"                 OFF)
-
 # Advanced settings
 option(KokkosTools_REUSE_KOKKOS_COMPILER "Set the compiler and flags based on installed Kokkos settings" OFF)
 mark_as_advanced(KokkosTools_REUSE_KOKKOS_COMPILER)
@@ -116,7 +115,7 @@ set(EXPORT_INCLUDE_DIR ${CMAKE_INSTALL_INCLUDEDIR})
 set(EXPORT_LIB_DIR ${CMAKE_INSTALL_LIBDIR})
 set(EXPORT_TARGETS "" CACHE STRING "" FORCE)
 
-if(WIN32)
+if(WIN32 OR OSX)
   message(STATUS "Windows target detected - skipping Unix-only tools")
 endif()
 
@@ -146,7 +145,7 @@ if(KokkosTools_ENABLE_PAPI)
   add_subdirectory(profiling/papi-connector)
 endif()
 
-if(NOT WIN32)
+if(NOT WIN32 AND NOT OSX)
   add_subdirectory(profiling/systemtap-connector)
 endif()
 if(KOKKOSTOOLS_HAS_VARIORUM)
@@ -218,3 +217,4 @@ install(EXPORT ${EXPORT_NAME}
   NAMESPACE KokkosTools::
   DESTINATION ${EXPORT_LIB_DIR}/cmake)
 install(CODE "SET(KokkosTools_HAS_MPI ${USE_MPI})")
+
