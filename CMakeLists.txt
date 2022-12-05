@@ -115,8 +115,12 @@ set(EXPORT_INCLUDE_DIR ${CMAKE_INSTALL_INCLUDEDIR})
 set(EXPORT_LIB_DIR ${CMAKE_INSTALL_LIBDIR})
 set(EXPORT_TARGETS "" CACHE STRING "" FORCE)
 
-if(WIN32 OR OSX)
+if(WIN32)
   message(STATUS "Windows target detected - skipping Unix-only tools")
+endif()
+
+if(APPLE)
+  message(STATUS "Apple OSX target detected - skipping Unix-only tools")
 endif()
 
 # Utilities
@@ -145,7 +149,7 @@ if(KokkosTools_ENABLE_PAPI)
   add_subdirectory(profiling/papi-connector)
 endif()
 
-if(NOT WIN32 AND NOT OSX)
+if(NOT WIN32 AND NOT APPLE)
   add_subdirectory(profiling/systemtap-connector)
 endif()
 if(KOKKOSTOOLS_HAS_VARIORUM)
