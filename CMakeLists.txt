@@ -7,8 +7,6 @@ include(cmake/utils.cmake)
 include(cmake/configure_tpls.cmake)
 
 # Set policies
-cmake_policy(SET CMP0054 NEW) # simplify if()
-cmake_policy(SET CMP0057 NEW) # support IN_LIST in if()
 cmake_policy(SET CMP0111 NEW) # error if library not found
 
 # Disable in-source builds to prevent source tree corruption.
@@ -23,13 +21,17 @@ message(STATUS Configuring Kokkos-Tools)
 message(STATUS)
 
 # Common settings
-option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+set(BUILD_SHARED_LIBS "Build shared libraries" ON)
 if(WIN32)
   set(BUILD_SHARED_LIBS OFF) # We need to add __declspec(dllexport/dllimport) for Windows DLLs
 endif()
 
 # Tools settings
 option(KokkosTools_ENABLE_SINGLE  "Build single library interfacing all profilers and dispatching at runtime" OFF)
+if(WIN32)
+  set(KokkosTools_ENABLE_SINGLE ON)
+endif()
+
 option(KokkosTools_ENABLE_PAPI    "Enable PAPI support"             OFF)
 option(KokkosTools_ENABLE_MPI     "Enable MPI support"              OFF)
 option(KokkosTools_ENABLE_CALIPER "Enable building Caliper library" OFF)
