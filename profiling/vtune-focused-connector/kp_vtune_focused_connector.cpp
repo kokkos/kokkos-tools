@@ -25,89 +25,95 @@
 #include "kp_vtune_focused_connector_domain.h"
 
 static KernelVTuneFocusedConnectorInfo* currentKernel;
-static std::unordered_map<std::string, KernelVTuneFocusedConnectorInfo*> domain_map;
+static std::unordered_map<std::string, KernelVTuneFocusedConnectorInfo*>
+    domain_map;
 static uint64_t nextKernelID;
 
 extern "C" void kokkosp_init_library(const int loadSeq,
-	const uint64_t interfaceVer,
-	const uint32_t devInfoCount,
-	void* deviceInfo) {
+                                     const uint64_t interfaceVer,
+                                     const uint32_t devInfoCount,
+                                     void* deviceInfo) {
+  printf("-----------------------------------------------------------\n");
+  printf("KokkosP: VTune Analyzer Connector (sequence is %d, version: %llu)\n",
+         loadSeq, interfaceVer);
+  printf("-----------------------------------------------------------\n");
 
-	printf("-----------------------------------------------------------\n");
-	printf("KokkosP: VTune Analyzer Connector (sequence is %d, version: %llu)\n", loadSeq, interfaceVer);
-	printf("-----------------------------------------------------------\n");
-
-	nextKernelID = 0;
-	__itt_pause();
+  nextKernelID = 0;
+  __itt_pause();
 }
 
-KernelVTuneFocusedConnectorInfo* getFocusedConnectorInfo(const char* name,
-		KernelExecutionType kType) {
+KernelVTuneFocusedConnectorInfo* getFocusedConnectorInfo(
+    const char* name, KernelExecutionType kType) {
+  std::string nameStr(name);
+  auto kDomain  = domain_map.find(nameStr);
+  currentKernel = NULL;
 
-	std::string nameStr(name);
-	auto kDomain = domain_map.find(nameStr);
-	currentKernel = NULL;
+  if (kDomain == domain_map.end()) {
+    currentKernel = new KernelVTuneFocusedConnectorInfo(name, kType);
+    domain_map.insert(std::pair<std::string, KernelVTuneFocusedConnectorInfo*>(
+        nameStr, currentKernel));
+  } else {
+    currentKernel = kDomain->second;
+  }
 
-	if(kDomain == domain_map.end()) {
-		currentKernel = new KernelVTuneFocusedConnectorInfo(name, kType);
-		domain_map.insert(std::pair<std::string, KernelVTuneFocusedConnectorInfo*>(nameStr,
-			currentKernel));
-	} else {
-		currentKernel = kDomain->second;
-	}
-
-	return currentKernel;
+  return currentKernel;
 }
 
 void focusedConnectorExecuteStart() {
-	__itt_resume();
-	__itt_frame_begin_v3(currentKernel->getDomain(), NULL);
+  __itt_resume();
+  __itt_frame_begin_v3(currentKernel->getDomain(), NULL);
 }
 
 void focusedConnectorExecuteEnd() {
-	__itt_frame_end_v3(currentKernel->getDomain(), NULL);
-	__itt_pause();
+  __itt_frame_end_v3(currentKernel->getDomain(), NULL);
+  __itt_pause();
 
-	currentKernel = NULL;
+  currentKernel = NULL;
 }
 
 extern "C" void kokkosp_finalize_library() {
-	printf("-----------------------------------------------------------\n");
-	printf("KokkosP: Finalization of VTune Connector. Complete.\n");
-	printf("-----------------------------------------------------------\n");
+  printf("-----------------------------------------------------------\n");
+  printf("KokkosP: Finalization of VTune Connector. Complete.\n");
+  printf("-----------------------------------------------------------\n");
 
-	__itt_detach();
+  __itt_detach();
 }
 
-extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
-	*kID = nextKernelID++;
+extern "C" void kokkosp_begin_parallel_for(const char* name,
+                                           const uint32_t devID,
+                                           uint64_t* kID) {
+  *kID = nextKernelID++;
 
-	currentKernel = getFocusedConnectorInfo(name, PARALLEL_FOR);
-	focusedConnectorExecuteStart();
+  currentKernel = getFocusedConnectorInfo(name, PARALLEL_FOR);
+  focusedConnectorExecuteStart();
 }
 
 extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
-	focusedConnectorExecuteEnd();
+  focusedConnectorExecuteEnd();
 }
 
-extern "C" void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID, uint64_t* kID) {
-	*kID = nextKernelID++;
+extern "C" void kokkosp_begin_parallel_scan(const char* name,
+                                            const uint32_t devID,
+                                            uint64_t* kID) {
+  *kID = nextKernelID++;
 
-	currentKernel = getFocusedConnectorInfo(name, PARALLEL_SCAN);
-	focusedConnectorExecuteStart();
+  currentKernel = getFocusedConnectorInfo(name, PARALLEL_SCAN);
+  focusedConnectorExecuteStart();
 }
 
 extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
-	focusedConnectorExecuteEnd();
+  focusedConnectorExecuteEnd();
 }
 
-extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID, uint64_t* kID) {
-	*kID = nextKernelID++;
+extern "C" void kokkosp_begin_parallel_reduce(const char* name,
+                                              const uint32_t devID,
+                                              uint64_t* kID) {
+  *kID = nextKernelID++;
 
-	currentKernel = getFocusedConnectorInfo(name, PARALLEL_REDUCE);
- 	focusedConnectorExecuteStart();
+  currentKernel = getFocusedConnectorInfo(name, PARALLEL_REDUCE);
+  focusedConnectorExecuteStart();
 }
 
 extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
-	focusedConnectorExecuteEnd();
+  focusedConnectorExecuteEnd();
 }

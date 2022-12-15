@@ -24,7 +24,7 @@
 #include "papi.h"
 
 struct SpaceHandle {
-   char name[64];
+  char name[64];
 };
 
 /* stack for parallel_for */
@@ -41,6 +41,5 @@ std::stack<std::string> region_name;
 
 /* map of profile sections */
 std::map<uint32_t, std::string> profile_section;
-
 
 #endif

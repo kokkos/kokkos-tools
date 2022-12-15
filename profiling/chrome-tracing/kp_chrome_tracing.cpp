@@ -50,12 +50,9 @@ struct KokkosPDeviceInfo {
   std::uint32_t deviceID;
 };
 
-enum Space {
-  SPACE_HOST,
-  SPACE_CUDA
-};
+enum Space { SPACE_HOST, SPACE_CUDA };
 
-Space get_space(SpaceHandle const& handle) {
+Space get_space(SpaceHandle const &handle) {
   switch (handle.name[0]) {
     case 'H': return SPACE_HOST;
     case 'C': return SPACE_CUDA;
@@ -76,7 +73,8 @@ Now now() {
 }
 
 uint64_t operator-(Now b, Now a) {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(b.impl - a.impl).count();
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(b.impl - a.impl)
+      .count();
 }
 
 enum StackKind {
@@ -87,16 +85,15 @@ enum StackKind {
   STACK_COPY
 };
 
-std::ostream & operator<<(std::ostream & os, StackKind kind)
-{
-      switch (kind) {
-        case STACK_FOR: os << "[for]"; break;
-        case STACK_REDUCE: os << "[reduce]"; break;
-        case STACK_SCAN: os << "[scan]"; break;
-        case STACK_REGION: os << "[region]"; break;
-        case STACK_COPY: os << "[copy]"; break;
-      };
-      return os;
+std::ostream &operator<<(std::ostream &os, StackKind kind) {
+  switch (kind) {
+    case STACK_FOR: os << "[for]"; break;
+    case STACK_REDUCE: os << "[reduce]"; break;
+    case STACK_SCAN: os << "[scan]"; break;
+    case STACK_REGION: os << "[region]"; break;
+    case STACK_COPY: os << "[copy]"; break;
+  };
+  return os;
 }
 
 struct StackNode {
@@ -107,19 +104,21 @@ struct StackNode {
   Now start_time;
   Now base_time;
   StackNode(std::string &&name_in, StackKind kind_in, int r, Now b)
-      : name(std::move(name_in)), kind(kind_in), rank(r), total_runtime(0.),
-        start_time(now()), base_time(std::move(b)) {}
+      : name(std::move(name_in)),
+        kind(kind_in),
+        rank(r),
+        total_runtime(0.),
+        start_time(now()),
+        base_time(std::move(b)) {}
 
   void print(std::ostream &os) const {
-    // {"name": "Asub", "cat": "PERF", "ph": "B", "pid": 22630, "tid": 22630, "ts": 829},
-    os << "{\"name\": \"" << name
-        << "\", \"cat\": \"" << kind
-        << "\", \"ph\": \"X"
-        << "\", \"ts\": \"" << start_time - base_time
-        << "\", \"dur\": \"" << now() - start_time
-        << "\", \"pid\": \"" << rank
-        << "\", \"tid\": \"" << 0
-        << "\", \"args\": {\"dummy\": 1}}\n";
+    // {"name": "Asub", "cat": "PERF", "ph": "B", "pid": 22630, "tid": 22630,
+    // "ts": 829},
+    os << "{\"name\": \"" << name << "\", \"cat\": \"" << kind
+       << "\", \"ph\": \"X"
+       << "\", \"ts\": \"" << start_time - base_time << "\", \"dur\": \""
+       << now() - start_time << "\", \"pid\": \"" << rank << "\", \"tid\": \""
+       << 0 << "\", \"args\": {\"dummy\": 1}}\n";
   }
 };
 
@@ -128,18 +127,16 @@ struct State {
   std::vector<StackNode> current_stack;
   Now my_base_time;
   int my_mpi_rank = -1;
-  bool first = true;
-  State()
-  : my_base_time(now())
-  {
-    char* mpi_rank = getenv("OMPI_COMM_WORLD_RANK");
+  bool first      = true;
+  State() : my_base_time(now()) {
+    char *mpi_rank = getenv("OMPI_COMM_WORLD_RANK");
 
-    char* hostname = (char*) malloc(sizeof(char) * 256);
+    char *hostname = (char *)malloc(sizeof(char) * 256);
     gethostname(hostname, 256);
 
-    char* fileOutput = (char*) malloc(sizeof(char) * 256);
-    sprintf(fileOutput, "%s-%d-%s.json", hostname, (int) getpid(),
-      (NULL == mpi_rank) ? "0" : mpi_rank);
+    char *fileOutput = (char *)malloc(sizeof(char) * 256);
+    sprintf(fileOutput, "%s-%d-%s.json", hostname, (int)getpid(),
+            (NULL == mpi_rank) ? "0" : mpi_rank);
 #if defined(USE_MPI) && USE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &my_mpi_rank);
 #else
@@ -154,20 +151,20 @@ struct State {
     current_stack.reserve(20);
   }
 
-  ~State() {
-    outfile << "]\n";
-  }
+  ~State() { outfile << "]\n"; }
   void begin_frame(const char *name, StackKind kind) {
     std::string name_str(name);
-    current_stack.emplace_back(std::move(name_str), kind, my_mpi_rank, my_base_time);
+    current_stack.emplace_back(std::move(name_str), kind, my_mpi_rank,
+                               my_base_time);
   }
   void end_frame() {
     if (current_stack.empty()) {
-      std::cerr << "Attempting to end root stack frame before Kokkos::finalize()\n";
+      std::cerr
+          << "Attempting to end root stack frame before Kokkos::finalize()\n";
       return;
     }
 
-    if(!first) outfile << ",\n";
+    if (!first) outfile << ",\n";
     first = false;
 
     current_stack.back().print(outfile);
@@ -178,9 +175,7 @@ struct State {
     begin_frame(name, kind);
     return 0;
   }
-  void end_kernel(std::uint64_t) {
-    end_frame();
-  }
+  void end_kernel(std::uint64_t) { end_frame(); }
   void push_region(const char *name) { begin_frame(name, STACK_REGION); }
   void pop_region() { end_frame(); }
   void begin_deep_copy(Space dst, const char *dst_name, const void *, Space src,
@@ -203,7 +198,7 @@ struct State {
 
 State *global_state = nullptr;
 
-} // end anonymous namespace
+}  // end anonymous namespace
 
 extern "C" void kokkosp_init_library(int loadseq, uint64_t, uint32_t ndevinfos,
                                      KokkosPDeviceInfo *devinfos) {
@@ -257,13 +252,11 @@ extern "C" void kokkosp_push_profile_region(const char *name) {
 
 extern "C" void kokkosp_pop_profile_region() { global_state->pop_region(); }
 
-extern "C" void kokkosp_allocate_data(SpaceHandle , const char *,
-                                      void *, uint64_t ) {
-}
+extern "C" void kokkosp_allocate_data(SpaceHandle, const char *, void *,
+                                      uint64_t) {}
 
-extern "C" void kokkosp_deallocate_data(SpaceHandle , const char *,
-                                        void *, uint64_t ) {
-}
+extern "C" void kokkosp_deallocate_data(SpaceHandle, const char *, void *,
+                                        uint64_t) {}
 
 extern "C" void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
                                         const char *dst_name,
