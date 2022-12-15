@@ -25,15 +25,15 @@ static int world_size = 1;
 
 // darwin report rusage.ru_maxrss in bytes
 #if defined(__APPLE__) || defined(__MACH__)
-#    define RU_MAXRSS_UNITS 1024
+#define RU_MAXRSS_UNITS 1024
 #else
-#    define RU_MAXRSS_UNITS 1
+#define RU_MAXRSS_UNITS 1
 #endif
 
 extern "C" void kokkosp_init_library(const int loadSeq,
-  const uint64_t interfaceVer,
-  const uint32_t devInfoCount,
-  void* deviceInfo) {
+                                     const uint64_t interfaceVer,
+                                     const uint32_t devInfoCount,
+                                     void* deviceInfo) {
   int mpi_is_initialized;
   MPI_Initialized(&mpi_is_initialized);
   if (!mpi_is_initialized) {
@@ -45,7 +45,10 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
   if (world_rank == 0) {
-    printf("KokkosP: High Water Mark Library Initialized (sequence is %d, version: %" PRIu64 ")\n", loadSeq, interfaceVer);
+    printf(
+        "KokkosP: High Water Mark Library Initialized (sequence is %d, "
+        "version: %" PRIu64 ")\n",
+        loadSeq, interfaceVer);
   }
 }
 
@@ -73,10 +76,8 @@ extern "C" void kokkosp_finalize_library() {
   hwm_ave /= world_size;
 
   if (world_rank == 0) {
-    printf("KokkosP: High water mark memory consumption: %ld kB\n",
-      hwm_max);
-    printf("  Max: %ld, Min: %ld, Ave: %ld kB\n",
-      hwm_max,hwm_min,hwm_ave);
+    printf("KokkosP: High water mark memory consumption: %ld kB\n", hwm_max);
+    printf("  Max: %ld, Min: %ld, Ave: %ld kB\n", hwm_max, hwm_min, hwm_ave);
     printf("\n");
   }
 }

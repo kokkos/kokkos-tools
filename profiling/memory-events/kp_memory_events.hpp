@@ -36,26 +36,27 @@ struct EventRecord {
   double time;
   char name[256];
 
-
-  EventRecord(const void* const ptr_, const uint64_t size_, const int operation_,
-              const int space_, const double time_, const char* const name_) {
-    ptr = ptr_;
-    size = size_;
+  EventRecord(const void* const ptr_, const uint64_t size_,
+              const int operation_, const int space_, const double time_,
+              const char* const name_) {
+    ptr       = ptr_;
+    size      = size_;
     operation = operation_;
-    space = space_;
-    time = time_;
-    strncpy(name,name_,256);
+    space     = space_;
+    time      = time_;
+    strncpy(name, name_, 256);
   }
 
   void print_record(FILE* ofile) const {
-    if(operation == MEMOP_ALLOCATE)
-      fprintf(ofile,"%lf %16p %14" PRId64 " %16s Allocate   %s\n",time,ptr,size,space<0?"":space_name[space],name);
-    if(operation == MEMOP_DEALLOCATE)
-      fprintf(ofile,"%lf %16p %14" PRId64 " %16s DeAllocate %s\n",time,ptr,-size,space<0?"":space_name[space],name);
-    if(operation == MEMOP_PUSH_REGION)
-      fprintf(ofile,"%lf PushRegion %s {\n",time,name);
-    if(operation == MEMOP_POP_REGION)
-      fprintf(ofile,"%lf } PopRegion %s\n",time,name);
+    if (operation == MEMOP_ALLOCATE)
+      fprintf(ofile, "%lf %16p %14" PRId64 " %16s Allocate   %s\n", time, ptr,
+              size, space < 0 ? "" : space_name[space], name);
+    if (operation == MEMOP_DEALLOCATE)
+      fprintf(ofile, "%lf %16p %14" PRId64 " %16s DeAllocate %s\n", time, ptr,
+              -size, space < 0 ? "" : space_name[space], name);
+    if (operation == MEMOP_PUSH_REGION)
+      fprintf(ofile, "%lf PushRegion %s {\n", time, name);
+    if (operation == MEMOP_POP_REGION)
+      fprintf(ofile, "%lf } PopRegion %s\n", time, name);
   }
 };
-
