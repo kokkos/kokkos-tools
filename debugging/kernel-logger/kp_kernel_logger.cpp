@@ -121,27 +121,38 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
   printf("KokkosP: Execution of kernel %llu is completed.\n", kID);
 }
 
-extern "C" void kokkosp_begin_fence(const char* name, const uint32_t devID, uint64_t* kID) {
-	 if (std::strstr(name, "Kokkos Profile Tool Fence")) { // filter out fence as this is a duplicate and unneeded (causing the tool to hinder performance of application). We use strstr for checking if the string contains the label of a fence (we assume the user will always have the word fence in the label of the fence).  
-              *kID = std::numeric_limits<uint64_t>::max(); // set the dereferenced execution identifier to be the maximum value of uint64_t, which is assumed to never be assigned
-           }
-        else {
-          *kID = uniqID++;
+extern "C" void kokkosp_begin_fence(const char* name, const uint32_t devID,
+                                    uint64_t* kID) {
+  // filter out fence as this is a duplicate and unneeded (causing the tool to
+  // hinder performance of application). We use strstr for checking if the
+  // string contains the label of a fence (we assume the user will always have
+  // the word fence in the label of the fence).
+  if (std::strstr(name, "Kokkos Profile Tool Fence")) {
+    // set the dereferenced execution identifier to be the maximum value of
+    // uint64_t, which is assumed to never be assigned
+    *kID = std::numeric_limits<uint64_t>::max();
+  } else {
+    *kID = uniqID++;
 
-        printf("KokkosP: Executing fence on device %d with unique execution identifier %llu\n",
-                devID, *kID);
+    printf(
+        "KokkosP: Executing fence on device %d with unique execution "
+        "identifier %llu\n",
+        devID, *kID);
 
-	int level = kokkosp_print_region_stack();
-	kokkosp_print_region_stack_indent(level);
-	
-	printf("    %s\n", name);
-	} 
+    int level = kokkosp_print_region_stack();
+    kokkosp_print_region_stack_indent(level);
+
+    printf("    %s\n", name);
+  }
 }
 
-extern "C" void kokkosp_end_fence(const uint64_t kID) { 
-       if(kID != std::numeric_limits<uint64_t>::max()) { // if we find the kID to be maximum value uint64_t, then the callback is dealing with the application's fence, which we filtered out in the callback for fences 
-	printf("KokkosP: Execution of fence %llu is completed.\n", kID); 
-       }
+extern "C" void kokkosp_end_fence(const uint64_t kID) {
+  // if we find the kID to be maximum value uint64_t, then the callback is
+  // dealing with the application's fence, which we filtered out in the callback
+  // for fences
+  if (kID != std::numeric_limits<uint64_t>::max()) {
+    printf("KokkosP: Execution of fence %llu is completed.\n", kID);
+  }
 }
 
 extern "C" void kokkosp_push_profile_region(char* regionName) {
