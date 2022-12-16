@@ -56,35 +56,30 @@ using namespace KokkosTools::KernelTimer;
 
 // clang-format on
 bool is_region(KernelPerformanceInfo const& kp) {
-        return kp.getKernelType() == REGION;
+  return kp.getKernelType() == REGION;
 }
 
 inline std::string to_string(KernelExecutionType t) {
-        switch (t) {
-                case PARALLEL_FOR:
-                        return "\"PARALLEL_FOR\"";
-                case PARALLEL_REDUCE:
-                        return "\"PARALLEL_REDUCE\"";
-                case PARALLEL_SCAN:
-                        return "\"PARALLEL_SCAN\"";
-                case REGION:
-                        return "\"REGION\"";
-                default:
-                        throw t;
-        }
+  switch (t) {
+    case PARALLEL_FOR: return "\"PARALLEL_FOR\"";
+    case PARALLEL_REDUCE: return "\"PARALLEL_REDUCE\"";
+    case PARALLEL_SCAN: return "\"PARALLEL_SCAN\"";
+    case REGION: return "\"REGION\"";
+    default: throw t;
+  }
 }
 
 inline void write_json(std::ostream& os, KernelPerformanceInfo const& kp,
                        std::string indent = "") {
-        os << indent << "{\n";
-        os << indent << "  \"kernel-name\": \"" << kp.getName() << "\",\n";
-        os << indent << "  \"call-count\": " << kp.getCallCount() << ",\n";
-        os << indent << "  \"total-time\": " << kp.getTime() << ",\n";
-        os << indent << "  \"time-per-call\": "
-           << kp.getTime() / std::max((uint64_t)1, kp.getCallCount()) << ",\n";
-        os << indent << "  \"kernel-type\": " << to_string(kp.getKernelType())
-           << '\n';
-        os << indent << '}';
+  os << indent << "{\n";
+  os << indent << "  \"kernel-name\": \"" << kp.getName() << "\",\n";
+  os << indent << "  \"call-count\": " << kp.getCallCount() << ",\n";
+  os << indent << "  \"total-time\": " << kp.getTime() << ",\n";
+  os << indent << "  \"time-per-call\": "
+     << kp.getTime() / std::max((uint64_t)1, kp.getCallCount()) << ",\n";
+  os << indent << "  \"kernel-type\": " << to_string(kp.getKernelType())
+     << '\n';
+  os << indent << '}';
 }
 // clang-format off
 
@@ -166,49 +161,49 @@ int main(int argc, char* argv[]) {
     }
 	}
 
-        // clang-format on
-        // std::string filename = "test.json";
-        // std::ofstream fout(filename);
-        auto& fout = std::cout;
+  // clang-format on
+  // std::string filename = "test.json";
+  // std::ofstream fout(filename);
+  auto& fout = std::cout;
 
-        fout << "{\n";
+  fout << "{\n";
 
-        fout << "  \"total-app-time\" : " << totalExecuteTime << ",\n";
-        fout << "  \"total-kernel-time\" : " << totalKernelsTime << ",\n";
-        fout << "  \"total-non-kernel-time\" : "
-             << totalExecuteTime - totalKernelsTime << ",\n";
-        fout << "  \"percent-in-kernels\" : "
-             << 100. * totalKernelsTime / totalExecuteTime << ",\n";
-        fout << "  \"unique-kernel-calls\" : " << totalKernelsCalls << ",\n";
+  fout << "  \"total-app-time\" : " << totalExecuteTime << ",\n";
+  fout << "  \"total-kernel-time\" : " << totalKernelsTime << ",\n";
+  fout << "  \"total-non-kernel-time\" : "
+       << totalExecuteTime - totalKernelsTime << ",\n";
+  fout << "  \"percent-in-kernels\" : "
+       << 100. * totalKernelsTime / totalExecuteTime << ",\n";
+  fout << "  \"unique-kernel-calls\" : " << totalKernelsCalls << ",\n";
 
-        fout << "  \"region-data\" : [\n";
-        {
-                bool add_comma = false;
-                for (auto const& kp : kernelInfo) {
-                        if (!is_region(*kp)) continue;
-                        if (add_comma) fout << ",\n";
-                        add_comma = true;
-                        write_json(fout, *kp, "    ");
-                }
-                fout << '\n';
-        }
-        fout << "  ],\n";
+  fout << "  \"region-data\" : [\n";
+  {
+    bool add_comma = false;
+    for (auto const& kp : kernelInfo) {
+      if (!is_region(*kp)) continue;
+      if (add_comma) fout << ",\n";
+      add_comma = true;
+      write_json(fout, *kp, "    ");
+    }
+    fout << '\n';
+  }
+  fout << "  ],\n";
 
-        fout << "  \"kernel-data\" : [\n";
-        {
-                bool add_comma = false;
-                for (auto const& kp : kernelInfo) {
-                        if (is_region(*kp)) continue;
-                        if (add_comma) fout << ",\n";
-                        add_comma = true;
-                        write_json(fout, *kp, "    ");
-                }
-                fout << '\n';
-        }
-        fout << "  ]\n";
+  fout << "  \"kernel-data\" : [\n";
+  {
+    bool add_comma = false;
+    for (auto const& kp : kernelInfo) {
+      if (is_region(*kp)) continue;
+      if (add_comma) fout << ",\n";
+      add_comma = true;
+      write_json(fout, *kp, "    ");
+    }
+    fout << '\n';
+  }
+  fout << "  ]\n";
 
-        fout << "}\n";
-        // clang-format off
+  fout << "}\n";
+  // clang-format off
 
 	return 0;
 

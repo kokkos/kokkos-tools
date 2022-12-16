@@ -9,13 +9,12 @@
 
 //-------------------------------------------------------------------------------------//
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 #if USE_MPI
   MPI_Init(&argc, &argv);
 #endif
 
-  const char *profiler_name = argc >= 2 ? argv[1] : "";
+  const char *profiler_name   = argc >= 2 ? argv[1] : "";
   const char *profiler_config = argc >= 3 ? argv[2] : "";
 
   auto eventSet = KokkosTools::get_event_set(profiler_name, profiler_config);

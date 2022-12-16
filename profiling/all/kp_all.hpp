@@ -44,11 +44,12 @@
 #define KOKKOSTOOLS_ALL_HPP
 
 #include "kp_config.hpp"
-#include "impl/Kokkos_Profiling_Interface.hpp" // Note: impl/... is used inside the header
+#include "impl/Kokkos_Profiling_Interface.hpp"  // Note: impl/... is used inside the header
 
 namespace KokkosTools {
 
-Kokkos::Tools::Experimental::EventSet get_event_set(const char *profiler, const char *options);
+Kokkos::Tools::Experimental::EventSet get_event_set(const char *profiler,
+                                                    const char *options);
 
 }
 

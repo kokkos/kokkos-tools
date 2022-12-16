@@ -53,4 +53,5 @@ char* outputDelimiter;
 int current_region_level = 0;
 KernelPerformanceInfo* regions[512];
 
-}} // namespace KokkosTools::KernelTimer
+}  // namespace KernelTimer
+}  // namespace KokkosTools

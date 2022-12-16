@@ -117,7 +117,7 @@ constexpr uint32_t device_id_root() {
       static_cast<uint32_t>(DeviceTypeTraits<ExecutionSpace>::id);
   return (device_id << instance_bits);
   */
- return 0;
+  return 0;
 }
 template <typename ExecutionSpace>
 inline uint32_t device_id(ExecutionSpace const& space) noexcept {

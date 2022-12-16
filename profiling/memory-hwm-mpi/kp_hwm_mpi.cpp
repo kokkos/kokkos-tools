@@ -56,15 +56,14 @@ static int world_size = 1;
 
 // darwin report rusage.ru_maxrss in bytes
 #if defined(__APPLE__) || defined(__MACH__)
-#    define RU_MAXRSS_UNITS 1024
+#define RU_MAXRSS_UNITS 1024
 #else
-#    define RU_MAXRSS_UNITS 1
+#define RU_MAXRSS_UNITS 1
 #endif
 
-void kokkosp_init_library(const int loadSeq,
-  const uint64_t interfaceVer,
-  const uint32_t devInfoCount,
-  Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
+                          const uint32_t devInfoCount,
+                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
   int mpi_is_initialized;
   MPI_Initialized(&mpi_is_initialized);
   if (!mpi_is_initialized) {
@@ -76,7 +75,10 @@ void kokkosp_init_library(const int loadSeq,
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
   if (world_rank == 0) {
-    printf("KokkosP: Example Library Initialized (sequence is %d, version: %" PRIu64 ")\n", loadSeq, interfaceVer);
+    printf(
+        "KokkosP: Example Library Initialized (sequence is %d, version: "
+        "%" PRIu64 ")\n",
+        loadSeq, interfaceVer);
   }
 }
 
@@ -104,31 +106,29 @@ void kokkosp_finalize_library() {
   hwm_ave /= world_size;
 
   if (world_rank == 0) {
-    printf("KokkosP: High water mark memory consumption: %ld kB\n",
-      hwm_max);
-    printf("  Max: %ld, Min: %ld, Ave: %ld kB\n",
-      hwm_max,hwm_min,hwm_ave);
+    printf("KokkosP: High water mark memory consumption: %ld kB\n", hwm_max);
+    printf("  Max: %ld, Min: %ld, Ave: %ld kB\n", hwm_max, hwm_min, hwm_ave);
     printf("\n");
   }
 }
 
 Kokkos::Tools::Experimental::EventSet get_event_set() {
-    Kokkos::Tools::Experimental::EventSet my_event_set;
-    memset(&my_event_set, 0, sizeof(my_event_set)); // zero any pointers not set here
-    my_event_set.init = kokkosp_init_library;
-    my_event_set.finalize = kokkosp_finalize_library;
-    return my_event_set;
+  Kokkos::Tools::Experimental::EventSet my_event_set;
+  memset(&my_event_set, 0,
+         sizeof(my_event_set));  // zero any pointers not set here
+  my_event_set.init     = kokkosp_init_library;
+  my_event_set.finalize = kokkosp_finalize_library;
+  return my_event_set;
 }
 
-}} // namespace KokkosTools::HighwaterMarkMPI
-
+}  // namespace HighwaterMarkMPI
+}  // namespace KokkosTools
 
 extern "C" {
 
-namespace impl = KokkosTools::HighwaterMarkMPI; 
+namespace impl = KokkosTools::HighwaterMarkMPI;
 
-EXPOSE_INIT(impl::kokkosp_init_library) 
+EXPOSE_INIT(impl::kokkosp_init_library)
 EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
 
-
-} // extern "C"
+}  // extern "C"
