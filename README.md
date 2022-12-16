@@ -10,7 +10,7 @@ Note: `Kokkos_ENABLE_LIBDL` must be on to load profiling hooks dynamically. It s
 
 ## General Usage
 
-To use one of the tools you have to compile it, which will generate a dynamic library. Before executing the Kokkos application you then have to set the environment variable `KOKKOS_PROFILE_LIBRARY` to point to the dynamic libary e.g. in Bash:
+ To use one of the tools you have to compile it, which will generate a dynamic library. Before executing the Kokkos application you then have to set the environment variable `KOKKOS_PROFILE_LIBRARY` to point to the dynamic libary e.g. in Bash:
 ```
 export KOKKOS_PROFILE_LIBRARY=${HOME}/kokkos-tools/src/tools/memory-events/kp_memory_event.so
 ```
@@ -36,7 +36,7 @@ void foo() {
 
 + **[[KernelFilter|KernelFilter]]:**
 
-    A tool which is used in conjunction with analysis tools, to restrict them to a subset of the application.
+   A tool which is used in conjunction with analysis tools, to restrict them to a subset of the application.
 
 ### Memory Analysis
 + **[[MemoryHighWater|MemoryHighWater]]:**
@@ -84,12 +84,20 @@ void foo() {
 
 # Building Kokkos-tools
 
-To build all the tools, simply create a build directory and type cmake .. in it. You can configure the cmake options through ccmake ... Doing so is not recommended. The build has been tested sucessfully on Perlmutter and MacOS.
+Use either cmake or provided Makefile within each tools directory. 
 
+Building with Makefiles is currently recommended. 
 
 # Running a Kokkos-based Application with a tool
 
-Given your tool <name_of_tool> (which contains kokkos profiling callback functions) and an application executable called yourApplication.exe, type export KOKKOS_TOOL_LIB=${YOUR_KOKKOS_TOOLS_DIR}/libkp_<name_of_tool>.dylib; ./yourApplication.exe
+
+
+Given your tool shared library <name_of_tool_shared_library>.so (which contains kokkos profiling callback functions) and an application executable called yourApplication.exe, type export KOKKOS_TOOL_LIB=${YOUR_KOKKOS_TOOLS_DIR}/<name_of_tool_shared_lib>; ./yourApplication.exe
+
+
+
+
+
 # Documentation
 
 Further information and tutorials can be found here: https://github.com/kokkos/kokkos-tutorials/blob/main/LectureSeries/KokkosTutorial_07_Tools.pdf
