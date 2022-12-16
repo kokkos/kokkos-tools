@@ -82,6 +82,14 @@ void foo() {
     resource usage, etc. 
 
 
+# Building Kokkos-tools
+
+To build all the tools, simply create a build directory and type cmake .. in it. You can configure the cmake options through ccmake ... Doing so is not recommended. The build has been tested sucessfully on Perlmutter and MacOS.
+
+
+# Running a Kokkos-based Application with a tool
+
+Given your tool <name_of_tool> (which contains kokkos profiling callback functions) and an application executable called yourApplication.exe, type export KOKKOS_TOOL_LIB=${YOUR_KOKKOS_TOOLS_DIR}/libkp_<name_of_tool>.dylib; ./yourApplication.exe
 # Documentation
 
 Further information and tutorials can be found here: https://github.com/kokkos/kokkos-tutorials/blob/main/LectureSeries/KokkosTutorial_07_Tools.pdf
