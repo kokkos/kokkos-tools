@@ -396,7 +396,7 @@ extern "C" void kokkosp_finalize_library() {
       if (size > old_size) { concurrent_allocations++; total_allocations++; }
       else concurrent_allocations--;
       if (concurrent_allocations > max_concurrent_allocations) max_concurrent_allocations = concurrent_allocations;
-
+      old_size = size;
     }
 
     printf( "%-10s %15lu %15lu %15.1lf\n", space_name[s], max_concurrent_allocations, total_allocations, maxvalue/1024/1024);
