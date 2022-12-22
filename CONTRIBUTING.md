@@ -23,23 +23,23 @@ Before starting with contributing a change to the kokkos-tools repo, one must as
 
 ### Step 1: Create a fork Kokkos-tools  (create a copy you own based on the latest version)  
 
-* First, open up a browser and point it to github.com/kokkos/kokkos-tools
+1. First, open up a browser and point it to github.com/kokkos/kokkos-tools
 
-* Then, fork the repo github.com/kokkos/kokkos-tools as 
+1. Then, fork the repo github.com/kokkos/kokkos-tools as 
 
     github.com/<YOURGITHUBID>/kokkos-tools 
 
-* After this, Open up a Terminal and find a location for your fork of kokkos-tools, and then set the environment variable Kokkos_TOOLS_LIB to that location. 
+1. Open up a Terminal and find a location for your fork of kokkos-tools, and then set the environment variable Kokkos_TOOLS_LIB to that location. 
 
-* Finally, clone the repo in the location in 2   
+1. Clone the repo in the location in 2   
 
- git clone https://github.com/<YOURGITHUBID>/kokkos-tools 
+ `git clone https://github.com/<YOURGITHUBID>/kokkos-tools .`
 
-* NOTE: Be sure to use/checkout the develop branch (this will be default soon and master won't be available - instead we will have releases) 
+1. NOTE: Be sure to use/checkout the develop branch (this will be default soon and master won't be available - instead we will have releases) 
 
-  ` git checkout develop `
+  `git checkout develop`
 
-* Do a `git status` to make sure you have the latest develop 
+1. Do a `git status` to make sure you have the latest `develop` branch
  
   
   ---- 
@@ -47,33 +47,34 @@ Before starting with contributing a change to the kokkos-tools repo, one must as
 ### Step 2: Make a version of your copy that has your proposed fix
 6. Create new branch with your changes for fix: 
 
- git checkout -b myFix 
+ `git checkout -b myFix` 
 
 As mentioned in Step 0, note that: 
 
-* The fix should be linked to a kokkos-tools github issue, i.e.,  the fix should solve a defined problem put forth and agreed upon on github.com/kokkos/kokkos-tools
+* The fix should be linked to a kokkos-tools github issue, i.e., the fix should solve a defined problem put forth and agreed upon on github.com/kokkos/kokkos-tools
 
-* The fix should only have one change. 
+* The fix should only have one functional modification (i.e., multiple changes , or edits to a file, can be made, but those changes should all be towards fixing exactly on github Issue. 
  
   
   -------
 
 ### Step 3: Make the changes and test them 
 
-* Open up the vi editor, and make changes to <yourfilename>. Vi is suggested as it is readily available on nearly any platform, and Kokkos development happens across different platforms.
+* Open up a vi editor, and make changes to `<yourfilename>`. 
+    - Vi is suggested to use as it is readily available on nearly any platform, and Kokkos development happens across different platforms.
 
-* Use clang-format8 on the file to comply with formatting that git will perform.
 
 ### Step 4: Test the code works
 
 * Compile and run the code with changes on platforms of importance, making sure no errors exist. 
 
-* (Optional): use clang-format-8 on <yourfilename> to ensure code formatting of CMakeLists.txt before committing 
+* (Optional): Use `clang-format-8` on the file to comply with formatting that git will perform.
+ use `clang-format-8` on `<yourfilename>` to ensure code formatting of your code files before committing 
 
 
 -----
   
-### Step 4: et ready for submitting your changes to your version with fix 
+### Step 4: get ready for submitting your changes to your version with fix 
 
 * Do a git diff to review all the changes you have made to <yourfilename> 
 
@@ -105,7 +106,21 @@ As mentioned in Step 0, note that:
    a. Suggest a PR against kokkos's kokkos-tools develop branch; or
 
    b. the develop branch of kokkos-tools 
+ 
+ * Put a meaningful description of the PR, and include the github Issue the PR is fixing. 
+ 
+ * Assign yourself to the PR as well as any others you think are relevant. 
+ 
+ * Put in reviewers for the PR
 
+ * if you are not fully ready to have others review (e.g., if you 
+ want the reviewers to see that you have a draft getting ready and that a review is needed soon), then submit a draft pull request 
+ Otherwise, submit the PR for review. 
+ 
+ * Message individuals on Kokkosteam.slack.com about the PR to promote its timely review. 
+ 
+ * Once it is approved, you must merge the PR into Kokkos-tools:develop. Note that kokkos-tools has no master branch, and the kokkosteam
+ only provides periodic releases of kokkos-tools.  
   
 -----------
 
