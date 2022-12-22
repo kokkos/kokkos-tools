@@ -4,6 +4,7 @@
 
 ## Contributing a simple change to kokkos-tools 
 
+------------
 ### Step 0: Confirm that this fix is established as needed
 
 Before starting with contributing a change to the kokkos-tools repo, one must ask the following questions. 
