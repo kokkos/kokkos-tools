@@ -4,7 +4,7 @@
 
 ## Contributing a simple change to kokkos-tools 
 
-### Step 0: Identify that this fix is needed 
+### Step 0: Confirm that this fix is established as needed
 
 Before starting with contributing a change to the kokkos-tools repo, one must ask the following questions. 
 
@@ -18,6 +18,7 @@ Before starting with contributing a change to the kokkos-tools repo, one must as
 
 3. Is your fix only making a change to an off-by-one error? Or, do you also improve the printing and display, e.g., use a tab instead of space, between the start and end index of an array that a thread executes? Generally: Is your fix associated with just one github issue on kokkos tools? 
 
+-----------
 
 ### Step 1: Create a fork Kokkos-tools  (create a copy you own based on the latest version)  
 
