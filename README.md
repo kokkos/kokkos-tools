@@ -15,7 +15,7 @@ Note: `Kokkos_ENABLE_LIBDL` must be on to load profiling hooks dynamically. It s
 export KOKKOS_PROFILE_LIBRARY=${HOME}/kokkos-tools/src/tools/memory-events/kp_memory_event.so
 ```
 
-Many of the tools will produce an output file which uses the hostname as well as the process id as part of the filename. 
+Many of the tools will produce an output file that uses the hostname as well as the process id as part of the filename. 
 
 ## Explicit Instrumentation
 
