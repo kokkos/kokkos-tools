@@ -19,7 +19,7 @@ Many of the tools will produce an output file which uses the hostname as well as
 
 ## Explicit Instrumentation
 
-One can explicitly add instrumentation to a library or an application. Currently the only hooks intended for explicit programmer use are the Region related hooks. These use a push/pop model to mark coarser regions in your code.
+One can explicitly add instrumentation to a library or an application. Currently, the only hooks intended for explicit programmer use are the Region related hooks. These use a push/pop model to mark coarser regions in your code.
 
 ```c++
 void foo() {
