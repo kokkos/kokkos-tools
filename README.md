@@ -90,15 +90,9 @@ Building with Makefiles is currently recommended.
 
 # Running a Kokkos-based Application with a tool
 
-
-
 Given your tool shared library <name_of_tool_shared_library>.so (which contains kokkos profiling callback functions) and an application executable called yourApplication.exe, type 
 
 `export KOKKOS_PROFILE_LIBRARY=${YOUR_KOKKOS_TOOLS_DIR}/<name_of_tool_shared_lib>; ./yourApplication.exe`
-
-
-
-
 
 # Documentation
 
