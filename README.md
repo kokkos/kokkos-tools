@@ -2,11 +2,11 @@
 
 # Kokkos Tools
 
-Kokkos Tools provide a light-weight set of profiling and debugging utilities, which interface with instrumentation hooks built directly into the Kokkos runtime. Compared to 3rd party tools these tools can provide much cleaner, context specific information: in particular, they allow kernel centric analysis and they use labels provided to Kokkos objects (kernel launches and views).
+Kokkos Tools provide a light-weight set of profiling and debugging utilities, which interface with instrumentation hooks built directly into the Kokkos runtime. Compared to 3rd party tools these tools can provide much cleaner, context-specific information: in particular, they allow kernel-centric analysis and they use labels provided to Kokkos objects (kernel launches and views).
 
-Under most circumstances the profiling hooks are compiled into Kokkos executables by default. That means the tools work for your existing Kokkos applications, assuming that the profiling hooks version is compatible with the tools version. No recompilation or changes to your build procedures are required.
+Under most circumstances, the profiling hooks are compiled into Kokkos executables by default assuming that the profiling hooks' version is compatible with the tools' version. No recompilation or changes to your build procedures are required.
 
-Note: `Kokkos_ENABLE_LIBDL` must be on to load profiling hooks dynamically. It should be on by default however.
+Note: `Kokkos` must be configured with `Kokkos_ENABLE_LIBDL=ON` to load profiling hooks dynamically. This is the default for most cases anyway.
 
 ## General Usage
 
