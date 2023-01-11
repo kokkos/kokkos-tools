@@ -36,7 +36,7 @@ void foo() {
 
 + **[[KernelFilter|KernelFilter]]:**
 
-   A tool which is used in conjunction with analysis tools, to restrict them to a subset of the application.
+   A tool that is used in conjunction with analysis tools, to restrict them to a subset of the application.
 
 ### Memory Analysis
 + **[[MemoryHighWater|MemoryHighWater]]:**
