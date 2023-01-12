@@ -10,7 +10,7 @@ Note: `Kokkos` must be configured with `Kokkos_ENABLE_LIBDL=ON` to load profilin
 
 ## General Usage
 
- To use one of the tools you have to compile it, which will generate a dynamic library. Before executing the Kokkos application you then have to set the environment variable `KOKKOS_PROFILE_LIBRARY` to point to the dynamic library e.g. in Bash:
+ To use one of the tools you have to compile it, which will generate a dynamic library. Before executing the Kokkos application you then have to set the environment variable `KOKKOS_TOOLS_LIB` to point to the dynamic library e.g. in Bash:
 ```
 export KOKKOS_PROFILE_LIBRARY=${HOME}/kokkos-tools/src/tools/memory-events/kp_memory_event.so
 ```
@@ -54,11 +54,11 @@ void foo() {
 ### Kernel Inspection
 + **[[SimpleKernelTimer|SimpleKernelTimer]]:**
 
-    Captures Basic Timing information for Kernels.
+    Captures basic timing information for Kernels.
 
 + **[[KernelLogger|KernelLogger]]:**
 
-    Prints Kernel and Region events during runtime.
+    Prints kernel and region events during runtime.
 
 ### 3rd Party Profiling Tool Hooks
 + **[[VTuneConnector|VTuneConnector]]:**
@@ -82,7 +82,7 @@ void foo() {
     resource usage, etc. 
 
 
-# Building Kokkos-tools
+# Building Kokkos Tools
 
 Use either cmake or provided Makefile within each tools directory. 
 
@@ -90,9 +90,9 @@ Building with Makefiles is currently recommended.
 
 # Running a Kokkos-based Application with a tool
 
-Given your tool shared library <name_of_tool_shared_library>.so (which contains kokkos profiling callback functions) and an application executable called yourApplication.exe, type 
+Given your tool shared library <name_of_tool_shared_library>.so (which contains kokkos profiling callback functions) and an application executable called yourApplication.exe, type: 
 
-`export KOKKOS_PROFILE_LIBRARY=${YOUR_KOKKOS_TOOLS_DIR}/<name_of_tool_shared_lib>; ./yourApplication.exe`
+`export KOKKOS_TOOLS_LIB=${YOUR_KOKKOS_TOOLS_DIR}/<name_of_tool_shared_lib>; ./yourApplication.exe 
 
 # Documentation
 
