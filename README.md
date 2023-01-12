@@ -84,7 +84,7 @@ void foo() {
 
 # Building Kokkos Tools
 
-Use either cmake or provided Makefile within each tools directory. 
+Use either CMake or provided Makefile within each subdirectory of Kokkos Tools.
 
 Building with Makefiles is currently recommended. 
 
