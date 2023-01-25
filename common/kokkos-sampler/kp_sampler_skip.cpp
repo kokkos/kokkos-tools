@@ -36,9 +36,15 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 	}
 
 	char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
-        if(profileLibrary == NULL) {
-                profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
+        if( NULL == profileLibrary ) {
+		printf("Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a depreciated variable. Please use KOKKOS_TOOLS_LIBS")
+		profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
+		if ( NULL == profileLibrary ) {
+                	printf("KokkosP: No library to call in %s\n", profileLibrary);
+			exit(-1);
+		}
         }
+	
 	
 	char* envBuffer = (char*) malloc( sizeof(char) * (strlen(profileLibrary) + 1 ));
 	sprintf(envBuffer, "%s", profileLibrary);
