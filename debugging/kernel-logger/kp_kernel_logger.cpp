@@ -18,6 +18,8 @@
 #include <inttypes.h>
 #include <vector>
 #include <string>
+#include <limits>
+#include <cstring>
 
 std::vector<std::string> regions;
 static uint64_t uniqID;
