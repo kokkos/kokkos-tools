@@ -12,7 +12,7 @@ Note: `Kokkos` must be configured with `Kokkos_ENABLE_LIBDL=ON` to load profilin
 
  To use one of the tools you have to compile it, which will generate a dynamic library. Before executing the Kokkos application you then have to set the environment variable `KOKKOS_TOOLS_LIB` to point to the dynamic library e.g. in Bash:
 ```
-export KOKKOS_PROFILE_LIBRARY=${HOME}/kokkos-tools/src/tools/memory-events/kp_memory_event.so
+export KOKKOS_TOOLS_LIB=${HOME}/kokkos-tools/src/tools/memory-events/kp_memory_event.so
 ```
 
 Many of the tools will produce an output file that uses the hostname as well as the process id as part of the filename. 
