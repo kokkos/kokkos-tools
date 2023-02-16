@@ -1,3 +1,19 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
+
 #include <algorithm>
 #include <cassert>
 #include <cinttypes>
@@ -223,10 +239,18 @@ void kokkosp_push_profile_region(const char *name) {
 
 void kokkosp_pop_profile_region() { global_state->pop_region(); }
 
-void kokkosp_begin_deep_copy(SpaceHandle dst_handle, const char *dst_name,
-                             const void *dst_ptr, SpaceHandle src_handle,
-                             const char *src_name, const void *src_ptr,
-                             uint64_t size) {
+void kokkosp_allocate_data(SpaceHandle, const char *, void *,
+                                      uint64_t) {}
+
+void kokkosp_deallocate_data(SpaceHandle, const char *, void *,
+                                        uint64_t) {}
+
+void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
+                                        const char *dst_name,
+                                        const void *dst_ptr,
+                                        SpaceHandle src_handle,
+                                        const char *src_name,
+                                        const void *src_ptr, uint64_t size) {
   auto dst_space = get_space(dst_handle);
   auto src_space = get_space(src_handle);
   global_state->begin_deep_copy(dst_space, dst_name, dst_ptr, src_space,
@@ -270,6 +294,8 @@ EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
 EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
 EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
+EXPOSE_ALLOCATE(impl::kokkosp_allocate_data)
+EXPOSE_DEALLOCATE(impl::kokkosp_deallocate_data)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
 EXPOSE_BEGIN_DEEP_COPY(impl::kokkosp_begin_deep_copy)
 EXPOSE_END_DEEP_COPY(impl::kokkosp_end_deep_copy)

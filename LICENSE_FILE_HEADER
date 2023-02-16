@@ -13,19 +13,3 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-
-#include "kp_shared.h"
-
-namespace KokkosTools {
-namespace KernelTimer {
-
-uint64_t uniqID = 0;
-KernelPerformanceInfo* currentEntry;
-std::map<std::string, KernelPerformanceInfo*> count_map;
-double initTime;
-char* outputDelimiter;
-int current_region_level = 0;
-KernelPerformanceInfo* regions[512];
-
-}  // namespace KernelTimer
-}  // namespace KokkosTools
