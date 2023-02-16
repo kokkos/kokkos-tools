@@ -58,41 +58,44 @@ extern int current_region_level;
 extern KernelPerformanceInfo* regions[512];
 
 inline void increment_counter(const char* name, KernelExecutionType kType) {
-	std::string nameStr(name);
+  std::string nameStr(name);
 
-	if(count_map.find(name) == count_map.end()) {
-		KernelPerformanceInfo *info = new KernelPerformanceInfo(nameStr, kType);
-		count_map.insert(std::pair<std::string, KernelPerformanceInfo*>(nameStr, info));
+  if (count_map.find(name) == count_map.end()) {
+    KernelPerformanceInfo* info = new KernelPerformanceInfo(nameStr, kType);
+    count_map.insert(
+        std::pair<std::string, KernelPerformanceInfo*>(nameStr, info));
 
-		currentEntry = info;
-	} else {
-		currentEntry = count_map[nameStr];
-	}
+    currentEntry = info;
+  } else {
+    currentEntry = count_map[nameStr];
+  }
 
-	currentEntry->startTimer();
+  currentEntry->startTimer();
 }
 
-inline void increment_counter_region(const char* name, KernelExecutionType kType) {
-        std::string nameStr(name);
+inline void increment_counter_region(const char* name,
+                                     KernelExecutionType kType) {
+  std::string nameStr(name);
 
-        if(count_map.find(name) == count_map.end()) {
-		KernelPerformanceInfo* info = new KernelPerformanceInfo(nameStr, kType);
-		count_map.insert(std::pair<std::string, KernelPerformanceInfo*>(nameStr, info));
+  if (count_map.find(name) == count_map.end()) {
+    KernelPerformanceInfo* info = new KernelPerformanceInfo(nameStr, kType);
+    count_map.insert(
+        std::pair<std::string, KernelPerformanceInfo*>(nameStr, info));
 
-                regions[current_region_level] = info;
-        } else {
-                regions[current_region_level] = count_map[nameStr];
-        }
+    regions[current_region_level] = info;
+  } else {
+    regions[current_region_level] = count_map[nameStr];
+  }
 
-        regions[current_region_level]->startTimer();
-        current_region_level++;
+  regions[current_region_level]->startTimer();
+  current_region_level++;
 }
 
-inline bool compareKernelPerformanceInfo(KernelPerformanceInfo* left, KernelPerformanceInfo* right)
-{
-	return left->getTime() > right->getTime();
+inline bool compareKernelPerformanceInfo(KernelPerformanceInfo* left,
+                                         KernelPerformanceInfo* right) {
+  return left->getTime() > right->getTime();
 };
 
-} // namespace KokkosTools::KernelTimer
+}  // namespace KokkosTools::KernelTimer
 
-#endif // _H_KOKKOSP_KERNEL_SHARED
+#endif  // _H_KOKKOSP_KERNEL_SHARED

@@ -239,18 +239,14 @@ void kokkosp_push_profile_region(const char *name) {
 
 void kokkosp_pop_profile_region() { global_state->pop_region(); }
 
-void kokkosp_allocate_data(SpaceHandle, const char *, void *,
-                                      uint64_t) {}
+void kokkosp_allocate_data(SpaceHandle, const char *, void *, uint64_t) {}
 
-void kokkosp_deallocate_data(SpaceHandle, const char *, void *,
-                                        uint64_t) {}
+void kokkosp_deallocate_data(SpaceHandle, const char *, void *, uint64_t) {}
 
-void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
-                                        const char *dst_name,
-                                        const void *dst_ptr,
-                                        SpaceHandle src_handle,
-                                        const char *src_name,
-                                        const void *src_ptr, uint64_t size) {
+void kokkosp_begin_deep_copy(SpaceHandle dst_handle, const char *dst_name,
+                             const void *dst_ptr, SpaceHandle src_handle,
+                             const char *src_name, const void *src_ptr,
+                             uint64_t size) {
   auto dst_space = get_space(dst_handle);
   auto src_space = get_space(src_handle);
   global_state->begin_deep_copy(dst_space, dst_name, dst_ptr, src_space,

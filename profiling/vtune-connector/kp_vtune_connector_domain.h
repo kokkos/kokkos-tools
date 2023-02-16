@@ -64,6 +64,7 @@ class KernelVTuneConnectorInfo {
   __itt_string_handle* domainNameHandle;
 };
 
-}} // namespace KokkosTools::VTuneConnector
+}  // namespace VTuneConnector
+}  // namespace KokkosTools
 
-#endif // _H_KOKKOSP_KERNEL_VTUNE_CONNECTOR_INFO
+#endif  // _H_KOKKOSP_KERNEL_VTUNE_CONNECTOR_INFO

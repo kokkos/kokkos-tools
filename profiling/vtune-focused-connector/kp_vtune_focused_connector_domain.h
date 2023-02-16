@@ -64,6 +64,7 @@ class KernelVTuneFocusedConnectorInfo {
   __itt_domain* domain;
   __itt_string_handle* domainNameHandle;
 };
-}} // namespace KokkosTools::VTuneFocusedConnector
+}  // namespace VTuneFocusedConnector
+}  // namespace KokkosTools
 
 #endif

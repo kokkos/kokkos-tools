@@ -72,7 +72,6 @@ void kokkosp_finalize_library() {
     kernel_itr->second->writeToBinaryFile(output_data);
   }
 
-
   fclose(output_data);
 
   char currentwd[256];

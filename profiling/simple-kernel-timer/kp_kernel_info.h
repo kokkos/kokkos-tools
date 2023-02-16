@@ -32,8 +32,7 @@
 
 namespace KokkosTools::KernelTimer {
 
-inline char* demangleName(char* kernelName)
-{
+inline char* demangleName(char* kernelName) {
 #if defined(HAVE_GCC_ABI_DEMANGLE)
   int status = -1;
   char* demangledKernelName =
@@ -47,8 +46,8 @@ inline char* demangleName(char* kernelName)
 }
 
 inline double seconds() {
-	struct timeval now;
-	gettimeofday(&now, NULL);
+  struct timeval now;
+  gettimeofday(&now, NULL);
 
   return (double)(now.tv_sec + (now.tv_usec * 1.0e-6));
 }
@@ -153,7 +152,7 @@ class KernelPerformanceInfo {
   }
 
   void writeToBinaryFile(FILE* output) {
-			const uint32_t kernelNameLen = (uint32_t) strlen(kernelName);
+    const uint32_t kernelNameLen = (uint32_t)strlen(kernelName);
     const uint32_t recordLen = sizeof(uint32_t) + sizeof(char) * kernelNameLen +
                                sizeof(uint64_t) + sizeof(double) +
                                sizeof(double) + sizeof(uint32_t);
@@ -192,42 +191,46 @@ class KernelPerformanceInfo {
     }
   }
 
-		void writeToJSONFile(FILE* output, const char* indent) {
-			fprintf(output, "%s{\n", indent);
+  void writeToJSONFile(FILE* output, const char* indent) {
+    fprintf(output, "%s{\n", indent);
 
-			char* indentBuffer = (char*) malloc( sizeof(char) * 256 );
-			sprintf(indentBuffer, "%s    ", indent);
+    char* indentBuffer = (char*)malloc(sizeof(char) * 256);
+    sprintf(indentBuffer, "%s    ", indent);
 
-			fprintf(output, "%s\"kernel-name\"    : \"%s\",\n", indentBuffer, kernelName);
-			// fprintf(output, "%s\"region\"         : \"%s\",\n", indentBuffer, regionName);
-			fprintf(output, "%s\"call-count\"     : %lu,\n", indentBuffer, callCount);
-			fprintf(output, "%s\"total-time\"     : %f,\n", indentBuffer, time);
-			fprintf(output, "%s\"time-per-call\"  : %16.8f,\n", indentBuffer, (time /
-				static_cast<double>(std::max(
-					static_cast<uint64_t>(1), callCount))));
-			fprintf(output, "%s\"kernel-type\"    : \"%s\"\n", indentBuffer,
-				(kType == PARALLEL_FOR) ? "PARALLEL-FOR" :
-				(kType == PARALLEL_REDUCE) ? "PARALLEL-REDUCE" : "PARALLEL-SCAN");
+    fprintf(output, "%s\"kernel-name\"    : \"%s\",\n", indentBuffer,
+            kernelName);
+    // fprintf(output, "%s\"region\"         : \"%s\",\n", indentBuffer,
+    // regionName);
+    fprintf(output, "%s\"call-count\"     : %lu,\n", indentBuffer, callCount);
+    fprintf(output, "%s\"total-time\"     : %f,\n", indentBuffer, time);
+    fprintf(output, "%s\"time-per-call\"  : %16.8f,\n", indentBuffer,
+            (time / static_cast<double>(
+                        std::max(static_cast<uint64_t>(1), callCount))));
+    fprintf(
+        output, "%s\"kernel-type\"    : \"%s\"\n", indentBuffer,
+        (kType == PARALLEL_FOR)
+            ? "PARALLEL-FOR"
+            : (kType == PARALLEL_REDUCE) ? "PARALLEL-REDUCE" : "PARALLEL-SCAN");
 
-			fprintf(output, "%s}", indent);
-		}
+    fprintf(output, "%s}", indent);
+  }
 
-	private:
-		void copy(char* dest, const char* src, uint32_t len) {
-			for(uint32_t i = 0; i < len; i++) {
-				dest[i] = src[i];
-			}
-		}
+ private:
+  void copy(char* dest, const char* src, uint32_t len) {
+    for (uint32_t i = 0; i < len; i++) {
+      dest[i] = src[i];
+    }
+  }
 
-		char* kernelName;
-		// const char* regionName;
-		uint64_t callCount;
-		double time;
-		double timeSq;
-		double startTime;
-		KernelExecutionType kType;
+  char* kernelName;
+  // const char* regionName;
+  uint64_t callCount;
+  double time;
+  double timeSq;
+  double startTime;
+  KernelExecutionType kType;
 };
 
-} // namespace KokkosTools::KernelTimer
+}  // namespace KokkosTools::KernelTimer
 
 #endif

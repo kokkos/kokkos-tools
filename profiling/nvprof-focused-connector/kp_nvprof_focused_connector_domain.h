@@ -80,5 +80,5 @@ class KernelNVProfFocusedConnectorInfo {
 };
 
 #endif
-
-}} // KokkosTools::NVProfFocusedConnector
+}
+}  // KokkosTools::NVProfFocusedConnector
