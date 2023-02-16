@@ -652,13 +652,13 @@ struct State {
       std::cout << "<average time> <percent of total time> <percent time in "
                    "Kokkos> <percent MPI imbalance> <remainder> <kernels per "
                    "second> <number of calls> <name> [type]\n";
-      std::cout << "=================== \n";
+      std::cout << "===================\n";
       stack_root.print(std::cout);
       std::cout << "BOTTOM-UP TIME TREE:\n";
       std::cout
           << "<average time> <percent of total time> <percent time in Kokkos> "
              "<percent MPI imbalance> <number of calls> <name> [type]\n";
-      std::cout << "=================== \n";
+      std::cout << "===================\n";
       inv_stack_root.print(std::cout);
     }
     for (int space = 0; space < NSPACES; ++space) {
@@ -667,7 +667,7 @@ struct State {
 #endif
       {
         std::cout << "KOKKOS " << get_space_name(space) << " SPACE:\n";
-        std::cout << "=================== \n";
+        std::cout << "===================\n";
         std::cout.flush();
       }
       hwm_allocations[space].print(std::cout);
