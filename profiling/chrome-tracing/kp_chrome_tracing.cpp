@@ -31,9 +31,7 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
-#ifndef USE_MPI
-#define USE_MPI 1
-#endif
+#include "kp_core.hpp"
 
 #if USE_MPI
 #include <mpi.h>
@@ -41,14 +39,8 @@
 
 #include <chrono>
 
-namespace {
-
-struct SpaceHandle {
-  char name[64];
-};
-struct KokkosPDeviceInfo {
-  std::uint32_t deviceID;
-};
+namespace KokkosTools {
+namespace ChromeTracing {
 
 enum Space { SPACE_HOST, SPACE_CUDA };
 
@@ -198,76 +190,111 @@ struct State {
 
 State *global_state = nullptr;
 
-}  // end anonymous namespace
-
-extern "C" void kokkosp_init_library(int loadseq, uint64_t, uint32_t ndevinfos,
-                                     KokkosPDeviceInfo *devinfos) {
+void kokkosp_init_library(int loadseq, uint64_t, uint32_t ndevinfos,
+                          Kokkos_Profiling_KokkosPDeviceInfo *devinfos) {
   (void)loadseq;
   (void)ndevinfos;
   (void)devinfos;
   global_state = new State();
 }
 
-extern "C" void kokkosp_finalize_library() {
+void kokkosp_finalize_library() {
   delete global_state;
   global_state = nullptr;
 }
 
-extern "C" void kokkosp_begin_parallel_for(const char *name,
-                                           std::uint32_t devid,
-                                           std::uint64_t *kernid) {
+void kokkosp_begin_parallel_for(const char *name, std::uint32_t devid,
+                                std::uint64_t *kernid) {
   (void)devid;
   *kernid = global_state->begin_kernel(name, STACK_FOR);
 }
 
-extern "C" void kokkosp_begin_parallel_reduce(const char *name,
-                                              std::uint32_t devid,
-                                              std::uint64_t *kernid) {
+void kokkosp_begin_parallel_reduce(const char *name, std::uint32_t devid,
+                                   std::uint64_t *kernid) {
   (void)devid;
   *kernid = global_state->begin_kernel(name, STACK_REDUCE);
 }
 
-extern "C" void kokkosp_begin_parallel_scan(const char *name,
-                                            std::uint32_t devid,
-                                            std::uint64_t *kernid) {
+void kokkosp_begin_parallel_scan(const char *name, std::uint32_t devid,
+                                 std::uint64_t *kernid) {
   (void)devid;
   *kernid = global_state->begin_kernel(name, STACK_SCAN);
 }
 
-extern "C" void kokkosp_end_parallel_for(std::uint64_t kernid) {
+void kokkosp_end_parallel_for(std::uint64_t kernid) {
   global_state->end_kernel(kernid);
 }
 
-extern "C" void kokkosp_end_parallel_reduce(std::uint64_t kernid) {
+void kokkosp_end_parallel_reduce(std::uint64_t kernid) {
   global_state->end_kernel(kernid);
 }
 
-extern "C" void kokkosp_end_parallel_scan(std::uint64_t kernid) {
+void kokkosp_end_parallel_scan(std::uint64_t kernid) {
   global_state->end_kernel(kernid);
 }
 
-extern "C" void kokkosp_push_profile_region(const char *name) {
+void kokkosp_push_profile_region(const char *name) {
   global_state->push_region(name);
 }
 
-extern "C" void kokkosp_pop_profile_region() { global_state->pop_region(); }
+void kokkosp_pop_profile_region() { global_state->pop_region(); }
 
-extern "C" void kokkosp_allocate_data(SpaceHandle, const char *, void *,
-                                      uint64_t) {}
+void kokkosp_allocate_data(SpaceHandle, const char *, const void *, uint64_t) {}
 
-extern "C" void kokkosp_deallocate_data(SpaceHandle, const char *, void *,
-                                        uint64_t) {}
+void kokkosp_deallocate_data(SpaceHandle, const char *, const void *,
+                             uint64_t) {}
 
-extern "C" void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
-                                        const char *dst_name,
-                                        const void *dst_ptr,
-                                        SpaceHandle src_handle,
-                                        const char *src_name,
-                                        const void *src_ptr, uint64_t size) {
+void kokkosp_begin_deep_copy(SpaceHandle dst_handle, const char *dst_name,
+                             const void *dst_ptr, SpaceHandle src_handle,
+                             const char *src_name, const void *src_ptr,
+                             uint64_t size) {
   auto dst_space = get_space(dst_handle);
   auto src_space = get_space(src_handle);
   global_state->begin_deep_copy(dst_space, dst_name, dst_ptr, src_space,
                                 src_name, src_ptr, size);
 }
 
-extern "C" void kokkosp_end_deep_copy() { global_state->end_deep_copy(); }
+void kokkosp_end_deep_copy() { global_state->end_deep_copy(); }
+
+Kokkos::Tools::Experimental::EventSet get_event_set() {
+  Kokkos::Tools::Experimental::EventSet my_event_set;
+  memset(&my_event_set, 0,
+         sizeof(my_event_set));  // zero any pointers not set here
+  my_event_set.init                  = kokkosp_init_library;
+  my_event_set.finalize              = kokkosp_finalize_library;
+  my_event_set.push_region           = kokkosp_push_profile_region;
+  my_event_set.pop_region            = kokkosp_pop_profile_region;
+  my_event_set.begin_parallel_for    = kokkosp_begin_parallel_for;
+  my_event_set.begin_parallel_reduce = kokkosp_begin_parallel_reduce;
+  my_event_set.begin_parallel_scan   = kokkosp_begin_parallel_scan;
+  my_event_set.end_parallel_for      = kokkosp_end_parallel_for;
+  my_event_set.end_parallel_reduce   = kokkosp_end_parallel_reduce;
+  my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
+  my_event_set.begin_deep_copy       = kokkosp_begin_deep_copy;
+  my_event_set.end_deep_copy         = kokkosp_end_deep_copy;
+  return my_event_set;
+}
+
+}  // namespace ChromeTracing
+}  // namespace KokkosTools
+
+extern "C" {
+
+namespace impl = KokkosTools::ChromeTracing;
+
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
+EXPOSE_POP_REGION(impl::kokkosp_pop_profile_region)
+EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
+EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
+EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
+EXPOSE_ALLOCATE(impl::kokkosp_allocate_data)
+EXPOSE_DEALLOCATE(impl::kokkosp_deallocate_data)
+EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+EXPOSE_BEGIN_DEEP_COPY(impl::kokkosp_begin_deep_copy)
+EXPOSE_END_DEEP_COPY(impl::kokkosp_end_deep_copy)
+
+}  // extern "C"

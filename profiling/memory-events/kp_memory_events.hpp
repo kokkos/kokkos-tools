@@ -18,15 +18,14 @@
 #define MEMOP_PUSH_REGION 3
 #define MEMOP_POP_REGION 4
 
-#include <cstring>
 #include <cstdio>
 #include <inttypes.h>
 
-struct SpaceHandle {
-  char name[64];
-};
+#include "kp_core.hpp"
 
-char space_name[16][64];
+namespace KokkosTools::MemoryEvents {
+
+extern char space_name[16][64];
 
 struct EventRecord {
   const void* ptr;
@@ -60,3 +59,5 @@ struct EventRecord {
       fprintf(ofile, "%lf } PopRegion %s\n", time, name);
   }
 };
+
+}  // namespace KokkosTools::MemoryEvents

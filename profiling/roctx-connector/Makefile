@@ -8,7 +8,7 @@ all: kp_roctx_connector.so
 
 MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
 
-CXXFLAGS+=-I${MAKEFILE_PATH}
+CXXFLAGS+=-I${MAKEFILE_PATH} -I${MAKEFILE_PATH}/../../common/makefile-only -I${MAKEFILE_PATH}../all
 
 kp_roctx_connector.so: ${MAKEFILE_PATH}kp_roctx_connector.cpp
 	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) \

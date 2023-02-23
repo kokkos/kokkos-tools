@@ -18,10 +18,12 @@
 #define _H_KOKKOSP_KERNEL_VTUNE_CONNECTOR_INFO
 
 #include <stdio.h>
-#include <sys/time.h>
 #include <cstring>
 
 #include "ittnotify.h"
+
+namespace KokkosTools {
+namespace VTuneConnector {
 
 enum KernelExecutionType {
   PARALLEL_FOR    = 0,
@@ -62,4 +64,7 @@ class KernelVTuneConnectorInfo {
   __itt_string_handle* domainNameHandle;
 };
 
-#endif
+}  // namespace VTuneConnector
+}  // namespace KokkosTools
+
+#endif  // _H_KOKKOSP_KERNEL_VTUNE_CONNECTOR_INFO

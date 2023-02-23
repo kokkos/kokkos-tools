@@ -1,0 +1,8 @@
+[submodule "tpls/Caliper"]
+	path = tpls/Caliper
+	url = https://github.com/NexGenAnalytics/Caliper.git
+	branch = feature/make-multitool-safe # Until Caliper gets full support for Kokkos EventSet
+[submodule "tpls/apex"]
+	path = tpls/apex
+	url = https://github.com/NexGenAnalytics/apex.git
+	branch = develop

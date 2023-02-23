@@ -39,13 +39,14 @@ extern "C" {
 #include <jansson.h>
 }
 
-#ifndef USE_MPI
-#define USE_MPI 1
-#endif
+#include "kp_core.hpp"
 
 #if USE_MPI
 #include <mpi.h>
 #endif
+
+namespace KokkosTools {
+namespace VariorumConnector {
 
 bool filterKernels;
 uint64_t nextKernelID;
@@ -160,6 +161,7 @@ char* variorum_json_call() {
 // Post: An output message if variourum returned an error or if it functioned
 // correctly
 void variorum_call_mpi() {
+#if USE_MPI
   if (usingMPI == true) {
     int rank;
     std::string output;
@@ -217,6 +219,7 @@ void variorum_call_mpi() {
     }
     file.close();
   }
+#endif
 }
 
 // Function: variorum_call
@@ -240,10 +243,9 @@ void variorum_call() {
   }
 }
 
-extern "C" void kokkosp_init_library(const int loadSeq,
-                                     const uint64_t interfaceVer,
-                                     const uint32_t devInfoCount,
-                                     void* deviceInfo) {
+void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
+                          const uint32_t devInfoCount,
+                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
   char* outputPathChar;
   try {
     outputPathChar = getenv("VARIORUM_OUTPUT_PATH");
@@ -316,6 +318,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
       throw 20;
     }
     if (strcmp(usingMPIstr, "true") == 0) {
+#if USE_MPI
       usingMPI = true;
       try {
         char* perRankOutput = getenv("RANKED_OUTPUT");
@@ -333,6 +336,12 @@ extern "C" void kokkosp_init_library(const int loadSeq,
                   << std::endl;
         mpiOutPut = false;
       }
+#else
+      usingMPI = false;
+      std::cout << "Ignoring MPI enabled in Variorum: the connector was built "
+                   "without MPI support"
+                << std::endl;
+#endif
     }
   } catch (int e) {
     std::cout << "No MPI Option provided, not using per rank output"
@@ -347,7 +356,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   // variorum_call();
 }
 
-extern "C" void kokkosp_finalize_library() {
+void kokkosp_finalize_library() {
   if (usingMPI) {
     variorum_call_mpi();
   } else {
@@ -364,9 +373,8 @@ extern "C" void kokkosp_finalize_library() {
             << std::endl;
 }
 
-extern "C" void kokkosp_begin_parallel_for(const char* name,
-                                           const uint32_t devID,
-                                           uint64_t* kID) {
+void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
+                                uint64_t* kID) {
   std::cout << "Device ID: " << devID << "\n";
   if (usingMPI) {
     variorum_call_mpi();
@@ -375,7 +383,7 @@ extern "C" void kokkosp_begin_parallel_for(const char* name,
   }
 }
 
-extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
+void kokkosp_end_parallel_for(const uint64_t kID) {
   if (usingMPI) {
     variorum_call_mpi();
   } else {
@@ -383,9 +391,8 @@ extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
   }
 }
 
-extern "C" void kokkosp_begin_parallel_scan(const char* name,
-                                            const uint32_t devID,
-                                            uint64_t* kID) {
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
+                                 uint64_t* kID) {
   std::cout << "Device ID: " << devID << "\n";
   if (usingMPI) {
     variorum_call_mpi();
@@ -394,7 +401,7 @@ extern "C" void kokkosp_begin_parallel_scan(const char* name,
   }
 }
 
-extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
+void kokkosp_end_parallel_scan(const uint64_t kID) {
   if (usingMPI) {
     variorum_call_mpi();
   } else {
@@ -402,9 +409,8 @@ extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
   }
 }
 
-extern "C" void kokkosp_begin_parallel_reduce(const char* name,
-                                              const uint32_t devID,
-                                              uint64_t* kID) {
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
+                                   uint64_t* kID) {
   std::cout << "Device ID: " << devID << "\n";
   if (usingMPI) {
     variorum_call_mpi();
@@ -413,10 +419,43 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
   }
 }
 
-extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
+void kokkosp_end_parallel_reduce(const uint64_t kID) {
   if (usingMPI) {
     variorum_call_mpi();
   } else {
     variorum_call();
   }
 }
+
+Kokkos::Tools::Experimental::EventSet get_event_set() {
+  Kokkos::Tools::Experimental::EventSet my_event_set;
+  memset(&my_event_set, 0,
+         sizeof(my_event_set));  // zero any pointers not set here
+  my_event_set.init                  = kokkosp_init_library;
+  my_event_set.finalize              = kokkosp_finalize_library;
+  my_event_set.begin_parallel_for    = kokkosp_begin_parallel_for;
+  my_event_set.begin_parallel_reduce = kokkosp_begin_parallel_reduce;
+  my_event_set.begin_parallel_scan   = kokkosp_begin_parallel_scan;
+  my_event_set.end_parallel_for      = kokkosp_end_parallel_for;
+  my_event_set.end_parallel_reduce   = kokkosp_end_parallel_reduce;
+  my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
+  return my_event_set;
+}
+
+}  // namespace VariorumConnector
+}  // namespace KokkosTools
+
+extern "C" {
+
+namespace impl = KokkosTools::VariorumConnector;
+
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
+EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
+EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
+EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+
+}  // extern "C"

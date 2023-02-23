@@ -24,8 +24,13 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
-#include "kp_memory_events.hpp"
+#include "kp_core.hpp"
 #include "kp_timer.hpp"
+
+namespace KokkosTools {
+namespace MemoryUsage {
+
+char space_name[16][64];
 
 int num_spaces;
 std::vector<std::tuple<double, uint64_t, double> > space_size_track[16];
@@ -42,17 +47,16 @@ double max_mem_usage() {
   return max_rssKB * 1024;
 }
 
-extern "C" void kokkosp_init_library(const int loadSeq,
-                                     const uint64_t interfaceVer,
-                                     const uint32_t devInfoCount,
-                                     void* deviceInfo) {
+void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
+                          const uint32_t devInfoCount,
+                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
   num_spaces = 0;
   for (int i = 0; i < 16; i++) space_size[i] = 0;
 
   timer.reset();
 }
 
-extern "C" void kokkosp_finalize_library() {
+void kokkosp_finalize_library() {
   char* hostname = (char*)malloc(sizeof(char) * 256);
   gethostname(hostname, 256);
   int pid = getpid();
@@ -83,9 +87,8 @@ extern "C" void kokkosp_finalize_library() {
   free(hostname);
 }
 
-extern "C" void kokkosp_allocate_data(const SpaceHandle space,
-                                      const char* label, const void* const ptr,
-                                      const uint64_t size) {
+void kokkosp_allocate_data(const SpaceHandle space, const char* label,
+                           const void* const ptr, const uint64_t size) {
   std::lock_guard<std::mutex> lock(m);
 
   double time = timer.seconds();
@@ -103,10 +106,8 @@ extern "C" void kokkosp_allocate_data(const SpaceHandle space,
       std::make_tuple(time, space_size[space_i], max_mem_usage()));
 }
 
-extern "C" void kokkosp_deallocate_data(const SpaceHandle space,
-                                        const char* label,
-                                        const void* const ptr,
-                                        const uint64_t size) {
+void kokkosp_deallocate_data(const SpaceHandle space, const char* label,
+                             const void* const ptr, const uint64_t size) {
   std::lock_guard<std::mutex> lock(m);
 
   double time = timer.seconds();
@@ -125,3 +126,28 @@ extern "C" void kokkosp_deallocate_data(const SpaceHandle space,
         std::make_tuple(time, space_size[space_i], max_mem_usage()));
   }
 }
+
+Kokkos::Tools::Experimental::EventSet get_event_set() {
+  Kokkos::Tools::Experimental::EventSet my_event_set;
+  memset(&my_event_set, 0,
+         sizeof(my_event_set));  // zero any pointers not set here
+  my_event_set.init            = kokkosp_init_library;
+  my_event_set.finalize        = kokkosp_finalize_library;
+  my_event_set.allocate_data   = kokkosp_allocate_data;
+  my_event_set.deallocate_data = kokkosp_deallocate_data;
+  return my_event_set;
+}
+
+}  // namespace MemoryUsage
+}  // namespace KokkosTools
+
+extern "C" {
+
+namespace impl = KokkosTools::MemoryUsage;
+
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_ALLOCATE(impl::kokkosp_allocate_data)
+EXPOSE_DEALLOCATE(impl::kokkosp_deallocate_data)
+
+}  // extern "C"

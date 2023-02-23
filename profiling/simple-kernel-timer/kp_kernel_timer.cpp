@@ -14,73 +14,20 @@
 //
 //@HEADER
 
-#include <stdio.h>
-#include <inttypes.h>
-#include <execinfo.h>
-#include <cstdlib>
-#include <cstring>
-#include <map>
 #include <vector>
-#include <algorithm>
 #include <string>
-#include <sys/time.h>
 #include <iostream>
-
 #include <unistd.h>
-#include "kp_kernel_info.h"
 
-bool compareKernelPerformanceInfo(KernelPerformanceInfo* left,
-                                  KernelPerformanceInfo* right) {
-  return left->getTime() > right->getTime();
-};
+#include "kp_core.hpp"
+#include "kp_shared.h"
 
-static uint64_t uniqID = 0;
-static KernelPerformanceInfo* currentEntry;
-static std::map<std::string, KernelPerformanceInfo*> count_map;
-static double initTime;
-static char* outputDelimiter;
-static int current_region_level = 0;
-static KernelPerformanceInfo* regions[512];
+namespace KokkosTools {
+namespace KernelTimer {
 
-#define MAX_STACK_SIZE 128
-
-void increment_counter(const char* name, KernelExecutionType kType) {
-  std::string nameStr(name);
-
-  if (count_map.find(name) == count_map.end()) {
-    KernelPerformanceInfo* info = new KernelPerformanceInfo(nameStr, kType);
-    count_map.insert(
-        std::pair<std::string, KernelPerformanceInfo*>(nameStr, info));
-
-    currentEntry = info;
-  } else {
-    currentEntry = count_map[nameStr];
-  }
-
-  currentEntry->startTimer();
-}
-
-void increment_counter_region(const char* name, KernelExecutionType kType) {
-  std::string nameStr(name);
-
-  if (count_map.find(name) == count_map.end()) {
-    KernelPerformanceInfo* info = new KernelPerformanceInfo(nameStr, kType);
-    count_map.insert(
-        std::pair<std::string, KernelPerformanceInfo*>(nameStr, info));
-
-    regions[current_region_level] = info;
-  } else {
-    regions[current_region_level] = count_map[nameStr];
-  }
-
-  regions[current_region_level]->startTimer();
-  current_region_level++;
-}
-
-extern "C" void kokkosp_init_library(const int loadSeq,
-                                     const uint64_t interfaceVer,
-                                     const uint32_t devInfoCount,
-                                     void* deviceInfo) {
+void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
+                          const uint32_t devInfoCount,
+                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
   const char* output_delim_env = getenv("KOKKOSP_OUTPUT_DELIM");
   if (NULL == output_delim_env) {
     outputDelimiter = (char*)malloc(sizeof(char) * 2);
@@ -102,7 +49,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   initTime = seconds();
 }
 
-extern "C" void kokkosp_finalize_library() {
+void kokkosp_finalize_library() {
   double finishTime  = seconds();
   double kernelTimes = 0;
 
@@ -122,7 +69,7 @@ extern "C" void kokkosp_finalize_library() {
 
   for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
        kernel_itr++) {
-    kernel_itr->second->writeToFile(output_data);
+    kernel_itr->second->writeToBinaryFile(output_data);
   }
 
   fclose(output_data);
@@ -244,9 +191,8 @@ extern "C" void kokkosp_finalize_library() {
   }*/
 }
 
-extern "C" void kokkosp_begin_parallel_for(const char* name,
-                                           const uint32_t devID,
-                                           uint64_t* kID) {
+void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
+                                uint64_t* kID) {
   *kID = uniqID++;
 
   if ((NULL == name) || (strcmp("", name) == 0)) {
@@ -257,13 +203,12 @@ extern "C" void kokkosp_begin_parallel_for(const char* name,
   increment_counter(name, PARALLEL_FOR);
 }
 
-extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
+void kokkosp_end_parallel_for(const uint64_t kID) {
   currentEntry->addFromTimer();
 }
 
-extern "C" void kokkosp_begin_parallel_scan(const char* name,
-                                            const uint32_t devID,
-                                            uint64_t* kID) {
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
+                                 uint64_t* kID) {
   *kID = uniqID++;
 
   if ((NULL == name) || (strcmp("", name) == 0)) {
@@ -274,13 +219,12 @@ extern "C" void kokkosp_begin_parallel_scan(const char* name,
   increment_counter(name, PARALLEL_SCAN);
 }
 
-extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
+void kokkosp_end_parallel_scan(const uint64_t kID) {
   currentEntry->addFromTimer();
 }
 
-extern "C" void kokkosp_begin_parallel_reduce(const char* name,
-                                              const uint32_t devID,
-                                              uint64_t* kID) {
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
+                                   uint64_t* kID) {
   *kID = uniqID++;
 
   if ((NULL == name) || (strcmp("", name) == 0)) {
@@ -291,15 +235,15 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
   increment_counter(name, PARALLEL_REDUCE);
 }
 
-extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
+void kokkosp_end_parallel_reduce(const uint64_t kID) {
   currentEntry->addFromTimer();
 }
 
-extern "C" void kokkosp_push_profile_region(char* regionName) {
+void kokkosp_push_profile_region(char* regionName) {
   increment_counter_region(regionName, REGION);
 }
 
-extern "C" void kokkosp_pop_profile_region() {
+void kokkosp_pop_profile_region() {
   current_region_level--;
 
   // current_region_level is out of bounds, inform the user they
@@ -328,3 +272,36 @@ extern "C" void kokkosp_pop_profile_region() {
     regions[current_region_level]->addFromTimer();
   }
 }
+
+Kokkos::Tools::Experimental::EventSet get_event_set() {
+  Kokkos::Tools::Experimental::EventSet my_event_set;
+  memset(&my_event_set, 0,
+         sizeof(my_event_set));  // zero any pointers not set here
+  my_event_set.init                  = kokkosp_init_library;
+  my_event_set.finalize              = kokkosp_finalize_library;
+  my_event_set.begin_parallel_for    = kokkosp_begin_parallel_for;
+  my_event_set.begin_parallel_reduce = kokkosp_begin_parallel_reduce;
+  my_event_set.begin_parallel_scan   = kokkosp_begin_parallel_scan;
+  my_event_set.end_parallel_for      = kokkosp_end_parallel_for;
+  my_event_set.end_parallel_reduce   = kokkosp_end_parallel_reduce;
+  my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
+  return my_event_set;
+}
+
+}  // namespace KernelTimer
+}  // namespace KokkosTools
+
+extern "C" {
+
+namespace impl = KokkosTools::KernelTimer;
+
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
+EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
+EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
+EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+
+}  // extern "C"
