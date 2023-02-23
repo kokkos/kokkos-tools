@@ -184,13 +184,6 @@ class KernelPerformanceInfo {
     free(entry);
   }
 
- private:
-  void copy(char* dest, const char* src, uint32_t len) {
-    for (uint32_t i = 0; i < len; i++) {
-      dest[i] = src[i];
-    }
-  }
-
   void writeToJSONFile(FILE* output, const char* indent) {
     fprintf(output, "%s{\n", indent);
 
