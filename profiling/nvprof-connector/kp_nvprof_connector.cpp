@@ -81,6 +81,15 @@ void kokkosp_push_profile_region(const char* regionName) {
 
 void kokkosp_pop_profile_region() { nvtxRangePop(); }
 
+// TODO: move this to kp_core?
+namespace {
+struct Section {
+  std::string label;
+  nvtxRangeId_t id;
+};
+std::vector<Section> kokkosp_sections;
+}  // namespace
+
 Kokkos::Tools::Experimental::EventSet get_event_set() {
   Kokkos::Tools::Experimental::EventSet my_event_set;
   memset(&my_event_set, 0,
@@ -97,34 +106,26 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
   my_event_set.end_parallel_reduce   = kokkosp_end_parallel_reduce;
   my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
   return my_event_set;
+}
 
-  // TODO: move this to kp_core?
-  namespace {
-  struct Section {
-    std::string label;
-    nvtxRangeId_t id;
-  };
-  std::vector<Section> kokkosp_sections;
-  }  // namespace
+void kokkosp_create_profile_section(const char* name, uint32_t* sID) {
+  *sID = kokkosp_sections.size();
+  kokkosp_sections.push_back(
+      {std::string(name), static_cast<nvtxRangeId_t>(-1)});
+}
 
-  void kokkosp_create_profile_section(const char* name, uint32_t* sID) {
-    *sID = kokkosp_sections.size();
-    kokkosp_sections.push_back(
-        {std::string(name), static_cast<nvtxRangeId_t>(-1)});
-  }
+void kokkosp_start_profile_section(const uint32_t sID) {
+  auto& section = kokkosp_sections[sID];
+  section.id    = nvtxRangeStartA(section.label.c_str());
+}
 
-  void kokkosp_start_profile_section(const uint32_t sID) {
-    auto& section = kokkosp_sections[sID];
-    section.id    = nvtxRangeStartA(section.label.c_str());
-  }
-
-  void kokkosp_stop_profile_section(const uint32_t sID) {
-    auto const& section = kokkosp_sections[sID];
-    nvtxRangeEnd(section.id);
-  }
+void kokkosp_stop_profile_section(const uint32_t sID) {
+  auto const& section = kokkosp_sections[sID];
+  nvtxRangeEnd(section.id);
+}
 
 }  // namespace NVProfConnector
-}  // namespace NVProfConnector
+}  // namespace KokkosTools
 
 extern "C" {
 
