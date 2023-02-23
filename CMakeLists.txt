@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 project(KokkosTools CXX)
 
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+if(CMAKE_CXX_STANDARD LESS 17)
+  message(FATAL_ERROR "KokkosTools requires C++17")
+endif()
+
+
 # Include utilities
 include(cmake/utils.cmake)
 include(cmake/configure_tpls.cmake)
