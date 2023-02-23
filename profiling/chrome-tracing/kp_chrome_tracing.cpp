@@ -241,7 +241,8 @@ void kokkosp_pop_profile_region() { global_state->pop_region(); }
 
 void kokkosp_allocate_data(SpaceHandle, const char *, const void *, uint64_t) {}
 
-void kokkosp_deallocate_data(SpaceHandle, const char *, const void *, uint64_t) {}
+void kokkosp_deallocate_data(SpaceHandle, const char *, const void *,
+                             uint64_t) {}
 
 void kokkosp_begin_deep_copy(SpaceHandle dst_handle, const char *dst_name,
                              const void *dst_ptr, SpaceHandle src_handle,
