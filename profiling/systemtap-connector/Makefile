@@ -12,7 +12,7 @@ ${MAKEFILE_PATH}probes.h: ${MAKEFILE_PATH}probes.d
 probes.o: ${MAKEFILE_PATH}probes.d
 	dtrace -C -G -s $< -o $@
 
-CXXFLAGS+=-I${MAKEFILE_PATH}
+CXXFLAGS+=-I${MAKEFILE_PATH} -I${MAKEFILE_PATH}/../../common/makefile-only -I${MAKEFILE_PATH}../all
 
 kp_systemtap_connector.so: ${MAKEFILE_PATH}kp_systemtap_connector.cpp ${MAKEFILE_PATH}probes.h probes.o
 	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) probes.o \
