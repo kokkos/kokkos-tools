@@ -65,7 +65,7 @@ void foo() {
     
     Provides Kernel Names to VTune, so that analysis can be performed on a per kernel base.
 
-+ [[VTuneFocusedConnector|VTuneFocusedConnector]]
++ **[[VTuneFocusedConnector|VTuneFocusedConnector]]**
     
     Like VTuneConnector but turns profiling off outside of kernels. Should be used in conjunction with the KernelFilter tool. 
 
