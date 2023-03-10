@@ -27,26 +27,22 @@ elseif(NOT USE_LIB64)
 endif()
 #--------------------------------------------------------------------------------#
 
-if(MSVC)
-
+if(KokkosTools_ENABLE_CALIPER)
+  # Just reuse find module implemented in Caliper
+  set(ITT_PREFIX ${VTune_ROOT})
+  include(${PROJECT_SOURCE_DIR}/tpls/Caliper/cmake/FindITTAPI.cmake)
+else()
   # 2022-02-14: find_library() can't locate libittnotify.lib on Windows - not sure why...
   #             using find_file() instead as a workaround
   get_property(USE_LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
   if(USE_LIB64)
-    find_file(ITT_LIBRARY libittnotify.lib ${VTune_ROOT}/lib64)
+    find_file(ITT_LIBRARY libittnotify${CMAKE_STATIC_LIBRARY_SUFFIX} ${VTune_ROOT}/lib64)
   else()
-    find_file(ITT_LIBRARY libittnotify.lib ${VTune_ROOT}/lib32)
+    find_file(ITT_LIBRARY libittnotify${CMAKE_STATIC_LIBRARY_SUFFIX} ${VTune_ROOT}/lib32)
   endif()
   find_path(ITT_INCLUDE_DIR NAMES ittnotify.h HINTS ${VTune_ROOT}/include)
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(ITT DEFAULT_MSG ITT_LIBRARY ITT_INCLUDE_DIR)
-
-else()
-
-  # Just reuse find module implemented in Caliper
-  set(ITT_PREFIX ${VTune_ROOT})
-  include(${PROJECT_SOURCE_DIR}/tpls/Caliper/cmake/FindITTAPI.cmake)
-
 endif()
 
 # Set up imported target
