@@ -4,5 +4,5 @@
 	branch = feature/make-multitool-safe # Until Caliper gets full support for Kokkos EventSet
 [submodule "tpls/apex"]
 	path = tpls/apex
-	url = https://github.com/NexGenAnalytics/apex.git
+	url = https://github.com/UO-OACISS/apex.git
 	branch = develop
