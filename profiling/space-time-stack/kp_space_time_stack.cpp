@@ -736,15 +736,19 @@ struct State {
         std::string(name), ptr, size, stack_frame);
   }
   void begin_deep_copy(
-      Space, const char* dst_name, const void*,
-      Space, const char* src_name, const void*,
+      Space dst_space, const char* dst_name, const void*,
+      Space src_space, const char* src_name, const void*,
       std::uint64_t) {
     std::string frame_name;
     frame_name += "\"";
     frame_name += dst_name;
     frame_name += "\"=\"";
     frame_name += src_name;
-    frame_name += "\"";
+    frame_name += "\" (";
+    frame_name += get_space_name(dst_space);
+    frame_name += "->";
+    frame_name += get_space_name(src_space);
+    frame_name += ")";
     begin_frame(frame_name.c_str(), STACK_COPY);
   }
   void end_deep_copy() {
