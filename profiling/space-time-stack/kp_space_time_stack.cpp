@@ -711,8 +711,9 @@ struct State {
     current_allocations[space].deallocate(std::string(name), ptr, size,
                                           stack_frame);
   }
-  void begin_deep_copy(Space dst_space, const char* dst_name, const void*, Space src_space,
-                       const char* src_name, const void*, std::uint64_t) {
+  void begin_deep_copy(Space dst_space, const char* dst_name, const void*,
+                       Space src_space, const char* src_name, const void*,
+                       std::uint64_t) {
     std::string frame_name;
     frame_name += "\"";
     frame_name += dst_name;
