@@ -30,6 +30,7 @@
 #include <sys/resource.h>
 #include <algorithm>
 #include <cstring>
+#include <stdlib.h>
 
 #include "kp_core.hpp"
 
@@ -241,9 +242,15 @@ struct StackNode {
   }
   void print_recursive_json(std::ostream& os, StackNode const* parent,
                             double tree_time) const {
-    static bool add_comma = false;
+    static bool add_comma = false;    
     auto percent          = (total_runtime / tree_time) * 100.0;
-    if (percent < 0.1) return;
+
+    double threshold = 0.1;
+    const char * s_threshold = getenv("KOKKOSP_PRINT_THRESHOLD");
+    if(s_threshold)
+      threshold = strtod(s_threshold,NULL);
+    
+    if (percent < threshold) return;
     if (!name.empty()) {
       if (add_comma) os << ",\n";
       add_comma = true;
@@ -325,7 +332,13 @@ struct StackNode {
                        std::string const& child_indent,
                        double tree_time) const {
     auto percent = (total_runtime / tree_time) * 100.0;
-    if (percent < 0.1) return;
+    
+    double threshold = 0.1;
+    const char * s_threshold = getenv("KOKKOSP_PRINT_THRESHOLD");
+    if(s_threshold)
+      threshold = strtod(s_threshold,NULL);
+    
+    if (percent < threshold) return;
     if (!name.empty()) {
       os << my_indent;
       auto imbalance = (max_runtime / avg_runtime - 1.0) * 100.0;
