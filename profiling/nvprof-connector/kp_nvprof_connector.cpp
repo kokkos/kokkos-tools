@@ -1,72 +1,41 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact David Poliakoff (dzpolia@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
 
-#include <stdio.h>
-#include <inttypes.h>
-#include <cstdlib>
-#include <cstring>
-#include <unordered_map>
-#include <stack>
+#include <cstdio>
+#include <cstdint>
+#include <vector>
 #include <string>
-#include <iostream>
 
 #include "nvToolsExt.h"
 
-struct Kokkos_Tools_ToolSettings
-{
-  bool requires_global_fencing;
-  bool padding[255];
-};
+#include "kp_core.hpp"
 
-extern "C" void kokkosp_request_tool_settings(const uint32_t, Kokkos_Tools_ToolSettings* settings) {
+namespace KokkosTools {
+namespace NVProfConnector {
+
+void kokkosp_request_tool_settings(const uint32_t,
+                                   Kokkos_Tools_ToolSettings* settings) {
   settings->requires_global_fencing = false;
 }
 
 static uint64_t nextKernelID;
 
-extern "C" void kokkosp_init_library(const int loadSeq,
-                                     const uint64_t interfaceVer,
-                                     const uint32_t devInfoCount,
-                                     void* deviceInfo) {
+void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
+                          const uint32_t devInfoCount,
+                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
   printf("-----------------------------------------------------------\n");
   printf("KokkosP: NVTX Analyzer Connector (sequence is %d, version: %llu)\n",
          loadSeq, interfaceVer);
@@ -77,7 +46,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   nvtxMarkA("Kokkos::Initialization Complete");
 }
 
-extern "C" void kokkosp_finalize_library() {
+void kokkosp_finalize_library() {
   printf("-----------------------------------------------------------\n");
   printf("KokkosP: Finalization of NVTX Connector. Complete.\n");
   printf("-----------------------------------------------------------\n");
@@ -85,38 +54,93 @@ extern "C" void kokkosp_finalize_library() {
   nvtxMarkA("Kokkos::Finalization Complete");
 }
 
-extern "C" void kokkosp_begin_parallel_for(const char* name,
-                                           const uint32_t devID,
-                                           uint64_t* kID) {
+void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
+                                uint64_t* kID) {
   nvtxRangePush(name);
 }
 
-extern "C" void kokkosp_end_parallel_for(const uint64_t kID) { nvtxRangePop(); }
+void kokkosp_end_parallel_for(const uint64_t kID) { nvtxRangePop(); }
 
-extern "C" void kokkosp_begin_parallel_scan(const char* name,
-                                            const uint32_t devID,
-                                            uint64_t* kID) {
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
+                                 uint64_t* kID) {
   nvtxRangePush(name);
 }
 
-extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
-  nvtxRangePop();
-}
+void kokkosp_end_parallel_scan(const uint64_t kID) { nvtxRangePop(); }
 
-extern "C" void kokkosp_begin_parallel_reduce(const char* name,
-                                              const uint32_t devID,
-                                              uint64_t* kID) {
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
+                                   uint64_t* kID) {
   nvtxRangePush(name);
 }
 
-extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
-  nvtxRangePop();
-}
+void kokkosp_end_parallel_reduce(const uint64_t kID) { nvtxRangePop(); }
 
-extern "C" void kokkosp_push_profile_region(char* regionName) {
+void kokkosp_push_profile_region(const char* regionName) {
   nvtxRangePush(regionName);
 }
 
-extern "C" void kokkosp_pop_profile_region() {
-  nvtxRangePop();
+void kokkosp_pop_profile_region() { nvtxRangePop(); }
+
+// TODO: move this to kp_core?
+namespace {
+struct Section {
+  std::string label;
+  nvtxRangeId_t id;
+};
+std::vector<Section> kokkosp_sections;
+}  // namespace
+
+Kokkos::Tools::Experimental::EventSet get_event_set() {
+  Kokkos::Tools::Experimental::EventSet my_event_set;
+  memset(&my_event_set, 0,
+         sizeof(my_event_set));  // zero any pointers not set here
+  my_event_set.request_tool_settings = kokkosp_request_tool_settings;
+  my_event_set.init                  = kokkosp_init_library;
+  my_event_set.finalize              = kokkosp_finalize_library;
+  my_event_set.push_region           = kokkosp_push_profile_region;
+  my_event_set.pop_region            = kokkosp_pop_profile_region;
+  my_event_set.begin_parallel_for    = kokkosp_begin_parallel_for;
+  my_event_set.begin_parallel_reduce = kokkosp_begin_parallel_reduce;
+  my_event_set.begin_parallel_scan   = kokkosp_begin_parallel_scan;
+  my_event_set.end_parallel_for      = kokkosp_end_parallel_for;
+  my_event_set.end_parallel_reduce   = kokkosp_end_parallel_reduce;
+  my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
+  return my_event_set;
 }
+
+void kokkosp_create_profile_section(const char* name, uint32_t* sID) {
+  *sID = kokkosp_sections.size();
+  kokkosp_sections.push_back(
+      {std::string(name), static_cast<nvtxRangeId_t>(-1)});
+}
+
+void kokkosp_start_profile_section(const uint32_t sID) {
+  auto& section = kokkosp_sections[sID];
+  section.id    = nvtxRangeStartA(section.label.c_str());
+}
+
+void kokkosp_stop_profile_section(const uint32_t sID) {
+  auto const& section = kokkosp_sections[sID];
+  nvtxRangeEnd(section.id);
+}
+
+}  // namespace NVProfConnector
+}  // namespace KokkosTools
+
+extern "C" {
+
+namespace impl = KokkosTools::NVProfConnector;
+
+EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
+EXPOSE_POP_REGION(impl::kokkosp_pop_profile_region)
+EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
+EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
+EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
+EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+// TODO: expose section stuff
+}  // extern "C"

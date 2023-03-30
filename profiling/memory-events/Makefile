@@ -6,7 +6,7 @@ all: kp_memory_events.so
 
 MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
 
-CXXFLAGS+=-I${MAKEFILE_PATH}
+CXXFLAGS+=-I${MAKEFILE_PATH} -I${MAKEFILE_PATH}/../../common/makefile-only -I${MAKEFILE_PATH}../all
 
 kp_memory_events.so: ${MAKEFILE_PATH}kp_memory_events.cpp ${MAKEFILE_PATH}kp_memory_events.hpp ${MAKEFILE_PATH}kp_timer.hpp
 	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) -o $@ ${MAKEFILE_PATH}kp_memory_events.cpp
