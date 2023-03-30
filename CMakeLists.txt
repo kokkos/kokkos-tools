@@ -95,7 +95,7 @@ endif()
 include(cmake/configure_variorum.cmake)
 
 set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
-set(KOKKOSTOOLS_HAS_NVPROF ${Kokkos_ENABLE_CUDA}) # we assume that enabling CUDA for Kokkos program means nvprof should be available 
+set(KOKKOSTOOLS_HAS_NVPROF ${Kokkos_ENABLE_CUDA}) # we assume that enabling CUDA for Kokkos program means nvprof should be available
 
 if(DEFINED ENV{VTUNE_HOME})
   set(VTune_ROOT $ENV{VTUNE_HOME})
@@ -127,7 +127,7 @@ set(EXPORT_LIB_DIR ${CMAKE_INSTALL_LIBDIR})
 set(EXPORT_TARGETS "" CACHE STRING "" FORCE)
 
 if(WIN32)
-  message(STATUS "Windows target detected - skipping Unix-only tools.") 
+  message(STATUS "Windows target detected - skipping Unix-only tools.")
 endif()
 
 if(APPLE)
@@ -170,8 +170,8 @@ endif()
 
 # GPU profilers
 if(Kokkos_ENABLE_CUDA)
-  add_subdirectory(profiling/nvprof-connector) 
-  add_subdirectory(profiling/nvprof-focused-connector) 
+  add_subdirectory(profiling/nvprof-connector)
+  add_subdirectory(profiling/nvprof-focused-connector)
 endif()
 if(KOKKOS_ENABLE_HIP)
   #add_subdirectory(profiling/roctx-connector)
@@ -191,8 +191,8 @@ if(KokkosTools_ENABLE_CALIPER)
     message(STATUS "Caliper installation found in: ${Caliper_INSTALL_DIR}")
    list(APPEND SINGLELIB_PROFILERS caliper)
   else()
-  # Don't support git submodules for Caliper. The Kokkos tools user has can try installing Apex and linking on their own if they don't have it. 
-    message(FATAL_ERROR "FATAL: Required Caliper installation not found! Exiting.") 
+  # Don't support git submodules for Caliper. The Kokkos tools user has can try installing Apex and linking on their own if they don't have it.
+    message(FATAL_ERROR "FATAL: Required Caliper installation not found! Exiting.")
   endif()
 endif()
 
@@ -203,8 +203,33 @@ if(KokkosTools_ENABLE_APEX)
     message(STATUS "Apex installation found in: ${Apex_DIR}")
   list(APPEND SINGLELIB_PROFILERS "apex")
   else()
-  # Don't support git submodules for apex. The Kokkos tools user has can try installing Apex and linking on their own if they don't have it. 
-      message(FATAL_ERROR "FATAL: Required Apex installation not found! Exiting.")
+      include(cmake/AddGitSubmodule.cmake)
+      # Build Binutils as part of APEX
+      set(APEX_WITH_BFD TRUE CACHE BOOL "Include Binutils support for APEX")
+      set(APEX_BUILD_BFD TRUE CACHE BOOL "Build Binutils support for APEX")
+      # Build Tuning support as part of APEX
+      set(APEX_WITH_PLUGINS TRUE CACHE BOOL "Include Plugins support for APEX")
+      set(APEX_WITH_ACTIVEHARMONY TRUE CACHE BOOL "Include Active Harmony support for APEX")
+      set(APEX_BUILD_ACTIVEHARMONY TRUE CACHE BOOL "Build Active Harmony support for APEX")
+      # Include MPI support as part of APEX
+      set(APEX_WITH_MPI ${KokkosTools_ENABLE_MPI} CACHE BOOL "Include MPI support for APEX")
+      # Include Device-specific support as part of APEX
+      if(Kokkos_DEVICES MATCHES "CUDA")
+        set(APEX_WITH_CUDA TRUE CACHE BOOL "Include CUDA support for APEX")
+      endif(Kokkos_DEVICES MATCHES "CUDA")
+      if(Kokkos_DEVICES MATCHES "HIP")
+        set(APEX_WITH_HIP TRUE CACHE BOOL "Include HIP support for APEX")
+      endif(Kokkos_DEVICES MATCHES "HIP")
+      if(Kokkos_DEVICES MATCHES "SYCL")
+        set(APEX_WITH_LEVEL0 TRUE CACHE BOOL "Include LEVEL0 support for APEX")
+      endif(Kokkos_DEVICES MATCHES "SYCL")
+      # Add openmp support as long as the compiler supports OMPT - definitely not GNU though.
+      if(Kokkos_DEVICES MATCHES "OPENMP")
+        if ("${CMAKE_CXX_COMPILER_ID}" NOT STREQUAL "GNU")
+          set(APEX_WITH_OMPT TRUE CACHE BOOL "Include OpenMP support for APEX")
+        endif ("${CMAKE_CXX_COMPILER_ID}" NOT STREQUAL "GNU")
+      endif(Kokkos_DEVICES MATCHES "OPENMP")
+      add_git_submodule(tpls/apex)
   endif()
 endif()
 
