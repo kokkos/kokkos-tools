@@ -98,38 +98,44 @@ enum StackKind {
   STACK_COPY
 };
 
-void print_process_hwm() {
+void print_process_hwm(bool mpi_usable) {
   struct rusage sys_resources;
   getrusage(RUSAGE_SELF, &sys_resources);
   long hwm     = sys_resources.ru_maxrss;
   long hwm_max = hwm;
 
 #if USE_MPI
-  int rank, world_size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+  if (mpi_usable) {
+    int rank, world_size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-  // Max
-  MPI_Reduce(&hwm, &hwm_max, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
+    // Max
+    MPI_Reduce(&hwm, &hwm_max, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
 
-  // Min
-  long hwm_min;
-  MPI_Reduce(&hwm, &hwm_min, 1, MPI_LONG, MPI_MIN, 0, MPI_COMM_WORLD);
+    // Min
+    long hwm_min;
+    MPI_Reduce(&hwm, &hwm_min, 1, MPI_LONG, MPI_MIN, 0, MPI_COMM_WORLD);
 
-  // Average
-  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-  long hwm_ave;
-  MPI_Reduce(&hwm, &hwm_ave, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-  hwm_ave /= world_size;
+    // Average
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    long hwm_ave;
+    MPI_Reduce(&hwm, &hwm_ave, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+    hwm_ave /= world_size;
 
-  if (rank == 0)
+    if (rank == 0) {
+      printf("Host process high water mark memory consumption: %ld kB\n",
+             hwm_max);
+      printf("  Max: %ld, Min: %ld, Ave: %ld kB\n", hwm_max, hwm_min, hwm_ave);
+      printf("\n");
+    }
+  } else
+#else
+  (void)mpi_usable;
 #endif
   {
     printf("Host process high water mark memory consumption: %ld kB\n",
            hwm_max);
-#if USE_MPI
-    printf("  Max: %ld, Min: %ld, Ave: %ld kB\n", hwm_max, hwm_min, hwm_ave);
-#endif
     printf("\n");
   }
 }
@@ -392,93 +398,99 @@ struct StackNode {
     os << '\n';
     os.copyfmt(saved_state);
   }
-  void reduce_over_mpi() {
+  void reduce_over_mpi(bool mpi_usable) {
 #if USE_MPI
-    int rank, comm_size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-    std::queue<StackNode*> q;
-    std::set<std::pair<std::string, StackKind>> children_to_process;
-    q.push(this);
-    while (!q.empty()) {
-      auto node = q.front();
-      q.pop();
-      node->max_runtime = node->total_runtime;
-      node->avg_runtime = node->total_runtime;
-      MPI_Allreduce(MPI_IN_PLACE, &(node->total_runtime), 1, MPI_DOUBLE,
-                    MPI_SUM, MPI_COMM_WORLD);
-      MPI_Allreduce(MPI_IN_PLACE, &(node->max_runtime), 1, MPI_DOUBLE, MPI_MAX,
-                    MPI_COMM_WORLD);
-      MPI_Allreduce(MPI_IN_PLACE, &(node->avg_runtime), 1, MPI_DOUBLE, MPI_SUM,
-                    MPI_COMM_WORLD);
-      node->avg_runtime /= comm_size;
-      MPI_Allreduce(MPI_IN_PLACE, &(node->total_kokkos_runtime), 1, MPI_DOUBLE,
-                    MPI_SUM, MPI_COMM_WORLD);
-      /* Not all children necessarily exist on every rank. To handle this we
-         will: 1) Build a set of the child node names on each rank. 2) Start
-         with rank 0, broadcast all of it's child names and add them to the
-            queue, removing them from the set of names to be processed.
-            If a child doesn't exist on a rank we add an empty node for it.
-         3) Do a check for the lowest rank that has any remaining unprocessed
-         children and repeat step 2 broadcasting from that rank until we process
-         all children from all ranks.
-       */
-      children_to_process.clear();
-      for (auto& child : node->children) {
-        children_to_process.emplace(child.name, child.kind);
-      }
-
-      int bcast_rank = 0;
-      do {
-        int nchildren_to_process = int(children_to_process.size());
-        MPI_Bcast(&nchildren_to_process, 1, MPI_INT, bcast_rank,
-                  MPI_COMM_WORLD);
-        if (rank == bcast_rank) {
-          for (auto& child_info : children_to_process) {
-            std::string child_name = child_info.first;
-            int kind               = child_info.second;
-            int name_len           = child_name.length();
-            MPI_Bcast(&name_len, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
-            MPI_Bcast(&child_name[0], name_len, MPI_CHAR, bcast_rank,
-                      MPI_COMM_WORLD);
-            MPI_Bcast(&kind, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
-            auto* child =
-                node->get_child(std::move(child_name), StackKind(kind));
-            q.push(child);
-          }
-          children_to_process.clear();
-        } else {
-          for (int i = 0; i < nchildren_to_process; ++i) {
-            int name_len;
-            MPI_Bcast(&name_len, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
-            std::string name(size_t(name_len), '?');
-            MPI_Bcast(&name[0], name_len, MPI_CHAR, bcast_rank, MPI_COMM_WORLD);
-            int kind;
-            MPI_Bcast(&kind, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
-            auto child = node->get_child(std::move(name), StackKind(kind));
-            q.push(child);
-            children_to_process.erase({child->name, child->kind});
-          }
+    if (mpi_usable) {
+      int rank, comm_size;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+      std::queue<StackNode*> q;
+      std::set<std::pair<std::string, StackKind>> children_to_process;
+      q.push(this);
+      while (!q.empty()) {
+        auto node = q.front();
+        q.pop();
+        node->max_runtime = node->total_runtime;
+        node->avg_runtime = node->total_runtime;
+        MPI_Allreduce(MPI_IN_PLACE, &(node->total_runtime), 1, MPI_DOUBLE,
+                      MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(MPI_IN_PLACE, &(node->max_runtime), 1, MPI_DOUBLE,
+                      MPI_MAX, MPI_COMM_WORLD);
+        MPI_Allreduce(MPI_IN_PLACE, &(node->avg_runtime), 1, MPI_DOUBLE,
+                      MPI_SUM, MPI_COMM_WORLD);
+        node->avg_runtime /= comm_size;
+        MPI_Allreduce(MPI_IN_PLACE, &(node->total_kokkos_runtime), 1,
+                      MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        /* Not all children necessarily exist on every rank. To handle this we
+           will: 1) Build a set of the child node names on each rank. 2) Start
+           with rank 0, broadcast all of it's child names and add them to the
+              queue, removing them from the set of names to be processed.
+              If a child doesn't exist on a rank we add an empty node for it.
+           3) Do a check for the lowest rank that has any remaining unprocessed
+           children and repeat step 2 broadcasting from that rank until we
+           process all children from all ranks.
+         */
+        children_to_process.clear();
+        for (auto& child : node->children) {
+          children_to_process.emplace(child.name, child.kind);
         }
-        int local_next_bcast_rank =
-            children_to_process.empty() ? comm_size : rank;
-        MPI_Allreduce(&local_next_bcast_rank, &bcast_rank, 1, MPI_INT, MPI_MIN,
-                      MPI_COMM_WORLD);
-      } while (bcast_rank < comm_size);
-    }
+
+        int bcast_rank = 0;
+        do {
+          int nchildren_to_process = int(children_to_process.size());
+          MPI_Bcast(&nchildren_to_process, 1, MPI_INT, bcast_rank,
+                    MPI_COMM_WORLD);
+          if (rank == bcast_rank) {
+            for (auto& child_info : children_to_process) {
+              std::string child_name = child_info.first;
+              int kind               = child_info.second;
+              int name_len           = child_name.length();
+              MPI_Bcast(&name_len, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+              MPI_Bcast(&child_name[0], name_len, MPI_CHAR, bcast_rank,
+                        MPI_COMM_WORLD);
+              MPI_Bcast(&kind, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+              auto* child =
+                  node->get_child(std::move(child_name), StackKind(kind));
+              q.push(child);
+            }
+            children_to_process.clear();
+          } else {
+            for (int i = 0; i < nchildren_to_process; ++i) {
+              int name_len;
+              MPI_Bcast(&name_len, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+              std::string name(size_t(name_len), '?');
+              MPI_Bcast(&name[0], name_len, MPI_CHAR, bcast_rank,
+                        MPI_COMM_WORLD);
+              int kind;
+              MPI_Bcast(&kind, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
+              auto child = node->get_child(std::move(name), StackKind(kind));
+              q.push(child);
+              children_to_process.erase({child->name, child->kind});
+            }
+          }
+          int local_next_bcast_rank =
+              children_to_process.empty() ? comm_size : rank;
+          MPI_Allreduce(&local_next_bcast_rank, &bcast_rank, 1, MPI_INT,
+                        MPI_MIN, MPI_COMM_WORLD);
+        } while (bcast_rank < comm_size);
+      }
+    } else
 #else
-    std::queue<StackNode*> q;
-    q.push(this);
-    while (!q.empty()) {
-      auto node = q.front();
-      q.pop();
-      node->max_runtime = node->total_runtime;
-      node->avg_runtime = node->total_runtime;
-      for (auto& child : node->children) {
-        q.push(const_cast<StackNode*>(&child));
+    (void)mpi_usable;
+#endif
+    {
+      std::queue<StackNode*> q;
+      q.push(this);
+      while (!q.empty()) {
+        auto node = q.front();
+        q.pop();
+        node->max_runtime = node->total_runtime;
+        node->avg_runtime = node->total_runtime;
+        for (auto& child : node->children) {
+          q.push(const_cast<StackNode*>(&child));
+        }
       }
     }
-#endif
   }
 };
 
@@ -523,33 +535,79 @@ struct Allocations {
       alloc_set.erase(it);
     }
   }
-  void print(std::ostream& os) {
+  void print(std::ostream& os, bool mpi_usable) {
     std::string s;
 #if USE_MPI
-    auto max_total_size = total_size;
-    MPI_Allreduce(MPI_IN_PLACE, &max_total_size, 1, MPI_UINT64_T, MPI_MAX,
-                  MPI_COMM_WORLD);
-    /* this bit of logic is here to break ties in case two
-     * or more MPI ranks allocated the same (maximum) amount of
-     * memory. the one with the lowest MPI rank will print
-     * its snapshot */
-    int rank, size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    auto min_max_rank = (max_total_size == total_size) ? rank : size;
-    MPI_Allreduce(MPI_IN_PLACE, &min_max_rank, 1, MPI_INT, MPI_MIN,
-                  MPI_COMM_WORLD);
-    assert(min_max_rank < size);
-    if (rank == min_max_rank)
+    if (mpi_usable) {
+      auto max_total_size = total_size;
+      MPI_Allreduce(MPI_IN_PLACE, &max_total_size, 1, MPI_UINT64_T, MPI_MAX,
+                    MPI_COMM_WORLD);
+      /* this bit of logic is here to break ties in case two
+       * or more MPI ranks allocated the same (maximum) amount of
+       * memory. the one with the lowest MPI rank will print
+       * its snapshot */
+      int rank, size;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      MPI_Comm_size(MPI_COMM_WORLD, &size);
+      auto min_max_rank = (max_total_size == total_size) ? rank : size;
+      MPI_Allreduce(MPI_IN_PLACE, &min_max_rank, 1, MPI_INT, MPI_MIN,
+                    MPI_COMM_WORLD);
+      assert(min_max_rank < size);
+      if (rank == min_max_rank) {
+        std::stringstream ss;
+        ss << std::fixed << std::setprecision(1);
+        ss << "MAX MEMORY ALLOCATED: " << double(total_size) / 1024.0 << " kB"
+           << '\n';  // convert bytes to kB
+        ss << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
+        ss << "ALLOCATIONS AT TIME OF HIGH WATER MARK:\n";
+        std::ios saved_state(nullptr);
+        for (auto& allocation : alloc_set) {
+          auto percent = double(allocation.size) / double(total_size) * 100.0;
+          if (percent < 0.1) continue;
+          std::string full_name = allocation.frame->get_full_name();
+          if (full_name.empty())
+            full_name = allocation.name;
+          else
+            full_name = full_name + "/" + allocation.name;
+          ss << "  " << percent << "% " << full_name << '\n';
+        }
+        ss << '\n';
+        s = ss.str();
+      }
+      // a little MPI dance to send the string from min_max_rank to rank 0
+      MPI_Request request;
+      int string_size;
+      if (rank == 0) {
+        MPI_Irecv(&string_size, 1, MPI_INT, min_max_rank, 42, MPI_COMM_WORLD,
+                  &request);
+      }
+      if (rank == min_max_rank) {
+        string_size = int(s.size());
+        MPI_Send(&string_size, 1, MPI_INT, 0, 42, MPI_COMM_WORLD);
+      }
+      if (rank == 0) {
+        MPI_Wait(&request, MPI_STATUS_IGNORE);
+        s.resize(size_t(string_size));
+        MPI_Irecv(const_cast<char*>(s.data()), string_size, MPI_CHAR,
+                  min_max_rank, 42, MPI_COMM_WORLD, &request);
+      }
+      if (rank == min_max_rank) {
+        MPI_Send(const_cast<char*>(s.data()), string_size, MPI_CHAR, 0, 42,
+                 MPI_COMM_WORLD);
+      }
+      if (rank == 0) {
+        MPI_Wait(&request, MPI_STATUS_IGNORE);
+        os << s;
+      }
+    } else
+#else
+    (void)mpi_usable;
 #endif
     {
       std::stringstream ss;
       ss << std::fixed << std::setprecision(1);
       ss << "MAX MEMORY ALLOCATED: " << double(total_size) / 1024.0 << " kB"
          << '\n';  // convert bytes to kB
-#if USE_MPI
-      ss << "MPI RANK WITH MAX MEMORY: " << rank << '\n';
-#endif
       ss << "ALLOCATIONS AT TIME OF HIGH WATER MARK:\n";
       std::ios saved_state(nullptr);
       for (auto& allocation : alloc_set) {
@@ -564,36 +622,8 @@ struct Allocations {
       }
       ss << '\n';
       s = ss.str();
-    }
-#if USE_MPI
-    // a little MPI dance to send the string from min_max_rank to rank 0
-    MPI_Request request;
-    int string_size;
-    if (rank == 0) {
-      MPI_Irecv(&string_size, 1, MPI_INT, min_max_rank, 42, MPI_COMM_WORLD,
-                &request);
-    }
-    if (rank == min_max_rank) {
-      string_size = int(s.size());
-      MPI_Send(&string_size, 1, MPI_INT, 0, 42, MPI_COMM_WORLD);
-    }
-    if (rank == 0) {
-      MPI_Wait(&request, MPI_STATUS_IGNORE);
-      s.resize(size_t(string_size));
-      MPI_Irecv(const_cast<char*>(s.data()), string_size, MPI_CHAR,
-                min_max_rank, 42, MPI_COMM_WORLD, &request);
-    }
-    if (rank == min_max_rank) {
-      MPI_Send(const_cast<char*>(s.data()), string_size, MPI_CHAR, 0, 42,
-               MPI_COMM_WORLD);
-    }
-    if (rank == 0) {
-      MPI_Wait(&request, MPI_STATUS_IGNORE);
       os << s;
     }
-#else
-    os << s;
-#endif
   }
 };
 
@@ -606,6 +636,12 @@ struct State {
     stack_frame->begin();
   }
   ~State() {
+    bool mpi_usable = false;
+#if USE_MPI
+    int mpi_initialized;
+    MPI_Initialized(&mpi_initialized);
+    if (static_cast<bool>(mpi_initialized)) mpi_usable = true;
+#endif
     auto end_time = now();
     if (stack_frame != &stack_root) {
       std::cerr << "Program ended before \"" << stack_frame->get_full_name()
@@ -614,27 +650,62 @@ struct State {
     }
     stack_frame->end(end_time);
     stack_root.adopt();
-    stack_root.reduce_over_mpi();
+    stack_root.reduce_over_mpi(mpi_usable);
     if (getenv("KOKKOS_PROFILE_EXPORT_JSON")) {
 #if USE_MPI
-      int rank;
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      if (rank == 0) {
+      if (mpi_usable) {
+        int rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        if (rank == 0) {
+          std::ofstream fout("noname.json");
+          stack_root.print_json(fout);
+        }
+      } else
 #endif
+      {
         std::ofstream fout("noname.json");
         stack_root.print_json(fout);
-#if USE_MPI
       }
-#endif
       return;
     }
 
     auto inv_stack_root = stack_root.invert();
-    inv_stack_root.reduce_over_mpi();
+    inv_stack_root.reduce_over_mpi(mpi_usable);
+
 #if USE_MPI
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (rank == 0)
+    if (mpi_usable) {
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      if (rank == 0) {
+        std::cout << "\nBEGIN KOKKOS PROFILING REPORT:\n";
+        std::cout << "TOTAL TIME: " << stack_root.max_runtime << " seconds\n";
+        std::cout << "TOP-DOWN TIME TREE:\n";
+        std::cout << "<average time> <percent of total time> <percent time in "
+                     "Kokkos> <percent MPI imbalance> <remainder> <kernels per "
+                     "second> <number of calls> <name> [type]\n";
+        std::cout << "=================== \n";
+        stack_root.print(std::cout);
+        std::cout << "BOTTOM-UP TIME TREE:\n";
+        std::cout << "<average time> <percent of total time> <percent time in "
+                     "Kokkos> <percent MPI imbalance> <number of calls> <name> "
+                     "[type]\n";
+        std::cout << "=================== \n";
+        inv_stack_root.print(std::cout);
+      }
+      for (int space = 0; space < NSPACES; ++space) {
+        if (rank == 0) {
+          std::cout << "KOKKOS " << get_space_name(space) << " SPACE:\n";
+          std::cout << "=================== \n";
+          std::cout.flush();
+        }
+        hwm_allocations[space].print(std::cout, mpi_usable);
+      }
+      print_process_hwm(mpi_usable);
+      if (rank == 0) {
+        std::cout << "END KOKKOS PROFILING REPORT.\n";
+        std::cout.flush();
+      }
+    } else
 #endif
     {
       std::cout << "\nBEGIN KOKKOS PROFILING REPORT:\n";
@@ -651,27 +722,19 @@ struct State {
              "<percent MPI imbalance> <number of calls> <name> [type]\n";
       std::cout << "===================\n";
       inv_stack_root.print(std::cout);
-    }
-    for (int space = 0; space < NSPACES; ++space) {
-#if USE_MPI
-      if (rank == 0)
-#endif
-      {
+
+      for (int space = 0; space < NSPACES; ++space) {
         std::cout << "KOKKOS " << get_space_name(space) << " SPACE:\n";
         std::cout << "===================\n";
         std::cout.flush();
+        hwm_allocations[space].print(std::cout, mpi_usable);
       }
-      hwm_allocations[space].print(std::cout);
-    }
-    print_process_hwm();
-#if USE_MPI
-    if (rank == 0)
-#endif
-    {
+      print_process_hwm(mpi_usable);
       std::cout << "END KOKKOS PROFILING REPORT.\n";
       std::cout.flush();
     }
   }
+
   void begin_frame(const char* name, StackKind kind) {
     std::string name_str(name);
     stack_frame = stack_frame->get_child(std::move(name_str), kind);
