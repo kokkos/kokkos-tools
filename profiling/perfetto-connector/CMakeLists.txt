@@ -1,0 +1,3 @@
+kp_add_library(kp_perfetto_connector libperfetto-connector.cpp perfetto/perfetto.cc)
+target_include_directories(kp_perfetto_connector PRIVATE perfetto)
+

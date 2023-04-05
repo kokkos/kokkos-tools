@@ -13,41 +13,9 @@
 #include <unistd.h>
 #include <vector>
 
-#define KOKKOSP_PUBLIC_API __attribute__((visibility("default")))
+#include "kp_core.hpp"
 
-extern "C" {
-struct SpaceHandle {
-  char name[64];
-};
 
-void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
-                          const uint32_t, void *) KOKKOSP_PUBLIC_API;
-void kokkosp_finalize_library() KOKKOSP_PUBLIC_API;
-void kokkosp_begin_parallel_for(const char *name, const uint32_t,
-                                uint64_t *) KOKKOSP_PUBLIC_API;
-void kokkosp_end_parallel_for(const uint64_t) KOKKOSP_PUBLIC_API;
-void kokkosp_begin_parallel_scan(const char *name, const uint32_t,
-                                 uint64_t *) KOKKOSP_PUBLIC_API;
-void kokkosp_end_parallel_scan(const uint64_t) KOKKOSP_PUBLIC_API;
-void kokkosp_begin_parallel_reduce(const char *name, const uint32_t,
-                                   uint64_t *) KOKKOSP_PUBLIC_API;
-void kokkosp_end_parallel_reduce(const uint64_t) KOKKOSP_PUBLIC_API;
-void kokkosp_push_profile_region(const char *regionName) KOKKOSP_PUBLIC_API;
-void kokkosp_pop_profile_region() KOKKOSP_PUBLIC_API;
-void kokkosp_begin_deep_copy(SpaceHandle, const char *, const void *,
-                             SpaceHandle, const char *, const void *,
-                             uint64_t) KOKKOSP_PUBLIC_API;
-void kokkosp_end_deep_copy() KOKKOSP_PUBLIC_API;
-void kokkosp_allocate_data(const SpaceHandle, const char *, const void *const,
-                           const uint64_t) KOKKOSP_PUBLIC_API;
-void kokkosp_deallocate_data(const SpaceHandle, const char *, const void *const,
-                             const uint64_t) KOKKOSP_PUBLIC_API;
-void kokkosp_profile_event(const char *) KOKKOSP_PUBLIC_API;
-void kokkosp_dual_view_sync(const char *, const void *const,
-                            bool) KOKKOSP_PUBLIC_API;
-void kokkosp_dual_view_modify(const char *, const void *const,
-                              bool) KOKKOSP_PUBLIC_API;
-}
 
 PERFETTO_DEFINE_CATEGORIES(
     perfetto::Category("kokkos.parallel_for")
@@ -119,7 +87,8 @@ template <typename Tp> auto get_env(const std::string &_env_name, Tp _default) {
 }
 } // namespace
 
-extern "C" {
+namespace KokkosTools {
+namespace PerfettoConnector {
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t, void *) {
@@ -282,4 +251,25 @@ void kokkosp_dual_view_modify(const char *name, const void *const ptr,
   TRACE_EVENT_INSTANT("kokkos.dual_view_modify", perfetto::StaticString{name},
                       "address", ptr, "is_device", is_device);
 }
-}
+} // namespace PerfettoConnector
+} // namespace KokkosTools
+
+
+extern "C" {
+
+namespace impl = KokkosTools::PerfettoConnector;
+
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
+EXPOSE_POP_REGION(impl::kokkosp_pop_profile_region)
+EXPOSE_ALLOCATE(impl::kokkosp_allocate_data)
+EXPOSE_DEALLOCATE(impl::kokkosp_deallocate_data)
+EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
+EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
+EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
+EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+EXPOSE_PROFILE_EVENT(impl::kokkosp_profile_event)
+}  // extern "C"
