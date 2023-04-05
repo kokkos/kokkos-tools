@@ -15,8 +15,6 @@
 
 #include "kp_core.hpp"
 
-
-
 PERFETTO_DEFINE_CATEGORIES(
     perfetto::Category("kokkos.parallel_for")
         .SetDescription("Kokkos Parallel For Region"),
@@ -62,7 +60,8 @@ auto add_annotation(perfetto::EventContext &ctx, const char *_name, Tp &&_val) {
     static_assert(std::is_empty<type>::value, "Error! unsupported data type");
 }
 
-template <typename Tp> auto get_env(const std::string &_env_name, Tp _default) {
+template <typename Tp>
+auto get_env(const std::string &_env_name, Tp _default) {
   const char *_env_val = std::getenv(_env_name.c_str());
 
   if (_env_val) {
@@ -85,7 +84,7 @@ template <typename Tp> auto get_env(const std::string &_env_name, Tp _default) {
     return _default;
   }
 }
-} // namespace
+}  // namespace
 
 namespace KokkosTools {
 namespace PerfettoConnector {
@@ -113,8 +112,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       std::stoi(std::getenv("KOKKOSP_PERFETTO_SYSTEM_BACKEND")) != 0)
     args.backends |= perfetto::kInProcessBackend;
 
-  if (args.backends == 0)
-    args.backends |= perfetto::kInProcessBackend;
+  if (args.backends == 0) args.backends |= perfetto::kInProcessBackend;
 
   auto _fill_policy =
       _fill_policy_name == "discard"
@@ -127,7 +125,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   buffer_config->set_fill_policy(_fill_policy);
 
   auto *ds_cfg = cfg.add_data_sources()->mutable_config();
-  ds_cfg->set_name("track_event"); // this MUST be track_event
+  ds_cfg->set_name("track_event");  // this MUST be track_event
   ds_cfg->set_track_event_config_raw(track_event_cfg.SerializeAsString());
 
   args.shmem_size_hint_kb = shmem_size_hint;
@@ -251,9 +249,8 @@ void kokkosp_dual_view_modify(const char *name, const void *const ptr,
   TRACE_EVENT_INSTANT("kokkos.dual_view_modify", perfetto::StaticString{name},
                       "address", ptr, "is_device", is_device);
 }
-} // namespace PerfettoConnector
-} // namespace KokkosTools
-
+}  // namespace PerfettoConnector
+}  // namespace KokkosTools
 
 extern "C" {
 
