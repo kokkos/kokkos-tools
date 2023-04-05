@@ -167,13 +167,13 @@ using Kokkos::Tools::SpaceHandle;
 
 #define EXPOSE_DUAL_VIEW_SYNC(FUNC_NAME)                         \
   __attribute__((weak)) void kokkosp_dual_view_sync(             \
-      const char *name, const void *const ptr, bool is_device) { \
+      const char* name, const void* const ptr, bool is_device) { \
     FUNC_NAME(name, ptr, is_device);                             \
   }
 
 #define EXPOSE_DUAL_VIEW_MODIFY(FUNC_NAME)                       \
   __attribute__((weak)) void kokkosp_dual_view_modify(           \
-      const char *name, const void *const ptr, bool is_device) { \
+      const char* name, const void* const ptr, bool is_device) { \
     FUNC_NAME(name, ptr, is_device);                             \
   }
 #endif
