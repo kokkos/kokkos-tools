@@ -23,12 +23,12 @@
 
 #include "kp_core.hpp"
 
+static int tool_globfences; // use an integer   
 namespace KokkosTools {
 namespace NVProfConnector {
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
-  settings->requires_global_fencing = false;
 }
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
@@ -38,6 +38,24 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   printf("KokkosP: NVTX Analyzer Connector (sequence is %d, version: %llu)\n",
          loadSeq, (unsigned long long)(interfaceVer));
   printf("-----------------------------------------------------------\n");
+ const char* tool_global_fences = getenv("KOKKOS_TOOLS_NVTXCONNECTOR_GLOBALFENCES");
+  if (NULL != tool_global_fences) {
+    tool_globfences = atoi(tool_global_fences);
+  } else {
+    tool_globfences = 0;
+  }
+
+  char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
+  if (NULL == profileLibrary) {
+    printf(
+        "Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a depreciated "
+        "variable. Please use KOKKOS_TOOLS_LIBS\n");
+    profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
+    if (NULL == profileLibrary) {
+      printf("KokkosP: No library to call in %s\n", profileLibrary);
+      exit(-1);
+    }
+
 
   nvtxNameOsThread(pthread_self(), "Application Main Thread");
   nvtxMarkA("Kokkos::Initialization Complete");
