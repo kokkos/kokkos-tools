@@ -125,16 +125,33 @@ void kokkosp_profile_event(const char* name) { nvtxMarkA(name); }
 
 void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
                          uint64_t* handle) {
-  if (nullptr == name) {
+   if (nullptr == name) {
     name = "anonymous. Kokkos fence";
   }
-  nvtxRangeId_t id = nvtxRangeStartA(name);
-  *handle          = id;  // handle will be provided back to end_fence
-}
+    // filter out fence as this is a duplicate and unneeded (causing the tool to
+  // hinder performance of application). We use strstr for checking if the
+  // string contains the label of a fence (we assume the user will always have
+  // the word fence in the label of the fence).
+  if (std::strstr(name, "Kokkos Profile Tool Fence")) {
+    // set the dereferenced execution identifier to be the maximum value of
+    // uint64_t, which is assumed to never be assigned
+   *handle = std::numeric_limits<uint64_t>::max();
+  }
+  else 
+  {
+     nvtxRangeId_t id = nvtxRangeStartA(name);
+     *handle          = id;  // handle will be provided back to end_fence
+  }
+  
+ }
+
 void kokkosp_end_fence(uint64_t handle) {
   nvtxRangeId_t id = handle;
-  nvtxRangeEnd(id);
-}
+  if(handle != std::numeric_limits<uint64_t>::max()) 
+  {
+    nvtxRangeEnd(id);
+  }
+ }
 
 }  // namespace NVProfConnector
 }  // namespace KokkosTools
