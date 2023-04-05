@@ -828,11 +828,9 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
   return my_event_set;
 }
 
-
- extern "C" {
-   void kokkosp_print_help(const char* exe)
-   {
-     auto usage = R"usage(
+extern "C" {
+void kokkosp_print_help(const char* exe) {
+  auto usage = R"usage(
 Default value: 0.1
 
 Description:
@@ -844,26 +842,25 @@ Example:
   The following example would set the threshold to 10%
     <exe> [--kokkos-tools-args 10 ]
 )usage";
-     std::cout << "usage: " << exe << "[--kokkos-tools-args <threshold>]\n" << usage;
-   }
+  std::cout << "usage: " << exe << "[--kokkos-tools-args <threshold>]\n"
+            << usage;
+}
 
-   void kokkosp_parse_args(int argc, char** argv)
-   {
-     // See description in original PR.
-     // argc will always be at least 1 (exe)
-     if(argc == 1) {
-       // No argument, use the default
-     }
-     else if(argc == 2) {
-       // User specified a threshold
-       output_threshold = strtod(argv[1],0);
-     }
-     else { 
-       // Too many args
-       kokkosp_print_help(argv[0]); exit(1); 
-     }
-   }
- };//extern C
+void kokkosp_parse_args(int argc, char** argv) {
+  // See description in original PR.
+  // argc will always be at least 1 (exe)
+  if (argc == 1) {
+    // No argument, use the default
+  } else if (argc == 2) {
+    // User specified a threshold
+    output_threshold = strtod(argv[1], 0);
+  } else {
+    // Too many args
+    kokkosp_print_help(argv[0]);
+    exit(1);
+  }
+}
+};  // extern C
 
 }  // namespace SpaceTimeStack
 }  // namespace KokkosTools
