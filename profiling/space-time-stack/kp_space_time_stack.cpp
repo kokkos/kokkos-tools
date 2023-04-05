@@ -42,6 +42,9 @@
 namespace KokkosTools {
 namespace SpaceTimeStack {
 
+// Threshold to use for output (can be set via CLI options)
+double output_threshold = 0.1;
+
 enum Space { SPACE_HOST, SPACE_CUDA, SPACE_HIP, SPACE_SYCL, SPACE_OMPT };
 
 enum { NSPACES = 5 };
@@ -249,7 +252,8 @@ struct StackNode {
                             double tree_time) const {
     static bool add_comma = false;
     auto percent          = (total_runtime / tree_time) * 100.0;
-    if (percent < 0.1) return;
+
+    if (percent < output_threshold) return;
     if (!name.empty()) {
       if (add_comma) os << ",\n";
       add_comma = true;
@@ -331,7 +335,8 @@ struct StackNode {
                        std::string const& child_indent,
                        double tree_time) const {
     auto percent = (total_runtime / tree_time) * 100.0;
-    if (percent < 0.1) return;
+
+    if (percent < output_threshold) return;
     if (!name.empty()) {
       os << my_indent;
       auto imbalance = (max_runtime / avg_runtime - 1.0) * 100.0;
@@ -885,6 +890,40 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
   my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
   return my_event_set;
 }
+
+extern "C" {
+void kokkosp_print_help(const char* exe) {
+  auto usage = R"usage(
+Default value: 0.1
+
+Description:
+  Provide a decimal threshold value of percent of parent time for output.  
+  Timers below this threshold will not be output.  Set to 0 to get unfiltered
+  reports.
+
+Example:
+  The following example would set the threshold to 10%
+    <exe> [--kokkos-tools-args 10 ]
+)usage";
+  std::cout << "usage: " << exe << "[--kokkos-tools-args <threshold>]\n"
+            << usage;
+}
+
+void kokkosp_parse_args(int argc, char** argv) {
+  // See description in original PR.
+  // argc will always be at least 1 (exe)
+  if (argc == 1) {
+    // No argument, use the default
+  } else if (argc == 2) {
+    // User specified a threshold
+    output_threshold = strtod(argv[1], 0);
+  } else {
+    // Too many args
+    kokkosp_print_help(argv[0]);
+    exit(1);
+  }
+}
+};  // extern C
 
 }  // namespace SpaceTimeStack
 }  // namespace KokkosTools
