@@ -4,6 +4,8 @@
 #include <cstring>
 #include <dlfcn.h>
 
+namespace KokkosTools {
+namespace Sample {
 static uint64_t uniqID           = 0;
 static uint64_t kernelCounter    = 0;
 static uint64_t kernelSampleSkip = 101;
@@ -27,7 +29,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
                                      const uint64_t interfaceVer,
                                      const uint32_t devInfoCount,
                                      void* deviceInfo) {
-  const char* tool_verbose_str = getenv("KOKKOS_SAMPLER_VERBOSE");
+  const char* tool_verbose_str = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
   } else {
@@ -120,7 +122,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   kernelCounter = 0;
   uniqID        = 1;
 
-  const char* tool_sample = getenv("KOKKOS_SAMPLE_SKIP");
+  const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLE_SKIP");
   if (NULL != tool_sample) {
     kernelSampleSkip = atoi(tool_sample) + 1;
   }
@@ -214,20 +216,24 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
       (*endReduceCallee)(kID);
     }
   }
+}
 
-  extern "C" {
+}  // end namespace Sample
+}  // end namespace KokkosTools
 
-  namespace impl = KokkosTools::Sample;
+extern "C" {
 
-  EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
-  EXPOSE_INIT(impl::kokkosp_init_library)
-  EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
-  EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
-  EXPOSE_POP_REGION(impl::kokkosp_pop_profile_region)
-  EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
-  EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
-  EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
-  EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
-  EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
-  EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
-  }  // extern "C"
+namespace impl = KokkosTools::Sample;
+
+EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
+EXPOSE_POP_REGION(impl::kokkosp_pop_profile_region)
+EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
+EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
+EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
+EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+}  // end extern "C"
