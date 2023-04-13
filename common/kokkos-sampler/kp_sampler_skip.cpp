@@ -5,7 +5,7 @@
 #include <dlfcn.h>
 
 namespace KokkosTools {
-namespace Sample {
+namespace Sampler {
 static uint64_t uniqID           = 0;
 static uint64_t kernelCounter    = 0;
 static uint64_t kernelSampleSkip = 101;
@@ -25,7 +25,7 @@ static endFunction endForCallee                = NULL;
 static endFunction endScanCallee               = NULL;
 static endFunction endReduceCallee             = NULL;
 
-extern "C" void kokkosp_init_library(const int loadSeq,
+void kokkosp_init_library(const int loadSeq,
                                      const uint64_t interfaceVer,
                                      const uint32_t devInfoCount,
                                      void* deviceInfo) {
@@ -122,7 +122,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   kernelCounter = 0;
   uniqID        = 1;
 
-  const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLE_SKIP");
+  const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
   if (NULL != tool_sample) {
     kernelSampleSkip = atoi(tool_sample) + 1;
   }
@@ -132,9 +132,9 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   }
 }
 
-extern "C" void kokkosp_finalize_library() {}
+void kokkosp_finalize_library() {}
 
-extern "C" void kokkosp_begin_parallel_for(const char* name,
+void kokkosp_begin_parallel_for(const char* name,
                                            const uint32_t devID,
                                            uint64_t* kID) {
   *kID = uniqID++;
@@ -150,7 +150,7 @@ extern "C" void kokkosp_begin_parallel_for(const char* name,
   }
 }
 
-extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
+void kokkosp_end_parallel_for(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-end function...\n", kID);
@@ -162,7 +162,7 @@ extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
   }
 }
 
-extern "C" void kokkosp_begin_parallel_scan(const char* name,
+void kokkosp_begin_parallel_scan(const char* name,
                                             const uint32_t devID,
                                             uint64_t* kID) {
   *kID = uniqID++;
@@ -178,7 +178,7 @@ extern "C" void kokkosp_begin_parallel_scan(const char* name,
   }
 }
 
-extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
+void kokkosp_end_parallel_scan(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-end function...\n", kID);
@@ -190,7 +190,7 @@ extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
   }
 }
 
-extern "C" void kokkosp_begin_parallel_reduce(const char* name,
+void kokkosp_begin_parallel_reduce(const char* name,
                                               const uint32_t devID,
                                               uint64_t* kID) {
   *kID = uniqID++;
@@ -206,7 +206,7 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
   }
 }
 
-extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
+void kokkosp_end_parallel_reduce(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-end function...\n", kID);
@@ -223,7 +223,7 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
 
 extern "C" {
 
-namespace impl = KokkosTools::Sample;
+namespace impl = KokkosTools::Sampler;
 
 EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
 EXPOSE_INIT(impl::kokkosp_init_library)
