@@ -117,7 +117,17 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
 void kokkosp_end_parallel_reduce(const uint64_t kID) {
   focusedConnectorExecuteEnd();
 }
+    
+void kokkosp_begin_fence(const uint64_t kID) {
+  *kID = nextKernelID++;
+  currentKernel = getFocusedConnectorInfo(name, FENCE);
+  focusedConnectorExecuteStart();
+}
 
+void kokkosp_end_fence(const uint64_t kID) {
+  focusedConnectorExecuteEnd();
+}
+ 
 Kokkos::Tools::Experimental::EventSet get_event_set() {
   Kokkos::Tools::Experimental::EventSet my_event_set;
   memset(&my_event_set, 0,
@@ -127,9 +137,12 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
   my_event_set.begin_parallel_for    = kokkosp_begin_parallel_for;
   my_event_set.begin_parallel_reduce = kokkosp_begin_parallel_reduce;
   my_event_set.begin_parallel_scan   = kokkosp_begin_parallel_scan;
+  my_event_set.begin_parallel_scan   = kokkosp_begin_parallel_scan;
+  my_event_set.begin_fence           = kokkosp_begin_fence;
   my_event_set.end_parallel_for      = kokkosp_end_parallel_for;
   my_event_set.end_parallel_reduce   = kokkosp_end_parallel_reduce;
   my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
+  my_event_set.end_fence             = kokkosp_end_fence;
   return my_event_set;
 }
 
@@ -148,5 +161,7 @@ EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
 EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+EXPOSE_BEGIN_FENCE(impl::kokkosp_begin_fence)
+EXPOSE_END_FENCE(impl::kokkosp_end_fence)
 
 }  // extern "C"
