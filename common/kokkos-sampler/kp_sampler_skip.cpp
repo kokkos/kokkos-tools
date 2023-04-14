@@ -25,10 +25,8 @@ static endFunction endForCallee                = NULL;
 static endFunction endScanCallee               = NULL;
 static endFunction endReduceCallee             = NULL;
 
-void kokkosp_init_library(const int loadSeq,
-                                     const uint64_t interfaceVer,
-                                     const uint32_t devInfoCount,
-                                     void* deviceInfo) {
+void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
+                          const uint32_t devInfoCount, void* deviceInfo) {
   const char* tool_verbose_str = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
@@ -134,9 +132,8 @@ void kokkosp_init_library(const int loadSeq,
 
 void kokkosp_finalize_library() {}
 
-void kokkosp_begin_parallel_for(const char* name,
-                                           const uint32_t devID,
-                                           uint64_t* kID) {
+void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
+                                uint64_t* kID) {
   *kID = uniqID++;
 
   if (((*kID) % kernelSampleSkip) == 0) {
@@ -162,9 +159,8 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
   }
 }
 
-void kokkosp_begin_parallel_scan(const char* name,
-                                            const uint32_t devID,
-                                            uint64_t* kID) {
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
+                                 uint64_t* kID) {
   *kID = uniqID++;
 
   if (((*kID) % kernelSampleSkip) == 0) {
@@ -190,9 +186,8 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
   }
 }
 
-void kokkosp_begin_parallel_reduce(const char* name,
-                                              const uint32_t devID,
-                                              uint64_t* kID) {
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
+                                   uint64_t* kID) {
   *kID = uniqID++;
 
   if (((*kID) % kernelSampleSkip) == 0) {
@@ -218,7 +213,7 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
   }
 }
 
-}  // end namespace Sample
+}  // namespace Sampler
 }  // end namespace KokkosTools
 
 extern "C" {
