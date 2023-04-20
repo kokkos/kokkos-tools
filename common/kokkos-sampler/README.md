@@ -1,0 +1,1 @@
+This is a sampler utility that is intended to complement other tools in the Kokkos Tools set. This utility allows for sampling (rather than collecting) of profiling or debugging data gathered from a particular tool of the Kokkos Tools set. The Kokkos Tools user provides asampling rate via the environment variable KOKKOS_TOOLS_SAMPLER_SKIP.  

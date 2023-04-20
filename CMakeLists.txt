@@ -14,6 +14,7 @@ endif()
 include(cmake/utils.cmake)
 include(cmake/configure_tpls.cmake)
 
+
 # Set policies
 cmake_policy(SET CMP0111 NEW) # error if library not found
 
@@ -45,6 +46,7 @@ option(KokkosTools_ENABLE_MPI     "Enable MPI support"              OFF)
 option(KokkosTools_ENABLE_CALIPER "Enable building Caliper library" OFF)
 option(KokkosTools_ENABLE_APEX    "Enable building Apex library"    OFF)
 option(KokkosTools_ENABLE_EXAMPLES "Build examples"                 OFF)
+
 # Advanced settings
 option(KokkosTools_REUSE_KOKKOS_COMPILER "Set the compiler and flags based on installed Kokkos settings" OFF)
 mark_as_advanced(KokkosTools_REUSE_KOKKOS_COMPILER)
@@ -97,6 +99,7 @@ include(cmake/configure_variorum.cmake)
 set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
 set(KOKKOSTOOLS_HAS_NVPROF ${Kokkos_ENABLE_CUDA}) # we assume that enabling CUDA for Kokkos program means nvprof should be available
 
+
 if(DEFINED ENV{VTUNE_HOME})
   set(VTune_ROOT $ENV{VTUNE_HOME})
 endif()
@@ -138,7 +141,14 @@ endif()
 if(NOT WIN32)
   add_subdirectory(common/kernel-filter)
 endif()
-add_subdirectory(debugging/kernel-logger)
+add_subdirectory(debugging/kernel-logger) 
+
+
+if(NOT WIN32)
+  add_subdirectory(common/kokkos-sampler)
+else()
+  message(STATUS "Kokkos sampler not tested on Windows at this time. Skipping.")	
+endif()
 
 # Profilers
 if(NOT WIN32)
@@ -160,6 +170,7 @@ endif()
 if(KokkosTools_ENABLE_PAPI)
   add_subdirectory(profiling/papi-connector)
 endif()
+
 
 if(NOT WIN32 AND NOT APPLE)
   add_subdirectory(profiling/systemtap-connector)
@@ -192,7 +203,7 @@ if(KokkosTools_ENABLE_CALIPER)
     message(STATUS "Caliper installation found in: ${Caliper_INSTALL_DIR}")
    list(APPEND SINGLELIB_PROFILERS caliper)
   else()
-  # Don't support git submodules for Caliper. The Kokkos tools user has can try installing Apex and linking on their own if they don't have it.
+    # Don't support git submodules for Caliper. The Kokkos tools user has can try installing Apex and linking on their own if they don't have it.
     message(FATAL_ERROR "FATAL: Required Caliper installation not found! Exiting.")
   endif()
 endif()
