@@ -24,12 +24,15 @@
 #include "kp_core.hpp"
 
 static int tool_globfences; // use an integer   
+static uint64_t nextKernelID; 
+
 namespace KokkosTools {
 namespace NVProfConnector {
 
 void kokkosp_request_tool_settings(const uint32_t,
-                                   Kokkos_Tools_ToolSettings* settings) {
-}
+                                   Kokkos_Tools_ToolSettings* settings)
+{ if (tool_globfences == 1){  } ;  }
+
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t /*devInfoCount*/,
@@ -38,18 +41,19 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   printf("KokkosP: NVTX Analyzer Connector (sequence is %d, version: %llu)\n",
          loadSeq, (unsigned long long)(interfaceVer));
   printf("-----------------------------------------------------------\n");
- const char* tool_global_fences = getenv("KOKKOS_TOOLS_NVTXCONNECTOR_GLOBALFENCES");
+
+  const char* tool_global_fences = getenv("KOKKOS_TOOLS_NVTXCONNECTOR_GLOBALFENCES");
   if (NULL != tool_global_fences) {
     tool_globfences = atoi(tool_global_fences);
   } else {
-    tool_globfences = 0;
+    tool_globfences = 1; // default to 1 to be conservative for capturing state by the tool 
   }
 
   char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
   if (NULL == profileLibrary) {
     printf(
-        "Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a depreciated "
-        "variable. Please use KOKKOS_TOOLS_LIBS\n");
+        "Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a deprecated "
+        "variable. Please use KOKKOS_TOOLS_LIBS.\n");
     profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
     if (NULL == profileLibrary) {
       printf("KokkosP: No library to call in %s\n", profileLibrary);
