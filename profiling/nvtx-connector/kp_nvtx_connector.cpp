@@ -30,9 +30,15 @@ namespace KokkosTools {
 namespace NVProfConnector {
 
 void kokkosp_request_tool_settings(const uint32_t,
-                                   Kokkos_Tools_ToolSettings* settings)
-{ if (tool_globfences == 1){  } ;  }
-
+                                   Kokkos_Tools_ToolSettings* settings) {
+  settings->requires_global_fencing = true;
+  if (tool_globfences == 1) {
+    settings->requires_global_fencing = true;
+  } else {
+    settings->requires_global_fencing = false;
+  }
+  // leave the door open for other nonzero values of tools
+}
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t /*devInfoCount*/,
@@ -46,7 +52,8 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   if (NULL != tool_global_fences) {
     tool_globfences = atoi(tool_global_fences);
   } else {
-    tool_globfences = 1; // default to 1 to be conservative for capturing state by the tool 
+    tool_globfences =
+        1;  // default to 1 to be conservative for capturing state by the tool
   }
 
   char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
