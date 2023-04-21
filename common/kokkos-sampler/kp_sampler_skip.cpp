@@ -28,6 +28,9 @@ static endFunction endReduceCallee             = NULL;
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t devInfoCount, void* deviceInfo) {
   const char* tool_verbose_str = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
+  const char* tool_random_mode = getenv("KOKKOS_TOOLS_SAMPLER_RANDOMIZED");
+  const char* tool_periodic_mode = getenv("KOKKOS_TOOLS_SAMPLER_PERIODIC");
+
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
   } else {
