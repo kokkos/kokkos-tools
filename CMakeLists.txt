@@ -173,7 +173,12 @@ endif()
 
 
 if(NOT WIN32 AND NOT APPLE)
-  add_subdirectory(profiling/systemtap-connector)
+  find_program(KOKKOSTOOLS_DTRACE_EXECUTABLE dtrace)
+  if(KOKKOSTOOLS_DTRACE_EXECUTABLE)
+    add_subdirectory(profiling/systemtap-connector)
+  else()
+    message(STATUS "Skipping systemtap-connector (dtrace executable wasn't found)")
+  endif()
 endif()
 
 if(KOKKOSTOOLS_HAS_VARIORUM)
