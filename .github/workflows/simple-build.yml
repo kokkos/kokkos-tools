@@ -1,0 +1,15 @@
+name: Simple build without Kokkos
+on: [push, pull_request]
+jobs:
+  simple-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Configure using CMake and compile.
+      run : |
+        # The Kokkos Tools systemtap connector requires 'dtrace'
+        sudo apt update
+        sudo apt --yes --no-install-recommends install systemtap-sdt-dev
+        cmake -B build
+        cmake --build build
+        cmake --install build --prefix ${PWD}/install
