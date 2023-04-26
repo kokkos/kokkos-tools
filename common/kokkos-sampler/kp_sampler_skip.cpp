@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <dlfcn.h>
+#include <kokkos_core.hpp>
 
 namespace KokkosTools {
 namespace Sampler {
