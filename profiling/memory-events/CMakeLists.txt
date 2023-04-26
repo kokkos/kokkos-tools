@@ -1,0 +1,1 @@
+kp_add_library(kp_memory_events kp_memory_events.cpp)

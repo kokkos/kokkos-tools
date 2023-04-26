@@ -16,6 +16,7 @@ make -f $ROOT_DIR/profiling/simple-kernel-timer-json/Makefile
 make -f $ROOT_DIR/profiling/simple-kernel-timer/Makefile
 make -f $ROOT_DIR/profiling/space-time-stack/Makefile
 make -f $ROOT_DIR/profiling/systemtap-connector/Makefile
+make -f $ROOT_DIR/common/kokkos-sampler/Makefile
 if [ -z "${VTUNE_HOME}" ]; then
   echo ""
   echo "========================================="
