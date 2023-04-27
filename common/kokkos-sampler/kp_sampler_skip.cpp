@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <dlfcn.h>
-#include "kp_core.hpp"
+#include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
 
 namespace KokkosTools {
