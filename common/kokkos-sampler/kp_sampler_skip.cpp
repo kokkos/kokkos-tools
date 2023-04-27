@@ -156,7 +156,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
 
   if (((*kID) % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n", *kID);
+      printf("KokkosP: sample %lu calling child-begin function...\n", *kID);
     }
 
     if (NULL != beginForCallee) {
@@ -168,7 +168,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
 void kokkosp_end_parallel_for(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-end function...\n", kID);
+      printf("KokkosP: sample %lu calling child-end function...\n", kID);
     }
 
     if (NULL != endForCallee) {
@@ -183,7 +183,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
 
   if (((*kID) % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n", *kID);
+      printf("KokkosP: sample %lu calling child-begin function...\n", *kID);
     }
 
     if (NULL != beginScanCallee) {
@@ -195,7 +195,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
 void kokkosp_end_parallel_scan(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-end function...\n", kID);
+      printf("KokkosP: sample %lu calling child-end function...\n", kID);
     }
 
     if (NULL != endScanCallee) {
@@ -210,7 +210,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
 
   if (((*kID) % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n", *kID);
+      printf("KokkosP: sample %lu calling child-begin function...\n", *kID);
     }
 
     if (NULL != beginReduceCallee) {
@@ -222,7 +222,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
 void kokkosp_end_parallel_reduce(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-end function...\n", kID);
+      printf("KokkosP: sample %lu calling child-end function...\n", kID);
     }
 
     if (NULL != endReduceCallee) {
