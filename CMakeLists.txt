@@ -137,6 +137,7 @@ endif()
 # Utilities
 if(NOT WIN32)
   add_subdirectory(common/kernel-filter)
+  add_subdirectory(common/kokkos-sampler)
 endif()
 add_subdirectory(debugging/kernel-logger)
 
