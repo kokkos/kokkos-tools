@@ -10,6 +10,6 @@ jobs:
         # The Kokkos Tools systemtap connector requires 'dtrace'
         sudo apt update
         sudo apt --yes --no-install-recommends install systemtap-sdt-dev
-        cmake -B build
-        cmake --build build -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror"
+        cmake -B build -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror"
+        cmake --build build
         cmake --install build --prefix ${PWD}/install
