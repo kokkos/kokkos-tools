@@ -50,8 +50,8 @@ int kokkosp_print_region_stack() {
 
 extern "C" void kokkosp_init_library(const int loadSeq,
                                      const uint64_t interfaceVer,
-                                     const uint32_t devInfoCount,
-                                     void* deviceInfo) {
+                                     const uint32_t /*devInfoCount*/,
+                                     void* /*deviceInfo*/) {
   printf(
       "KokkosP: Kernel Logger Library Initialized (sequence is %d, version: "
       "%llu)\n",
@@ -173,14 +173,14 @@ extern "C" void kokkosp_pop_profile_region() {
 
 extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char* name,
                                       void* ptr, uint64_t size) {
-  printf("KokkosP: Allocate<%s> name: %s pointer: %p size: %lu\n", handle.name,
-         name, ptr, size);
+  printf("KokkosP: Allocate<%s> name: %s pointer: %p size: %llu\n", handle.name,
+         name, ptr, (unsigned long long)(size));
 }
 
 extern "C" void kokkosp_deallocate_data(SpaceHandle handle, const char* name,
                                         void* ptr, uint64_t size) {
-  printf("KokkosP: Deallocate<%s> name: %s pointer: %p size: %lu\n",
-         handle.name, name, ptr, size);
+  printf("KokkosP: Deallocate<%s> name: %s pointer: %p size: %llu\n",
+         handle.name, name, ptr, (unsigned long long)(size));
 }
 
 extern "C" void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
@@ -191,7 +191,7 @@ extern "C" void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
                                         const void* src_ptr, uint64_t size) {
   printf(
       "KokkosP: DeepCopy<%s,%s> DST(name: %s pointer: %p) SRC(name: %s pointer "
-      "%p) Size: %lu\n",
+      "%p) Size: %llu\n",
       dst_handle.name, src_handle.name, dst_name, dst_ptr, src_name, src_ptr,
-      size);
+      (unsigned long long)(size));
 }
