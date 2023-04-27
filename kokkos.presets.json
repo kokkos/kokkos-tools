@@ -1,0 +1,58 @@
+{
+    "version"   : 3,
+    "configurePresets" : [
+        {
+            "name"          : "default",
+            "binaryDir"     : "${sourceDir}/build-with-${presetName}",
+            "cacheVariables" : {
+                "CMAKE_EXPORT_COMPILE_COMMANDS" : {"type" : "BOOL"  , "value" : "ON"},
+                "CMAKE_BUILD_TYPE"              : {"type" : "STRING", "value" : "Release"},
+                "CMAKE_CXX_STANDARD"            : {"type" : "STRING", "value" : "17"},
+                "CMAKE_CXX_EXTENSIONS"          : {"type" : "BOOL"  , "value" : "OFF"},
+                "BUILD_SHARED_LIBS"             : {"type" : "BOOL"  , "value" : "ON"}
+            }
+        },
+        {
+            "name"        : "OpenMP",
+            "inherits"    : "default",
+            "cacheVariables" : {
+                "Kokkos_ENABLE_OPENMP" : {"type" : "BOOL"  , "value" : "ON"}
+            }
+        },
+        {
+            "name"        : "Cuda",
+            "inherits"    : "default",
+            "cacheVariables" : {
+                "Kokkos_ENABLE_CUDA"        : {"type" : "BOOL"  , "value" : "ON"},
+                "Kokkos_ARCH_VOLTA70"       : {"type" : "BOOL"  , "value" : "ON"},
+                "CMAKE_CXX_COMPILER"        : {"type" : "STRING", "value" : "${sourceDir}/bin/nvcc_wrapper"}
+            }
+        },
+        {
+            "name"        : "ROCm",
+            "inherits"    : "default",
+            "cacheVariables" : {
+                "Kokkos_ENABLE_HIP"   : {"type" : "BOOL"  , "value" : "ON"},
+                "Kokkos_ARCH_VEGA906" : {"type" : "BOOL"  , "value" : "ON"},
+                "CMAKE_CXX_COMPILER"  : {"type" : "STRING", "value" : "hipcc"}
+            }
+        }
+    ],
+    "buildPresets" : [
+        {
+            "name"                        : "OpenMP",
+            "configurePreset"             : "OpenMP",
+            "inheritConfigureEnvironment" : true
+        },
+        {
+            "name"                        : "Cuda",
+            "configurePreset"             : "Cuda",
+            "inheritConfigureEnvironment" : true
+        },
+        {
+            "name"                        : "ROCm",
+            "configurePreset"             : "ROCm",
+            "inheritConfigureEnvironment" : true
+        }
+    ]
+}

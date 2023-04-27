@@ -1,0 +1,80 @@
+{
+    "version"   : 3,
+    "configurePresets" : [
+        {
+            "name"          : "default",
+            "binaryDir"     : "${sourceDir}/build-with-${presetName}",
+            "cacheVariables" : {
+                "CMAKE_EXPORT_COMPILE_COMMANDS"     : {"type" : "BOOL"  , "value" : "ON"},
+                "CMAKE_BUILD_TYPE"                  : {"type" : "STRING", "value" : "Release"},
+                "CMAKE_CXX_STANDARD"                : {"type" : "STRING", "value" : "17"},
+                "KokkosTools_REUSE_KOKKOS_COMPILER" : {"type" : "BOOL"  , "value" : "ON"},
+                "KokkosTools_ENABLE_EXAMPLES"       : {"type" : "BOOL"  , "value" : "ON"},
+                "KokkosTools_ENABLE_SINGLE"         : {"type" : "BOOL"  , "value" : "ON"},
+                "KokkosTools_ENABLE_MPI"            : {"type" : "BOOL"  , "value" : "ON"}
+            }
+        },
+        {
+            "name"        : "OpenMP",
+            "inherits"    : "default"
+        },
+        {
+            "name"        : "Cuda",
+            "inherits"    : "default",
+            "cacheVariables" : {
+                "CMAKE_CXX_COMPILER" : {"type" : "STRING", "value" : "$env{Kokkos_ROOT}/bin/nvcc_wrapper"}
+            }
+        },
+        {
+            "name"        : "ROCm",
+            "inherits"    : "default",
+            "environment" : {
+                "ROCM_PATH" : "/opt/rocm"
+            },
+            "cacheVariables" : {
+                "CMAKE_CXX_COMPILER" : {"type" : "STRING", "value" : "hipcc"}
+            }
+        }
+    ],
+    "buildPresets" : [
+        {
+            "name"                        : "OpenMP",
+            "configurePreset"             : "OpenMP",
+            "inheritConfigureEnvironment" : true
+        },
+        {
+            "name"                        : "Cuda",
+            "configurePreset"             : "Cuda",
+            "inheritConfigureEnvironment" : true
+        },
+        {
+            "name"                        : "ROCm",
+            "configurePreset"             : "ROCm",
+            "inheritConfigureEnvironment" : true
+        }
+    ],
+    "testPresets" : [
+        {
+            "name"            : "default",
+            "configurePreset" : "default",
+            "inheritConfigureEnvironment" : true,
+            "output"          : {"outputOnFailure": true},
+            "execution"       : {"noTestsAction": "error", "stopOnFailure": false}
+        },
+        {
+            "name"            : "OpenMP",
+            "configurePreset" : "OpenMP",
+            "inherits"        : "default"
+        },
+        {
+            "name"            : "Cuda",
+            "configurePreset" : "Cuda",
+            "inherits"        : "default"
+        },
+        {
+            "name"            : "ROCm",
+            "configurePreset" : "ROCm",
+            "inherits"        : "default"
+        }
+    ]
+}

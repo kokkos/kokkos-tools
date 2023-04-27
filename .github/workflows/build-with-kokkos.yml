@@ -1,0 +1,56 @@
+name: Build Kokkos alongside with Kokkos Tools for various configurations
+
+on: [push, pull_request]
+
+jobs:
+  build-kokkos:
+    name: Build Kokkos Tools alongside Kokkos
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu:22.04
+            preset: OpenMP
+          - image: nvidia/cuda:12.1.0-devel-ubuntu22.04
+            preset: Cuda
+          - image: rocm/dev-ubuntu-22.04:5.4
+            preset: ROCm
+    container:
+      image: ${{ matrix.image }}
+    env:
+      Kokkos_ROOT: /opt/kokkos
+    steps:
+      - name: Checkout Kokkos Tools
+        uses: actions/checkout@v3
+      - name: Checkout Kokkos repository at latest develop
+        uses: actions/checkout@v3
+        with:
+          repository: kokkos/kokkos
+          path: kokkos
+          ref: develop
+      - name: Install CMake, compilers, OpenMPI and dtrace
+        run: |
+          apt update
+          apt --yes --no-install-recommends install \
+            cmake make \
+            gcc g++ \
+            libopenmpi-dev \
+            systemtap-sdt-dev
+      - name: Compile and install Kokkos
+        working-directory: kokkos
+        run: |
+          cp ${GITHUB_WORKSPACE}/kokkos.presets.json CMakePresets.json
+          cmake -S . --preset=${{ matrix.preset }}
+          cmake --build --preset=${{ matrix.preset }}
+          cmake --install build-with-${{ matrix.preset }} --prefix=${Kokkos_ROOT}
+      - name: Build Kokkos Tools, enabling examples
+        run: |
+          cmake -S . --preset=${{ matrix.preset }}
+          cmake --build --preset=${{ matrix.preset }}
+          cmake --install build-with-${{ matrix.preset }} --prefix=/opt/kokkos-tools
+      # For now, GitHub runners are used. These runner don't have GPUs. Therefore, testing can only be done for OpenMP.
+      - name: Run tests
+        if: ${{ matrix.preset == 'OpenMP' }}
+        run: |
+          ctest --preset=${{ matrix.preset }}
