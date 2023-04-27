@@ -33,11 +33,9 @@
 namespace KokkosTools {
 namespace HighwaterMark {
 
-static uint64_t uniqID = 0;
-
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
-                          const uint32_t devInfoCount,
-                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+                          const uint32_t /*devInfoCount*/,
+                          Kokkos_Profiling_KokkosPDeviceInfo* /*deviceInfo*/) {
   printf(
       "KokkosP: High Water Mark Library Initialized (sequence is %d, version: "
       "%llu)\n",
