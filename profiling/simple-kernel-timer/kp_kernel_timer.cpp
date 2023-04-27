@@ -26,16 +26,16 @@ namespace KokkosTools {
 namespace KernelTimer {
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
-                          const uint32_t devInfoCount,
-                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+                          const uint32_t /*devInfoCount*/,
+                          Kokkos_Profiling_KokkosPDeviceInfo* /*deviceInfo*/) {
   const char* output_delim_env = getenv("KOKKOSP_OUTPUT_DELIM");
   if (NULL == output_delim_env) {
     outputDelimiter = (char*)malloc(sizeof(char) * 2);
-    sprintf(outputDelimiter, "%c", ' ');
+    snprintf(outputDelimiter, 2, "%c", ' ');
   } else {
     outputDelimiter =
         (char*)malloc(sizeof(char) * (strlen(output_delim_env) + 1));
-    sprintf(outputDelimiter, "%s", output_delim_env);
+    strcpy(outputDelimiter, output_delim_env);
   }
 
   // initialize regions to 0s so we know if there is an object there
@@ -50,14 +50,13 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 }
 
 void kokkosp_finalize_library() {
-  double finishTime  = seconds();
-  double kernelTimes = 0;
+  double finishTime = seconds();
 
   char* hostname = (char*)malloc(sizeof(char) * 256);
   gethostname(hostname, 256);
 
   char* fileOutput = (char*)malloc(sizeof(char) * 256);
-  sprintf(fileOutput, "%s-%d.dat", hostname, (int)getpid());
+  snprintf(fileOutput, 256, "%s-%d.dat", hostname, (int)getpid());
 
   free(hostname);
   FILE* output_data = fopen(fileOutput, "wb");
@@ -191,7 +190,7 @@ void kokkosp_finalize_library() {
   }*/
 }
 
-void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
+void kokkosp_begin_parallel_for(const char* name, const uint32_t /*devID*/,
                                 uint64_t* kID) {
   *kID = uniqID++;
 
@@ -203,11 +202,11 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
   increment_counter(name, PARALLEL_FOR);
 }
 
-void kokkosp_end_parallel_for(const uint64_t kID) {
+void kokkosp_end_parallel_for(const uint64_t /*kID*/) {
   currentEntry->addFromTimer();
 }
 
-void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t /*devID*/,
                                  uint64_t* kID) {
   *kID = uniqID++;
 
@@ -219,11 +218,11 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
   increment_counter(name, PARALLEL_SCAN);
 }
 
-void kokkosp_end_parallel_scan(const uint64_t kID) {
+void kokkosp_end_parallel_scan(const uint64_t /*kID*/) {
   currentEntry->addFromTimer();
 }
 
-void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t /*devID*/,
                                    uint64_t* kID) {
   *kID = uniqID++;
 
@@ -235,7 +234,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
   increment_counter(name, PARALLEL_REDUCE);
 }
 
-void kokkosp_end_parallel_reduce(const uint64_t kID) {
+void kokkosp_end_parallel_reduce(const uint64_t /*kID*/) {
   currentEntry->addFromTimer();
 }
 

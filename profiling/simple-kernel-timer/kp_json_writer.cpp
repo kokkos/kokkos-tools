@@ -60,7 +60,7 @@ inline void write_json(std::ostream& os, KernelPerformanceInfo const& kp,
 int find_index(std::vector<KernelPerformanceInfo*>& kernels,
 	const char* kernelName) {
 
-	for(int i = 0; i < kernels.size(); i++) {
+	for(unsigned int i = 0; i < kernels.size(); i++) {
 		KernelPerformanceInfo* nextKernel = kernels[i];
 
 		if(strcmp(nextKernel->getName(), kernelName) == 0) {
@@ -79,18 +79,8 @@ int main(int argc, char* argv[]) {
 		exit(-1);
 	}
 
-        char delimiter   = ' ';
-        int fixed_width  = 0;
-
         int commandline_args = 1;
         while( (commandline_args<argc ) && (argv[commandline_args][0]=='-') ) {
-          if(strcmp(argv[commandline_args],"--delimiter")==0) {
-            delimiter=argv[++commandline_args][0];
-          }
-          if(strcmp(argv[commandline_args],"--fixed-width")==0) {
-            fixed_width=atoi(argv[++commandline_args]);
-          }
-
           commandline_args++;
         }
 
@@ -128,7 +118,7 @@ int main(int argc, char* argv[]) {
 
 	std::sort(kernelInfo.begin(), kernelInfo.end(), compareKernelPerformanceInfo);
 
-	for(int i = 0; i < kernelInfo.size(); i++) {
+	for(unsigned int i = 0; i < kernelInfo.size(); i++) {
     if(kernelInfo[i]->getKernelType() != REGION) {
 		  totalKernelsTime += kernelInfo[i]->getTime();
 		  totalKernelsCalls += kernelInfo[i]->getCallCount();
