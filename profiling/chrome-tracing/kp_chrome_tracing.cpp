@@ -127,8 +127,8 @@ struct State {
     gethostname(hostname, 256);
 
     char *fileOutput = (char *)malloc(sizeof(char) * 256);
-    sprintf(fileOutput, "%s-%d-%s.json", hostname, (int)getpid(),
-            (NULL == mpi_rank) ? "0" : mpi_rank);
+    snprintf(fileOutput, 256, "%s-%d-%s.json", hostname, (int)getpid(),
+             (NULL == mpi_rank) ? "0" : mpi_rank);
 #if defined(USE_MPI) && USE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &my_mpi_rank);
 #else
