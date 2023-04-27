@@ -11,8 +11,8 @@ namespace Sampler {
 static uint64_t uniqID           = 0;
 static uint64_t kernelCounter    = 0;
 static uint64_t kernelSampleSkip = 101;
-static int tool_verbosity = 0;
-static int tool_globFence = 0; 
+static int tool_verbosity        = 0;
+static int tool_globFence        = 0;
 
 typedef void (*initFunction)(const int, const uint64_t, const uint32_t, void*);
 typedef void (*finalizeFunction)();
@@ -30,29 +30,27 @@ static endFunction endReduceCallee             = NULL;
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
- if(0 == tool_globFence) { 
-  settings->requires_global_fencing = false;
- } else {
-   settings->requires_global_fencing = true; 
- }
-
+  if (0 == tool_globFence) {
+    settings->requires_global_fencing = false;
+  } else {
+    settings->requires_global_fencing = true;
+  }
 }
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t devInfoCount, void* deviceInfo) {
-  const char* tool_verbose_str = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
+  const char* tool_verbose_str   = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
   } else {
     tool_verbosity = 0;
   }
- if (NULL != tool_globFence_str) {
+  if (NULL != tool_globFence_str) {
     tool_globFence = atoi(tool_globFence_str);
- } else {
-    tool_globFence = 0; 
-   } 
-  
+  } else {
+    tool_globFence = 0;
+  }
 
   char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
   if (NULL == profileLibrary) {
@@ -238,7 +236,7 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
 
 extern "C" {
 
-namespace impl = KokkosTools::Sampler; 
+namespace impl = KokkosTools::Sampler;
 
 EXPOSE_TOOL_SETTINGS(kokkosp_request_tool_settings)
 EXPOSE_INIT(impl::kokkosp_init_library)
@@ -249,7 +247,5 @@ EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
 EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
-
-}
 
 }  // end extern "C"
