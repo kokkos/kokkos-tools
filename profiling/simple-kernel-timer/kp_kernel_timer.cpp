@@ -44,7 +44,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   printf(
       "KokkosP: Simple Kernel Timer Library Initialized (sequence is %d, "
       "version: %llu)\n",
-      loadSeq, interfaceVer);
+      loadSeq, (unsigned long long)(interfaceVer));
 
   initTime = seconds();
 }
