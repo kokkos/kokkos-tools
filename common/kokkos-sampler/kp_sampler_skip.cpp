@@ -9,7 +9,6 @@
 namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID           = 0;
-static uint64_t kernelCounter    = 0;
 static uint64_t kernelSampleSkip = 101;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
@@ -135,7 +134,6 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
   free(envBuffer);
 
-  kernelCounter = 0;
   uniqID        = 1;
 
   const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
@@ -148,7 +146,10 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   }
 }
 
-void kokkosp_finalize_library() {}
+void kokkosp_finalize_library() {
+ if (NULL != finalizeProfileLibrary)
+        (*finalizeProfileLibrary)();
+}
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
