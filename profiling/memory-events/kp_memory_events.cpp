@@ -57,7 +57,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   for (int i = 0; i < 16; i++) space_size[i] = 0;
 
   printf("KokkosP: MemoryEvents loaded (sequence: %d, version: %llu)\n",
-         loadSeq, interfaceVer);
+         loadSeq, (unsigned long long)(interfaceVer));
 
   timer.reset();
 }
