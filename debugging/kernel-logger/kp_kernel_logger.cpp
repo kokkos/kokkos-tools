@@ -55,7 +55,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   printf(
       "KokkosP: Kernel Logger Library Initialized (sequence is %d, version: "
       "%llu)\n",
-      loadSeq, ()unsigned long long)(interfaceVer));
+      loadSeq, (unsigned long long)(interfaceVer));
   uniqID = 0;
 }
 
