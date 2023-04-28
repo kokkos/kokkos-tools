@@ -36,7 +36,8 @@ static std::unordered_map<std::string, KernelNVProfFocusedConnectorInfo*>
 static uint64_t nextKernelID;
 
 void kokkosp_init_library(
-    const int loadSeq, const uint64_t interfaceVer, const uint32_t /*devInfoCount*/,
+    const int loadSeq, const uint64_t interfaceVer,
+    const uint32_t /*devInfoCount*/,
     struct Kokkos_Profiling_KokkosPDeviceInfo* /*deviceInfo*/) {
   printf("-----------------------------------------------------------\n");
   printf(

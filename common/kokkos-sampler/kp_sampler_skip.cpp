@@ -134,7 +134,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
   free(envBuffer);
 
-  uniqID        = 1;
+  uniqID = 1;
 
   const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
   if (NULL != tool_sample) {
@@ -147,8 +147,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 }
 
 void kokkosp_finalize_library() {
- if (NULL != finalizeProfileLibrary)
-        (*finalizeProfileLibrary)();
+  if (NULL != finalizeProfileLibrary) (*finalizeProfileLibrary)();
 }
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
