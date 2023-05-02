@@ -112,8 +112,6 @@ endif()
 # make Kokkos profiling interface available for native profilers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiling/all)
 
-# Config file
-configure_file(common/kp_config.hpp.in common/kp_config.hpp)
 set(COMMON_HEADERS_PATH ${CMAKE_CURRENT_BINARY_DIR}/common)
 include_directories(${COMMON_HEADERS_PATH})
 
@@ -166,9 +164,13 @@ if(NOT WIN32 AND NOT APPLE)
   find_program(KOKKOSTOOLS_DTRACE_EXECUTABLE dtrace)
   if(KOKKOSTOOLS_DTRACE_EXECUTABLE)
     add_subdirectory(profiling/systemtap-connector)
+    set(KOKKOSTOOLS_HAS_SYSTEMTAP ON)
   else()
     message(STATUS "Skipping systemtap-connector (dtrace executable wasn't found)")
+    set(KOKKOSTOOLS_HAS_SYSTEMTAP OFF)
   endif()
+else()
+  set(KOKKOSTOOLS_HAS_SYSTEMTAP OFF)
 endif()
 
 if(KOKKOSTOOLS_HAS_VARIORUM)
@@ -239,6 +241,9 @@ if(KokkosTools_ENABLE_APEX)
       add_git_submodule(tpls/apex)
   endif()
 endif()
+
+# Config file
+configure_file(common/kp_config.hpp.in common/kp_config.hpp)
 
 # Build single library interface (once we have everything set up)
 if(KokkosTools_ENABLE_SINGLE)
