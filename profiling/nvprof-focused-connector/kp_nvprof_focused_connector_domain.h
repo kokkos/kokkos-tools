@@ -54,7 +54,7 @@ class KernelNVProfFocusedConnectorInfo {
   }
 
   nvtxRangeId_t startRange() {
-    nvtxEventAttributes_t eventAttrib = {0};
+    nvtxEventAttributes_t eventAttrib = {};
     eventAttrib.version               = NVTX_VERSION;
     eventAttrib.size                  = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
     eventAttrib.messageType           = NVTX_MESSAGE_TYPE_ASCII;

@@ -50,12 +50,12 @@ int kokkosp_print_region_stack() {
 
 extern "C" void kokkosp_init_library(const int loadSeq,
                                      const uint64_t interfaceVer,
-                                     const uint32_t devInfoCount,
-                                     void* deviceInfo) {
+                                     const uint32_t /*devInfoCount*/,
+                                     void* /*deviceInfo*/) {
   printf(
       "KokkosP: Kernel Logger Library Initialized (sequence is %d, version: "
       "%llu)\n",
-      loadSeq, interfaceVer);
+      loadSeq, (unsigned long long)(interfaceVer));
   uniqID = 0;
 }
 
@@ -71,7 +71,7 @@ extern "C" void kokkosp_begin_parallel_for(const char* name,
   printf(
       "KokkosP: Executing parallel-for kernel on device %d with unique "
       "execution identifier %llu\n",
-      devID, *kID);
+      devID, (unsigned long long)(*kID));
 
   int level = kokkosp_print_region_stack();
   kokkosp_print_region_stack_indent(level);
@@ -80,7 +80,8 @@ extern "C" void kokkosp_begin_parallel_for(const char* name,
 }
 
 extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
-  printf("KokkosP: Execution of kernel %llu is completed.\n", kID);
+  printf("KokkosP: Execution of kernel %llu is completed.\n",
+         (unsigned long long)(kID));
 }
 
 extern "C" void kokkosp_begin_parallel_scan(const char* name,
@@ -91,7 +92,7 @@ extern "C" void kokkosp_begin_parallel_scan(const char* name,
   printf(
       "KokkosP: Executing parallel-scan kernel on device %d with unique "
       "execution identifier %llu\n",
-      devID, *kID);
+      devID, (unsigned long long)(*kID));
 
   int level = kokkosp_print_region_stack();
   kokkosp_print_region_stack_indent(level);
@@ -99,8 +100,9 @@ extern "C" void kokkosp_begin_parallel_scan(const char* name,
   printf("    %s\n", name);
 }
 
-extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
-  printf("KokkosP: Execution of kernel %llu is completed.\n", kID);
+extern "C" void kokkospk_end_parallel_scan(const uint64_t kID) {
+  printf("KokkosP: Execution of kernel %llu is completed.\n",
+         (unsigned long long)(kID));
 }
 
 extern "C" void kokkosp_begin_parallel_reduce(const char* name,
@@ -111,7 +113,7 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
   printf(
       "KokkosP: Executing parallel-reduce kernel on device %d with unique "
       "execution identifier %llu\n",
-      devID, *kID);
+      devID, (unsigned long long)(*kID));
 
   int level = kokkosp_print_region_stack();
   kokkosp_print_region_stack_indent(level);
@@ -120,7 +122,8 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
 }
 
 extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
-  printf("KokkosP: Execution of kernel %llu is completed.\n", kID);
+  printf("KokkosP: Execution of kernel %llu is completed.\n",
+         (unsigned long long)(kID));
 }
 
 extern "C" void kokkosp_begin_fence(const char* name, const uint32_t devID,
@@ -139,7 +142,7 @@ extern "C" void kokkosp_begin_fence(const char* name, const uint32_t devID,
     printf(
         "KokkosP: Executing fence on device %d with unique execution "
         "identifier %llu\n",
-        devID, *kID);
+        devID, (unsigned long long)(*kID));
 
     int level = kokkosp_print_region_stack();
     kokkosp_print_region_stack_indent(level);
@@ -153,7 +156,8 @@ extern "C" void kokkosp_end_fence(const uint64_t kID) {
   // dealing with the application's fence, which we filtered out in the callback
   // for fences
   if (kID != std::numeric_limits<uint64_t>::max()) {
-    printf("KokkosP: Execution of fence %llu is completed.\n", kID);
+    printf("KokkosP: Execution of fence %llu is completed.\n",
+           (unsigned long long)(kID));
   }
 }
 
@@ -173,14 +177,14 @@ extern "C" void kokkosp_pop_profile_region() {
 
 extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char* name,
                                       void* ptr, uint64_t size) {
-  printf("KokkosP: Allocate<%s> name: %s pointer: %p size: %lu\n", handle.name,
-         name, ptr, size);
+  printf("KokkosP: Allocate<%s> name: %s pointer: %p size: %llu\n", handle.name,
+         name, ptr, (unsigned long long)(size));
 }
 
 extern "C" void kokkosp_deallocate_data(SpaceHandle handle, const char* name,
                                         void* ptr, uint64_t size) {
-  printf("KokkosP: Deallocate<%s> name: %s pointer: %p size: %lu\n",
-         handle.name, name, ptr, size);
+  printf("KokkosP: Deallocate<%s> name: %s pointer: %p size: %llu\n",
+         handle.name, name, ptr, (unsigned long long)(size));
 }
 
 extern "C" void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
@@ -191,7 +195,7 @@ extern "C" void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
                                         const void* src_ptr, uint64_t size) {
   printf(
       "KokkosP: DeepCopy<%s,%s> DST(name: %s pointer: %p) SRC(name: %s pointer "
-      "%p) Size: %lu\n",
+      "%p) Size: %llu\n",
       dst_handle.name, src_handle.name, dst_name, dst_ptr, src_name, src_ptr,
-      size);
+      (unsigned long long)(size));
 }

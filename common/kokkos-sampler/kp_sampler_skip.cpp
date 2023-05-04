@@ -9,7 +9,6 @@
 namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID           = 0;
-static uint64_t kernelCounter    = 0;
 static uint64_t kernelSampleSkip = 101;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
@@ -65,7 +64,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   }
 
   char* envBuffer = (char*)malloc(sizeof(char) * (strlen(profileLibrary) + 1));
-  sprintf(envBuffer, "%s", profileLibrary);
+  strcpy(envBuffer, profileLibrary);
 
   char* nextLibrary = strtok(envBuffer, ";");
 
@@ -135,8 +134,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
   free(envBuffer);
 
-  kernelCounter = 0;
-  uniqID        = 1;
+  uniqID = 1;
 
   const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
   if (NULL != tool_sample) {
@@ -148,7 +146,9 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   }
 }
 
-void kokkosp_finalize_library() {}
+void kokkosp_finalize_library() {
+  if (NULL != finalizeProfileLibrary) (*finalizeProfileLibrary)();
+}
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
@@ -156,7 +156,8 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
 
   if (((*kID) % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %lu calling child-begin function...\n", *kID);
+      printf("KokkosP: sample %llu calling child-begin function...\n",
+             (unsigned long long)(*kID));
     }
 
     if (NULL != beginForCallee) {
@@ -168,7 +169,8 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
 void kokkosp_end_parallel_for(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %lu calling child-end function...\n", kID);
+      printf("KokkosP: sample %llu calling child-end function...\n",
+             (unsigned long long)(kID));
     }
 
     if (NULL != endForCallee) {
@@ -183,7 +185,8 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
 
   if (((*kID) % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %lu calling child-begin function...\n", *kID);
+      printf("KokkosP: sample %llu calling child-begin function...\n",
+             (unsigned long long)(*kID));
     }
 
     if (NULL != beginScanCallee) {
@@ -195,7 +198,8 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
 void kokkosp_end_parallel_scan(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %lu calling child-end function...\n", kID);
+      printf("KokkosP: sample %llu calling child-end function...\n",
+             (unsigned long long)(kID));
     }
 
     if (NULL != endScanCallee) {
@@ -210,7 +214,8 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
 
   if (((*kID) % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %lu calling child-begin function...\n", *kID);
+      printf("KokkosP: sample %llu calling child-begin function...\n",
+             (unsigned long long)(*kID));
     }
 
     if (NULL != beginReduceCallee) {
@@ -222,7 +227,8 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
 void kokkosp_end_parallel_reduce(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %lu calling child-end function...\n", kID);
+      printf("KokkosP: sample %llu calling child-end function...\n",
+             (unsigned long long)(kID));
     }
 
     if (NULL != endReduceCallee) {
@@ -238,7 +244,7 @@ extern "C" {
 
 namespace impl = KokkosTools::Sampler;
 
-EXPOSE_TOOL_SETTINGS(kokkosp_request_tool_settings)
+EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
 EXPOSE_INIT(impl::kokkosp_init_library)
 EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
 EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)

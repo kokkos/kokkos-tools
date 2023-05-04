@@ -51,13 +51,13 @@ double max_mem_usage() {
 }
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
-                          const uint32_t devInfoCount,
-                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+                          const uint32_t /*devInfoCount*/,
+                          Kokkos_Profiling_KokkosPDeviceInfo* /*deviceInfo*/) {
   num_spaces = 0;
   for (int i = 0; i < 16; i++) space_size[i] = 0;
 
   printf("KokkosP: MemoryEvents loaded (sequence: %d, version: %llu)\n",
-         loadSeq, interfaceVer);
+         loadSeq, (unsigned long long)(interfaceVer));
 
   timer.reset();
 }
@@ -69,7 +69,7 @@ void kokkosp_finalize_library() {
 
   {
     char* fileOutput = (char*)malloc(sizeof(char) * 256);
-    sprintf(fileOutput, "%s-%d.mem_events", hostname, pid);
+    snprintf(fileOutput, 256, "%s-%d.mem_events", hostname, pid);
 
     FILE* ofile = fopen(fileOutput, "wb");
     free(fileOutput);
@@ -78,14 +78,15 @@ void kokkosp_finalize_library() {
     fprintf(ofile,
             "# Time     Ptr                  Size        MemSpace      Op      "
             "   Name\n");
-    for (int i = 0; i < events.size(); i++) events[i].print_record(ofile);
+    for (unsigned int i = 0; i < events.size(); i++)
+      events[i].print_record(ofile);
     fclose(ofile);
   }
 
   for (int s = 0; s < num_spaces; s++) {
     char* fileOutput = (char*)malloc(sizeof(char) * 256);
-    sprintf(fileOutput, "%s-%d-%s.memspace_usage", hostname, pid,
-            space_name[s]);
+    snprintf(fileOutput, 256, "%s-%d-%s.memspace_usage", hostname, pid,
+             space_name[s]);
 
     FILE* ofile = fopen(fileOutput, "wb");
     free(fileOutput);
@@ -94,7 +95,7 @@ void kokkosp_finalize_library() {
     fprintf(ofile,
             "# Time(s)  Size(MB)   HighWater(MB)   HighWater-Process(MB)\n");
     uint64_t maxvalue = 0;
-    for (int i = 0; i < space_size_track[s].size(); i++) {
+    for (unsigned int i = 0; i < space_size_track[s].size(); i++) {
       if (std::get<1>(space_size_track[s][i]) > maxvalue)
         maxvalue = std::get<1>(space_size_track[s][i]);
       fprintf(ofile, "%lf %.1lf %.1lf %.1lf\n",
@@ -126,7 +127,6 @@ void kokkosp_allocate_data(const SpaceHandle space, const char* label,
   space_size_track[space_i].push_back(
       std::make_tuple(time, space_size[space_i], max_mem_usage()));
 
-  int i = events.size();
   events.push_back(
       EventRecord(ptr, size, MEMOP_ALLOCATE, space_i, time, label));
 }
@@ -151,7 +151,6 @@ void kokkosp_deallocate_data(const SpaceHandle space, const char* label,
         std::make_tuple(time, space_size[space_i], max_mem_usage()));
   }
 
-  int i = events.size();
   events.push_back(
       EventRecord(ptr, size, MEMOP_DEALLOCATE, space_i, time, label));
 }
