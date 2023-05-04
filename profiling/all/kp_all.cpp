@@ -37,7 +37,9 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMark)
 KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMarkMPI)
 KOKKOSTOOLS_EXTERN_EVENT_SET(ChromeTracing)
 KOKKOSTOOLS_EXTERN_EVENT_SET(SpaceTimeStack)
+#ifdef KOKKOSTOOLS_HAS_SYSTEMTAP
 KOKKOSTOOLS_EXTERN_EVENT_SET(SystemtapConnector)
+#endif
 #endif
 #ifdef KOKKOSTOOLS_HAS_VTUNE
 KOKKOSTOOLS_EXTERN_EVENT_SET(VTuneConnector)
@@ -71,10 +73,12 @@ EventSet get_event_set(const char* profiler, const char* config_str) {
 #if USE_MPI
   handlers["highwater-mark-mpi"] = HighwaterMarkMPI::get_event_set();
 #endif
-  handlers["highwater-mark"]      = HighwaterMark::get_event_set();
-  handlers["chrome-tracing"]      = ChromeTracing::get_event_set();
-  handlers["space-time-stack"]    = SpaceTimeStack::get_event_set();
+  handlers["highwater-mark"]   = HighwaterMark::get_event_set();
+  handlers["chrome-tracing"]   = ChromeTracing::get_event_set();
+  handlers["space-time-stack"] = SpaceTimeStack::get_event_set();
+#ifdef KOKKOSTOOLS_HAS_SYSTEMTAP
   handlers["systemtap-connector"] = SystemtapConnector::get_event_set();
+#endif
 #endif
 #ifdef KOKKOSTOOLS_HAS_VARIORUM
   handlers["variorum"] = VariorumConnector::get_event_set();
