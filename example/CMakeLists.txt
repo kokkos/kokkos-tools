@@ -1,11 +1,5 @@
 # Find Kokkos
-find_package(Kokkos QUIET)
-if(NOT Kokkos_FOUND)
-  message(FATAL_ERROR "Kokkos not found, set Kokkos_ROOT properly (current Kokkos_ROOT=${Kokkos_ROOT})")
-endif()
-foreach(_i "1;2;3") # cut .../lib/cmake/Kokkos suffix
-cmake_path(GET Kokkos_DIR PARENT_PATH Kokkos_DIR)
-endforeach()
+find_package(Kokkos REQUIRED)
 message(STATUS "Found installed Kokkos at ${Kokkos_DIR}")
 
 # Create target executable
