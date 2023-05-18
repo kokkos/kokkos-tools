@@ -9,6 +9,8 @@ int run_calculation(const data_type SIZE) {
 
   Kokkos::View<data_type*> data(Kokkos::ViewAllocateWithoutInitializing("data"),
                                 SIZE);
+for (int tstep = 0; tstep < 1000; tstep++) 
+{
   Kokkos::parallel_for(
       "initialize()", SIZE, KOKKOS_LAMBDA(data_type i) { data(i) = i; });
   Kokkos::fence();
@@ -30,6 +32,8 @@ int run_calculation(const data_type SIZE) {
     return 1;
   }
   std::cout << "Result OK: S(" << SIZE << ") = " << sum << std::endl;
+} // end timestep loop 
+
   return 0;
 }
 
