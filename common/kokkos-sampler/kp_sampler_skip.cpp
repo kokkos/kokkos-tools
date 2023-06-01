@@ -6,14 +6,18 @@
 #include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
 
-using tpi = Kokkos::Tools::Experimental::Kokkos_Tools_ToolProgrammingInterface;
+// using mytpi_type = Kokkos::Tools::Experimental::ToolProgrammingInterface;
+
+// mytpi_type mytpi;
+
 namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID           = 0;
 static uint64_t kernelSampleSkip = 101;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
-tpi mytpi;
+// mytpi_type mytpi;
+Kokkos::Tools::Experimental::ToolProgrammingInterface mytpi;
 
 typedef void (*initFunction)(const int, const uint64_t, const uint32_t, void*);
 typedef void (*finalizeFunction)();
@@ -34,15 +38,14 @@ void getGlobFenceChoice() {
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
   if (NULL != tool_globFence_str) {
     tool_globFence = atoi(tool_globFence_str);
-  } else {
-    tool_globFence = 0;
-  }
+  }  // else
+     // tool_globFence = 0;
 }
 
 // void kokkosp_tool_invoked_fence(const uint32_t, Kokkos_Tools_SpaceHandle*
 // myspchandle, Kokkos_Tools_toolInvokedFenceFunction tool_fence)
-// {
-// (*tool_fence)(myspchandle, );
+//{
+//(*tool_fence)(myspchandle, );
 // }
 
 void kokkosp_request_tool_settings(const uint32_t,
@@ -106,6 +109,14 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
               nextLibrary, dlerror());
       exit(-1);
     } else {
+      beginForCallee =
+          (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_for");
+      beginScanCallee =
+          (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_scan");
+      beginReduceCallee =
+          (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_reduce");
+    }
+    else {
       beginForCallee =
           (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_for");
       beginScanCallee =
@@ -207,28 +218,18 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
 
 void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
                                  uint64_t* kID) {
-  *kID = 0;  // set memory location value of kID to 0.
-  static uint64_t invocationNum;
-  ++invocationNum;
-  if ((invocationNum % kernelSampleSkip) == 0) {
-    getGlobFenceChoice();  // re-read environment variable to get most accurate
-                           // value
-    if (0 < tool_globFence) {
-      // using tool-induced fence from Kokkos_profiling rather than
-      // Kokkos_C_Profiling_interface. Note that this function
-      // only invokes a global (device 0 invoked) fence.
-      myfence(0);
-    }
-    *kID = 1;  // set kernel ID to 1 so that it is matched with the end.
-    if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n",
-             (unsigned long long)(*kID));
-    }
-    if (NULL != beginScanCallee) {
-      (*beginScanCallee)(name, devID, kID);
-    }
-  }
+  // Kokkos_C_Profiling_interface. Note that this function
+  // only invokes a global (device 0 invoked) fence.
+  mytpi.fence(0);
+
+  printf("KokkosP: sample %llu calling child-begin function...\n",
+         (unsigned long long)(*kID));
 }
+if (NULL != beginScanCallee) {
+  (*beginScanCallee)(name, devID, kID);
+}
+}  // namespace Sampler
+}  // namespace KokkosTools
 
 void kokkosp_end_parallel_scan(const uint64_t kID) {
   if (kID > 0) {
@@ -263,8 +264,6 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
       // Kokkos_C_Profiling_interface. Note that this function
       // only invokes a global (device 0 invoked) fence.
       mytpi.fence(0);
-
-      //  Kokkos::Tools::Experimental::Impl::tool_invoked_fence(0);
     }
     *kID = 1;  // set kernel ID to 1 so that it is matched with the end.
     if (tool_verbosity > 0) {
@@ -282,9 +281,8 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
     getGlobFenceChoice();  // re-read environment variable to get most accurate
                            // value
     if (0 < tool_globFence) {  // Todo: see if this is a performance bottleneck
-      //  Kokkos::Tools::Experimental::Impl::tool_invoked_fence(0);
+      mytpi.fence(0);
       // Kokkos::Tools::SpaceHandle::Kokkos_Profiling_SpaceHandle mysphndle;
-      mytpi.fence(0);  // TODO: get spacehandle to identify where to fence.
     }
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-end function...\n",
@@ -302,7 +300,11 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
 extern "C" {
 
 namespace impl = KokkosTools::Sampler;
+// Expose Kokkos TPI
+//
+// Kokkos_Tools_provideToolProgrammingInterfaceFunction;
 
+// EXPOSE_TOOL_INTERFACE(impl::kokkosp_provideToolsProgrammingInterface)
 EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
 EXPOSE_INIT(impl::kokkosp_init_library)
 EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
