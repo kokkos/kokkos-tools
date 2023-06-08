@@ -10,11 +10,11 @@
 
 namespace KokkosTools {
 namespace Sampler {
-static uint64_t uniqID                = 0;
-static uint64_t kernelSampleSkip      = 101;
+static uint64_t uniqID           = 0;
+static uint64_t kernelSampleSkip = 101;
 static int tool_prob_num         = 100;
-static int tool_verbosity             = 0;
-static int tool_globFence             = 0;
+static int tool_verbosity        = 0;
+static int tool_globFence        = 0;
 
 typedef void (*initFunction)(const int, const uint64_t, const uint32_t, void*);
 typedef void (*finalizeFunction)();
@@ -162,10 +162,9 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       printf(
           "KokkosP: Tool sample probability was set to be less than 0. Setting "
           "to 0.\n");
-      tool_prob_num           = 0;
+      tool_prob_num = 0;
     }
-    printf("KokkosP: debug: kernelSampleProbability is %d\n",
-           tool_prob_num);
+    printf("KokkosP: debug: kernelSampleProbability is %d\n", tool_prob_num);
   }
   // srand48((unsigned)clock());
   // seed48(0);
