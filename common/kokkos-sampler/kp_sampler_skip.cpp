@@ -6,12 +6,14 @@
 #include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
 #include <ctime>
+#include <time.h>
 
 namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID                = 0;
 static uint64_t kernelSampleSkip      = 101;
 static double kernelSampleProbability = 1.0;
+static uint64_t tool_prob_num         = 100;
 static int tool_verbosity             = 0;
 static int tool_globFence             = 0;
 
@@ -40,6 +42,7 @@ void kokkosp_request_tool_settings(const uint32_t,
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t devInfoCount, void* deviceInfo) {
+  printf("KokkosP: Sampler: hello! in init\n");
   const char* tool_verbose_str   = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
 
@@ -65,7 +68,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       exit(-1);
     }
   }
-
+  printf("KokkosP: hello!\n");
   char* envBuffer = (char*)malloc(sizeof(char) * (strlen(profileLibrary) + 1));
   strcpy(envBuffer, profileLibrary);
 
@@ -139,8 +142,6 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
   const char* tool_sample      = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
   const char* tool_probability = getenv("KOKKOS_TOOLS_SAMPLER_PROBABILITY");
-  const char* tool_periodprob_compose_str =
-      getenv("KOKKOS_TOOLS_SAMPLER_PERIODPROB_COMPOSE");
   // composing the periodicity and probability parameter. Set to 1 if
   // probability for each periodic sample. Set to 0 to default to probability
   // even if periodicity (skip rate) is defined.
@@ -152,9 +153,25 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   if (NULL != tool_probability) {
     //  read sampling probability as an integer between 1 and 100, but
     //  programs reasons about probability as a double between 0.0 and 1.0.
-    kernelSampleProbability = (double(atoi(tool_probability))) / 100.0;
-    srand48((unsigned)clock());
+    tool_prob_num = atoi(tool_probability);
+    if (tool_prob_num > 100) {
+      printf(
+          "KokkosP: Tool sample probability was set to be greater than 100. "
+          "Setting to 100.\n");
+      tool_prob_num = 100;
+    } else if (tool_prob_num < 0) {
+      printf(
+          "KokkosP: Tool sample probability was set to be less than 0. Setting "
+          "to 0.\n");
+      tool_prob_num           = 0;
+      kernelSampleProbability = 0.0;
+    }
+    printf("KokkosP: debug: kernelSampleProbability is %f\n",
+           kernelSampleProbability);
   }
+  // srand48((unsigned)clock());
+  // seed48(0);
+  srand(time(NULL));
 
   if (tool_verbosity > 0) {
     printf("KokkosP: Sampling rate set to: %s\n", tool_sample);
@@ -176,7 +193,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
   *kID = uniqID++;
   if (((*kID) % kernelSampleSkip) == 0) {
-    if (drand48() < kernelSampleProbability) {
+    if ((rand() % 100) < tool_prob_num) {
       if (tool_verbosity > 0) {
         printf("KokkosP: sample %llu calling child-begin function...\n",
                (unsigned long long)(*kID));
@@ -190,7 +207,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
 
 void kokkosp_end_parallel_for(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
-    if (drand48() < kernelSampleProbability) {
+    if ((rand() % 100) < tool_prob_num) {
       if (tool_verbosity > 0) {
         printf("KokkosP: sample %llu calling child-end function...\n",
                (unsigned long long)(kID));
@@ -208,7 +225,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
   *kID = uniqID++;
 
   if (((*kID) % kernelSampleSkip) == 0) {
-    if (drand48() < kernelSampleProbability) {
+    if ((rand() % 100) < tool_prob_num) {
       if (tool_verbosity > 0) {
         printf("KokkosP: sample %llu calling child-begin function...\n",
                (unsigned long long)(*kID));
@@ -223,7 +240,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
 
 void kokkosp_end_parallel_scan(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
-    if (drand48() < kernelSampleProbability) {
+    if ((rand() % 100) < tool_prob_num) {
       if (tool_verbosity > 0) {
         printf("KokkosP: sample %llu calling child-end function...\n",
                (unsigned long long)(kID));
@@ -240,7 +257,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
   *kID = uniqID++;
 
   if (((*kID) % kernelSampleSkip) == 0) {
-    if (drand48() < kernelSampleProbability) {
+    if ((rand() % 100) < tool_prob_num) {
       if (tool_verbosity > 0) {
         printf("KokkosP: sample %llu calling child-begin function...\n",
                (unsigned long long)(*kID));
@@ -255,7 +272,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
 
 void kokkosp_end_parallel_reduce(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
-    if (drand48() < kernelSampleProbability) {
+    if ((rand() % 100) < tool_prob_num) {
       if (tool_verbosity > 0) {
         printf("KokkosP: sample %llu calling child-end function...\n",
                (unsigned long long)(kID));
@@ -279,11 +296,11 @@ EXPOSE_INIT(kokkosp_init_library)
 EXPOSE_FINALIZE(kokkosp_finalize_library)
 EXPOSE_PUSH_REGION(kokkosp_push_profile_region)
 EXPOSE_POP_REGION(kokkosp_pop_profile_region)
-EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
-EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
-EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
-EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
-EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
-EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+EXPOSE_BEGIN_PARALLEL_FOR(kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(kokkosp_end_parallel_for)
+EXPOSE_BEGIN_PARALLEL_SCAN(kokkosp_begin_parallel_scan)
+EXPOSE_END_PARALLEL_SCAN(kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_PARALLEL_REDUCE(kokkosp_begin_parallel_reduce)
+EXPOSE_END_PARALLEL_REDUCE(kokkosp_end_parallel_reduce)
 
 }  // end extern "C"
