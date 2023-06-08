@@ -36,13 +36,14 @@ static std::unordered_map<std::string, KernelNVProfFocusedConnectorInfo*>
 static uint64_t nextKernelID;
 
 void kokkosp_init_library(
-    const int loadSeq, const uint64_t interfaceVer, const uint32_t devInfoCount,
-    struct Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+    const int loadSeq, const uint64_t interfaceVer,
+    const uint32_t /*devInfoCount*/,
+    struct Kokkos_Profiling_KokkosPDeviceInfo* /*deviceInfo*/) {
   printf("-----------------------------------------------------------\n");
   printf(
       "KokkosP: NVProf Analyzer Focused Connector (sequence is %d, version: "
       "%llu)\n",
-      loadSeq, interfaceVer);
+      loadSeq, (unsigned long long)(interfaceVer));
   printf("-----------------------------------------------------------\n");
 
   nextKernelID = 0;
@@ -82,7 +83,7 @@ void kokkosp_finalize_library() {
   printf("-----------------------------------------------------------\n");
 }
 
-void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
+void kokkosp_begin_parallel_for(const char* name, const uint32_t /*devID*/,
                                 uint64_t* kID) {
   *kID = nextKernelID++;
 
@@ -90,11 +91,11 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
   focusedConnectorExecuteStart();
 }
 
-void kokkosp_end_parallel_for(const uint64_t kID) {
+void kokkosp_end_parallel_for(const uint64_t /*kID*/) {
   focusedConnectorExecuteEnd();
 }
 
-void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t /*devID*/,
                                  uint64_t* kID) {
   *kID = nextKernelID++;
 
@@ -102,11 +103,11 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
   focusedConnectorExecuteStart();
 }
 
-void kokkosp_end_parallel_scan(const uint64_t kID) {
+void kokkosp_end_parallel_scan(const uint64_t /*kID*/) {
   focusedConnectorExecuteEnd();
 }
 
-void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t /*devID*/,
                                    uint64_t* kID) {
   *kID = nextKernelID++;
 
@@ -114,7 +115,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
   focusedConnectorExecuteStart();
 }
 
-void kokkosp_end_parallel_reduce(const uint64_t kID) {
+void kokkosp_end_parallel_reduce(const uint64_t /*kID*/) {
   focusedConnectorExecuteEnd();
 }
 

@@ -27,7 +27,7 @@ using namespace KokkosTools::KernelTimer;
 
 int find_index(std::vector<KernelPerformanceInfo*>& kernels,
                const char* kernelName) {
-  for (int i = 0; i < kernels.size(); i++) {
+  for (unsigned int i = 0; i < kernels.size(); i++) {
     KernelPerformanceInfo* nextKernel = kernels[i];
 
     if (strcmp(nextKernel->getName(), kernelName) == 0) {
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 
   std::sort(kernelInfo.begin(), kernelInfo.end(), compareKernelPerformanceInfo);
 
-  for (int i = 0; i < kernelInfo.size(); i++) {
+  for (unsigned int i = 0; i < kernelInfo.size(); i++) {
     if (kernelInfo[i]->getKernelType() != REGION) {
       totalKernelsTime += kernelInfo[i]->getTime();
       totalKernelsCalls += kernelInfo[i]->getCallCount();
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
 
   printf("Regions: \n\n");
 
-  for (int i = 0; i < kernelInfo.size(); i++) {
+  for (unsigned int i = 0; i < kernelInfo.size(); i++) {
     const double callCountDouble = (double)kernelInfo[i]->getCallCount();
 
     if (kernelInfo[i]->getKernelType() != REGION) continue;
@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
       "-\n");
   printf("Kernels: \n\n");
 
-  for (int i = 0; i < kernelInfo.size(); i++) {
+  for (unsigned int i = 0; i < kernelInfo.size(); i++) {
     const double callCountDouble = (double)kernelInfo[i]->getCallCount();
 
     if (kernelInfo[i]->getKernelType() == REGION) continue;

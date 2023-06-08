@@ -28,16 +28,16 @@ namespace KokkosTools {
 namespace KernelTimerJSON {
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
-                          const uint32_t devInfoCount,
-                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+                          const uint32_t /*devInfoCount*/,
+                          Kokkos_Profiling_KokkosPDeviceInfo* /*deviceInfo*/) {
   const char* output_delim_env = getenv("KOKKOSP_OUTPUT_DELIM");
   if (NULL == output_delim_env) {
     outputDelimiter = (char*)malloc(sizeof(char) * 2);
-    sprintf(outputDelimiter, "%c", ' ');
+    snprintf(outputDelimiter, 2, "%c", ' ');
   } else {
     outputDelimiter =
         (char*)malloc(sizeof(char) * (strlen(output_delim_env) + 1));
-    sprintf(outputDelimiter, "%s", output_delim_env);
+    strcpy(outputDelimiter, output_delim_env);
   }
 
   printf(
@@ -58,8 +58,8 @@ void kokkosp_finalize_library() {
   gethostname(hostname, 256);
 
   char* fileOutput = (char*)malloc(sizeof(char) * 256);
-  sprintf(fileOutput, "%s-%d-%s.json", hostname, (int)getpid(),
-          (NULL == mpi_rank) ? "0" : mpi_rank);
+  snprintf(fileOutput, 256, "%s-%d-%s.json", hostname, (int)getpid(),
+           (NULL == mpi_rank) ? "0" : mpi_rank);
 
   free(hostname);
   FILE* output_data = fopen(fileOutput, "w");
@@ -88,8 +88,8 @@ void kokkosp_finalize_library() {
   const double percentKokkos = (kernelTimes / totalExecuteTime) * 100.0;
   fprintf(output_data, "    \"percent-in-kernels\"     : %6.2f,\n",
           percentKokkos);
-  fprintf(output_data, "    \"unique-kernel-calls\"    : %22lu,\n",
-          (uint64_t)count_map.size());
+  fprintf(output_data, "    \"unique-kernel-calls\"    : %22llu,\n",
+          (unsigned long long)count_map.size());
   fprintf(output_data, "\n");
 
   fprintf(output_data, "    \"kernel-perf-info\"       : [\n");
@@ -109,7 +109,7 @@ void kokkosp_finalize_library() {
   fclose(output_data);
 }
 
-void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
+void kokkosp_begin_parallel_for(const char* name, const uint32_t /*devID*/,
                                 uint64_t* kID) {
   *kID = uniqID++;
 
@@ -121,11 +121,11 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
   increment_counter(name, PARALLEL_FOR);
 }
 
-void kokkosp_end_parallel_for(const uint64_t kID) {
+void kokkosp_end_parallel_for(const uint64_t /*kID*/) {
   currentEntry->addFromTimer();
 }
 
-void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t /*devID*/,
                                  uint64_t* kID) {
   *kID = uniqID++;
 
@@ -137,11 +137,11 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
   increment_counter(name, PARALLEL_SCAN);
 }
 
-void kokkosp_end_parallel_scan(const uint64_t kID) {
+void kokkosp_end_parallel_scan(const uint64_t /*kID*/) {
   currentEntry->addFromTimer();
 }
 
-void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t /*devID*/,
                                    uint64_t* kID) {
   *kID = uniqID++;
 
@@ -153,7 +153,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
   increment_counter(name, PARALLEL_REDUCE);
 }
 
-void kokkosp_end_parallel_reduce(const uint64_t kID) {
+void kokkosp_end_parallel_reduce(const uint64_t /*kID*/) {
   currentEntry->addFromTimer();
 }
 

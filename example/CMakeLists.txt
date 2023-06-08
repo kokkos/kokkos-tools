@@ -1,11 +1,5 @@
 # Find Kokkos
-find_package(Kokkos QUIET)
-if(NOT Kokkos_FOUND)
-  message(FATAL_ERROR "Kokkos not found, set Kokkos_ROOT properly (current Kokkos_ROOT=${Kokkos_ROOT})")
-endif()
-foreach(_i "1;2;3") # cut .../lib/cmake/Kokkos suffix
-cmake_path(GET Kokkos_DIR PARENT_PATH Kokkos_DIR)
-endforeach()
+find_package(Kokkos REQUIRED)
 message(STATUS "Found installed Kokkos at ${Kokkos_DIR}")
 
 # Create target executable
@@ -32,7 +26,9 @@ if(NOT WIN32)
   add_kp_test(memory_usage "memory-usage")
   add_kp_test(chrome_tracing "chrome-tracing")
   add_kp_test(space_time_stack "space-time-stack")
-  add_kp_test(systemtap_connector "systemtap-connector")
+  if(KOKKOSTOOLS_HAS_SYSTEMTAP)
+    add_kp_test(systemtap_connector "systemtap-connector")
+  endif()
   add_kp_test(highwater_mark "highwater-mark")
   if(USE_MPI)
     add_kp_test(highwater_mark_mpi "highwater-mark-mpi")

@@ -1,7 +1,6 @@
-
 CXX = clang++
 
-CXXFLAGS = -O3 -std=c++17 -g 
+CXXFLAGS = -O3 -std=c++17 -g
 
 SHARED_CXXFLAGS= -shared -fPIC
 

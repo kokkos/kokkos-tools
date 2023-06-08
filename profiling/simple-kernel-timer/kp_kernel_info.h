@@ -188,13 +188,14 @@ class KernelPerformanceInfo {
     fprintf(output, "%s{\n", indent);
 
     char* indentBuffer = (char*)malloc(sizeof(char) * 256);
-    sprintf(indentBuffer, "%s    ", indent);
+    snprintf(indentBuffer, 256, "%s    ", indent);
 
     fprintf(output, "%s\"kernel-name\"    : \"%s\",\n", indentBuffer,
             kernelName);
     // fprintf(output, "%s\"region\"         : \"%s\",\n", indentBuffer,
     // regionName);
-    fprintf(output, "%s\"call-count\"     : %lu,\n", indentBuffer, callCount);
+    fprintf(output, "%s\"call-count\"     : %llu,\n", indentBuffer,
+            (unsigned long long)(callCount));
     fprintf(output, "%s\"total-time\"     : %f,\n", indentBuffer, time);
     fprintf(output, "%s\"time-per-call\"  : %16.8f,\n", indentBuffer,
             (time / static_cast<double>(
