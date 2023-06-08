@@ -14,7 +14,6 @@ endif()
 include(cmake/utils.cmake)
 include(cmake/configure_tpls.cmake)
 
-
 # Set policies
 cmake_policy(SET CMP0111 NEW) # error if library not found
 
@@ -46,7 +45,6 @@ option(KokkosTools_ENABLE_MPI     "Enable MPI support"              OFF)
 option(KokkosTools_ENABLE_CALIPER "Enable building Caliper library" OFF)
 option(KokkosTools_ENABLE_APEX    "Enable building Apex library"    OFF)
 option(KokkosTools_ENABLE_EXAMPLES "Build examples"                 OFF)
-
 # Advanced settings
 option(KokkosTools_REUSE_KOKKOS_COMPILER "Set the compiler and flags based on installed Kokkos settings" OFF)
 mark_as_advanced(KokkosTools_REUSE_KOKKOS_COMPILER)
@@ -99,7 +97,6 @@ include(cmake/configure_variorum.cmake)
 set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
 set(KOKKOSTOOLS_HAS_NVPROF ${Kokkos_ENABLE_CUDA}) # we assume that enabling CUDA for Kokkos program means nvprof should be available
 
-
 if(DEFINED ENV{VTUNE_HOME})
   set(VTune_ROOT $ENV{VTUNE_HOME})
 endif()
@@ -115,8 +112,6 @@ endif()
 # make Kokkos profiling interface available for native profilers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiling/all)
 
-# Config file
-configure_file(common/kp_config.hpp.in common/kp_config.hpp)
 set(COMMON_HEADERS_PATH ${CMAKE_CURRENT_BINARY_DIR}/common)
 include_directories(${COMMON_HEADERS_PATH})
 
@@ -140,15 +135,9 @@ endif()
 # Utilities
 if(NOT WIN32)
   add_subdirectory(common/kernel-filter)
-endif()
-add_subdirectory(debugging/kernel-logger) 
-
-
-if(NOT WIN32)
   add_subdirectory(common/kokkos-sampler)
-else()
-  message(STATUS "Kokkos sampler not tested on Windows at this time. Skipping.")	
 endif()
+add_subdirectory(debugging/kernel-logger)
 
 # Profilers
 if(NOT WIN32)
@@ -171,9 +160,17 @@ if(KokkosTools_ENABLE_PAPI)
   add_subdirectory(profiling/papi-connector)
 endif()
 
-
 if(NOT WIN32 AND NOT APPLE)
-  add_subdirectory(profiling/systemtap-connector)
+  find_program(KOKKOSTOOLS_DTRACE_EXECUTABLE dtrace)
+  if(KOKKOSTOOLS_DTRACE_EXECUTABLE)
+    add_subdirectory(profiling/systemtap-connector)
+    set(KOKKOSTOOLS_HAS_SYSTEMTAP ON)
+  else()
+    message(STATUS "Skipping systemtap-connector (dtrace executable wasn't found)")
+    set(KOKKOSTOOLS_HAS_SYSTEMTAP OFF)
+  endif()
+else()
+  set(KOKKOSTOOLS_HAS_SYSTEMTAP OFF)
 endif()
 
 if(KOKKOSTOOLS_HAS_VARIORUM)
@@ -185,8 +182,8 @@ if(Kokkos_ENABLE_CUDA)
   add_subdirectory(profiling/nvprof-connector)
   add_subdirectory(profiling/nvprof-focused-connector)
 endif()
-if(KOKKOS_ENABLE_HIP)
-  #add_subdirectory(profiling/roctx-connector)
+if(Kokkos_ENABLE_HIP)
+  add_subdirectory(profiling/roctx-connector)
 endif()
 
 if(KOKKOSTOOLS_HAS_VTUNE)
@@ -203,7 +200,7 @@ if(KokkosTools_ENABLE_CALIPER)
     message(STATUS "Caliper installation found in: ${Caliper_INSTALL_DIR}")
    list(APPEND SINGLELIB_PROFILERS caliper)
   else()
-    # Don't support git submodules for Caliper. The Kokkos tools user has can try installing Apex and linking on their own if they don't have it.
+  # Don't support git submodules for Caliper. The Kokkos tools user has can try installing Apex and linking on their own if they don't have it.
     message(FATAL_ERROR "FATAL: Required Caliper installation not found! Exiting.")
   endif()
 endif()
@@ -244,6 +241,9 @@ if(KokkosTools_ENABLE_APEX)
       add_git_submodule(tpls/apex)
   endif()
 endif()
+
+# Config file
+configure_file(common/kp_config.hpp.in common/kp_config.hpp)
 
 # Build single library interface (once we have everything set up)
 if(KokkosTools_ENABLE_SINGLE)

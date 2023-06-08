@@ -47,9 +47,10 @@ double max_mem_usage() {
   return max_rssKB * 1024;
 }
 
-void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
-                          const uint32_t devInfoCount,
-                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+void kokkosp_init_library(const int /*loadSeq*/,
+                          const uint64_t /*interfaceVer*/,
+                          const uint32_t /*devInfoCount*/,
+                          Kokkos_Profiling_KokkosPDeviceInfo* /*deviceInfo*/) {
   num_spaces = 0;
   for (int i = 0; i < 16; i++) space_size[i] = 0;
 
@@ -73,7 +74,7 @@ void kokkosp_finalize_library() {
     fprintf(ofile,
             "# Time(s)  Size(MB)   HighWater(MB)   HighWater-Process(MB)\n");
     uint64_t maxvalue = 0;
-    for (int i = 0; i < space_size_track[s].size(); i++) {
+    for (unsigned int i = 0; i < space_size_track[s].size(); i++) {
       if (std::get<1>(space_size_track[s][i]) > maxvalue)
         maxvalue = std::get<1>(space_size_track[s][i]);
       fprintf(ofile, "%lf %.1lf %.1lf %.1lf\n",
@@ -87,8 +88,8 @@ void kokkosp_finalize_library() {
   free(hostname);
 }
 
-void kokkosp_allocate_data(const SpaceHandle space, const char* label,
-                           const void* const ptr, const uint64_t size) {
+void kokkosp_allocate_data(const SpaceHandle space, const char* /*label*/,
+                           const void* const /*ptr*/, const uint64_t size) {
   std::lock_guard<std::mutex> lock(m);
 
   double time = timer.seconds();
@@ -106,8 +107,8 @@ void kokkosp_allocate_data(const SpaceHandle space, const char* label,
       std::make_tuple(time, space_size[space_i], max_mem_usage()));
 }
 
-void kokkosp_deallocate_data(const SpaceHandle space, const char* label,
-                             const void* const ptr, const uint64_t size) {
+void kokkosp_deallocate_data(const SpaceHandle space, const char* /*label*/,
+                             const void* const /*ptr*/, const uint64_t size) {
   std::lock_guard<std::mutex> lock(m);
 
   double time = timer.seconds();

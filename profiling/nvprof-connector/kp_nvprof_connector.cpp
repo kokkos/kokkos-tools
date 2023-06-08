@@ -31,17 +31,14 @@ void kokkosp_request_tool_settings(const uint32_t,
   settings->requires_global_fencing = false;
 }
 
-static uint64_t nextKernelID;
-
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
-                          const uint32_t devInfoCount,
-                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+                          const uint32_t /*devInfoCount*/,
+                          Kokkos_Profiling_KokkosPDeviceInfo* /*deviceInfo*/) {
   printf("-----------------------------------------------------------\n");
   printf("KokkosP: NVTX Analyzer Connector (sequence is %d, version: %llu)\n",
-         loadSeq, interfaceVer);
+         loadSeq, (unsigned long long)(interfaceVer));
   printf("-----------------------------------------------------------\n");
 
-  nextKernelID = 0;
   nvtxNameOsThread(pthread_self(), "Application Main Thread");
   nvtxMarkA("Kokkos::Initialization Complete");
 }
@@ -54,26 +51,26 @@ void kokkosp_finalize_library() {
   nvtxMarkA("Kokkos::Finalization Complete");
 }
 
-void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
-                                uint64_t* kID) {
+void kokkosp_begin_parallel_for(const char* name, const uint32_t /*devID*/,
+                                uint64_t* /*kID*/) {
   nvtxRangePush(name);
 }
 
-void kokkosp_end_parallel_for(const uint64_t kID) { nvtxRangePop(); }
+void kokkosp_end_parallel_for(const uint64_t /*kID*/) { nvtxRangePop(); }
 
-void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
-                                 uint64_t* kID) {
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t /*devID*/,
+                                 uint64_t* /*kID*/) {
   nvtxRangePush(name);
 }
 
-void kokkosp_end_parallel_scan(const uint64_t kID) { nvtxRangePop(); }
+void kokkosp_end_parallel_scan(const uint64_t /*kID*/) { nvtxRangePop(); }
 
-void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
-                                   uint64_t* kID) {
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t /*devID*/,
+                                   uint64_t* /*kID*/) {
   nvtxRangePush(name);
 }
 
-void kokkosp_end_parallel_reduce(const uint64_t kID) { nvtxRangePop(); }
+void kokkosp_end_parallel_reduce(const uint64_t /*kID*/) { nvtxRangePop(); }
 
 void kokkosp_push_profile_region(const char* regionName) {
   nvtxRangePush(regionName);
