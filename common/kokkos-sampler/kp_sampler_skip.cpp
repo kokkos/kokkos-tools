@@ -9,11 +9,11 @@
 
 namespace KokkosTools {
 namespace Sampler {
-static uint64_t uniqID           = 0;
-static uint64_t kernelSampleSkip = 101;
+static uint64_t uniqID                = 0;
+static uint64_t kernelSampleSkip      = 101;
 static double kernelSampleProbability = 1.0;
-static int tool_verbosity        = 0;
-static int tool_globFence        = 0;
+static int tool_verbosity             = 0;
+static int tool_globFence             = 0;
 
 typedef void (*initFunction)(const int, const uint64_t, const uint32_t, void*);
 typedef void (*finalizeFunction)();
@@ -40,9 +40,9 @@ void kokkosp_request_tool_settings(const uint32_t,
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t devInfoCount, void* deviceInfo) {
-  const char* tool_verbose_str = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
+  const char* tool_verbose_str   = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
-  
+
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
   } else {
@@ -53,7 +53,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   } else {
     tool_globFence = 0;
   }
-  
+
   char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
   if (NULL == profileLibrary) {
     printf(
@@ -137,31 +137,36 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
   uniqID = 1;
 
-  const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
+  const char* tool_sample      = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
   const char* tool_probability = getenv("KOKKOS_TOOLS_SAMPLER_PROBABILITY");
-  const char* tool_periodprob_compose_str = getenv("KOKKOS_TOOLS_SAMPLER_PERIODPROB_COMPOSE"); 
-  // composing the periodicity and probability parameter. Set to 1 if probability for 
-  // each periodic sample. Set to 0 to default to probability even if periodicity (skip rate) is defined. 
+  const char* tool_periodprob_compose_str =
+      getenv("KOKKOS_TOOLS_SAMPLER_PERIODPROB_COMPOSE");
+  // composing the periodicity and probability parameter. Set to 1 if
+  // probability for each periodic sample. Set to 0 to default to probability
+  // even if periodicity (skip rate) is defined.
 
   if (NULL != tool_sample) {
     kernelSampleSkip = atoi(tool_sample) + 1;
   }
 
   if (NULL != tool_probability) {
-   //  read sampling probability as an integer between 1 and 100, but 
-   //  programs reasons about probability as a double between 0.0 and 1.0. 
-   kernelSampleProbability = (double(atoi(tool_probability)))/100.0;
-   srand48((unsigned)clock()); 
+    //  read sampling probability as an integer between 1 and 100, but
+    //  programs reasons about probability as a double between 0.0 and 1.0.
+    kernelSampleProbability = (double(atoi(tool_probability))) / 100.0;
+    srand48((unsigned)clock());
   }
 
   if (tool_verbosity > 0) {
     printf("KokkosP: Sampling rate set to: %s\n", tool_sample);
-    printf("KokkosP: Sampling probability set to: %s\n", tool_probability); 
+    printf("KokkosP: Sampling probability set to: %s\n", tool_probability);
   }
-  if( (NULL != tool_probability) && (NULL !=tool_sample)) { 
-   printf("KokkosP: Note that both probability and skip rate are set. Kokkos Tools Sampler utility will invoke Kokkos Tool child event with a probability at the skip rate.\n");
-  } 
-} // end kokkosp_init_library 
+  if ((NULL != tool_probability) && (NULL != tool_sample)) {
+    printf(
+        "KokkosP: Note that both probability and skip rate are set. Kokkos "
+        "Tools Sampler utility will invoke Kokkos Tool child event with a "
+        "probability at the skip rate.\n");
+  }
+}  // end kokkosp_init_library
 
 void kokkosp_finalize_library() {
   if (NULL != finalizeProfileLibrary) (*finalizeProfileLibrary)();
@@ -170,33 +175,33 @@ void kokkosp_finalize_library() {
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
   *kID = uniqID++;
-  if (((*kID) % kernelSampleSkip) == 0) {  
-   if (drand48() < kernelSampleProbability) { 
+  if (((*kID) % kernelSampleSkip) == 0) {
+    if (drand48() < kernelSampleProbability) {
       if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n",
-             (unsigned long long)(*kID));
+        printf("KokkosP: sample %llu calling child-begin function...\n",
+               (unsigned long long)(*kID));
+      }
+      if (NULL != beginForCallee) {
+        (*beginForCallee)(name, devID, kID);
+      }
     }
-    if (NULL != beginForCallee) {
-      (*beginForCallee)(name, devID, kID);
-    }
-   }
-  } 
-} // kokkosp_begin_parallel_for
+  }
+}  // kokkosp_begin_parallel_for
 
 void kokkosp_end_parallel_for(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
-   if (drand48() < kernelSampleProbability) {
-    if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-end function...\n",
-             (unsigned long long)(kID));
-    }
+    if (drand48() < kernelSampleProbability) {
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu calling child-end function...\n",
+               (unsigned long long)(kID));
+      }
 
-    if (NULL != endForCallee) {
-      (*endForCallee)(kID);
+      if (NULL != endForCallee) {
+        (*endForCallee)(kID);
+      }
     }
-   }
   }
-} // kokkosp_end_parallel_for
+}  // kokkosp_end_parallel_for
 
 void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
                                  uint64_t* kID) {
@@ -204,64 +209,63 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
 
   if (((*kID) % kernelSampleSkip) == 0) {
     if (drand48() < kernelSampleProbability) {
-     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n",
-             (unsigned long long)(*kID));
-    }
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu calling child-begin function...\n",
+               (unsigned long long)(*kID));
+      }
 
-    if (NULL != beginScanCallee) {
-      (*beginScanCallee)(name, devID, kID);
+      if (NULL != beginScanCallee) {
+        (*beginScanCallee)(name, devID, kID);
+      }
     }
-   }
   }
-} // kokkosp_end_parallel_for 
+}  // kokkosp_end_parallel_for
 
 void kokkosp_end_parallel_scan(const uint64_t kID) {
-  
-   if ((kID % kernelSampleSkip) == 0) {
+  if ((kID % kernelSampleSkip) == 0) {
     if (drand48() < kernelSampleProbability) {
-     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-end function...\n",
-             (unsigned long long)(kID));
-    }
-    if (NULL != endScanCallee) {
-      (*endScanCallee)(kID);
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu calling child-end function...\n",
+               (unsigned long long)(kID));
+      }
+      if (NULL != endScanCallee) {
+        (*endScanCallee)(kID);
+      }
     }
   }
- }
-} // kokkosp_end_parallel_scan
+}  // kokkosp_end_parallel_scan
 
 void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
                                    uint64_t* kID) {
   *kID = uniqID++;
 
   if (((*kID) % kernelSampleSkip) == 0) {
-   if (drand48() < kernelSampleProbability) { 
-    if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n",
-             (unsigned long long)(*kID));
-    }
+    if (drand48() < kernelSampleProbability) {
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu calling child-begin function...\n",
+               (unsigned long long)(*kID));
+      }
 
-    if (NULL != beginReduceCallee) {
-      (*beginReduceCallee)(name, devID, kID);
+      if (NULL != beginReduceCallee) {
+        (*beginReduceCallee)(name, devID, kID);
+      }
     }
-   }
-  } 
-} // kokkosp_begin_parallel_reduce 
+  }
+}  // kokkosp_begin_parallel_reduce
 
 void kokkosp_end_parallel_reduce(const uint64_t kID) {
   if ((kID % kernelSampleSkip) == 0) {
-   if (drand48() < kernelSampleProbability) {
-    if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-end function...\n",
-             (unsigned long long)(kID));
-    }
-    if (NULL != endReduceCallee) {
-      (*endReduceCallee)(kID);
+    if (drand48() < kernelSampleProbability) {
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu calling child-end function...\n",
+               (unsigned long long)(kID));
+      }
+      if (NULL != endReduceCallee) {
+        (*endReduceCallee)(kID);
+      }
     }
   }
- }
-} // kokkosp_end_parallel_reduce 
+}  // kokkosp_end_parallel_reduce
 
 }  // namespace Sampler
 }  // namespace KokkosTools
