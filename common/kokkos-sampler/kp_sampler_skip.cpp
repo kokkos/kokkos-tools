@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <dlfcn.h>
+#include "../../profiling/all/kp_core.hpp"
+#include "kp_config.hpp"
 
 namespace KokkosTools {
 namespace Sampler {
@@ -30,7 +32,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   const char* tool_verbose_str = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   const char* tool_random_mode = getenv("KOKKOS_TOOLS_SAMPLER_RANDOMIZED");
   const char* tool_periodic_mode = getenv("KOKKOS_TOOLS_SAMPLER_PERIODIC");
-
+  
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
   } else {
@@ -124,12 +126,14 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   uniqID        = 1;
 
   const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
+  const char* tool_probability = getenv("KOKKOS_TOOLS_SAMPLER_PROBABILITY");
   if (NULL != tool_sample) {
     kernelSampleSkip = atoi(tool_sample) + 1;
   }
 
   if (tool_verbosity > 0) {
     printf("KokkosP: Sampling rate set to: %s\n", tool_sample);
+    printf("KokkosP: Sampling probability set to: %s\n", tool_probability);
   }
 }
 
@@ -223,11 +227,11 @@ extern "C" {
 
 namespace impl = KokkosTools::Sampler;
 
-EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
-EXPOSE_INIT(impl::kokkosp_init_library)
-EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
-EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
-EXPOSE_POP_REGION(impl::kokkosp_pop_profile_region)
+EXPOSE_TOOL_SETTINGS(kokkosp_request_tool_settings)
+EXPOSE_INIT(kokkosp_init_library)
+EXPOSE_FINALIZE(kokkosp_finalize_library)
+EXPOSE_PUSH_REGION(kokkosp_push_profile_region)
+EXPOSE_POP_REGION(kokkosp_pop_profile_region)
 EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
 EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
 EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
