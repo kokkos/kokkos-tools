@@ -55,10 +55,11 @@ using Kokkos::Tools::SpaceHandle;
     FUNC_NAME(num_actions, settings);                                    \
   }
 
-#define EXPOSE_TOOL_PROGRAMMING_INTERFACE(FUNC_NAME)                                  \
-  __attribute__((weak)) void kokkosp_provide_tool_programming_interface(              \
-      const uint32_t num_actions, Kokkos_Tools_ToolProgrammingInterface* tool_funcs) { \
-    FUNC_NAME(num_actions, tool_funcs);                                    \
+#define EXPOSE_TOOL_PROGRAMMING_INTERFACE(FUNC_NAME)                     \
+  __attribute__((weak)) void kokkosp_provide_tool_programming_interface( \
+      const uint32_t num_actions,                                        \
+      Kokkos_Tools_ToolProgrammingInterface* tool_funcs) {               \
+    FUNC_NAME(num_actions, tool_funcs);                                  \
   }
 
 #define EXPOSE_INIT(FUNC_NAME)                                  \
