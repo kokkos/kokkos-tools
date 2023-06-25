@@ -10,6 +10,14 @@ function(kp_add_library TARGET)
   set(EXPORT_TARGETS ${EXPORT_TARGETS} CACHE STRING "" FORCE)
 endfunction()
 
+function(kp_add_executable TARGET)
+  add_executable(${TARGET} ${ARGN}) # SOURCES = ${ARGN}
+
+  # add this executable to exported targets
+  list(APPEND EXPORT_TARGETS ${TARGET})
+  set(EXPORT_TARGETS ${EXPORT_TARGETS} CACHE STRING "" FORCE)
+endfunction()
+
 macro(set_cache NAME VAL)
   set(${NAME} ON CACHE BOOL "")
 endmacro()
