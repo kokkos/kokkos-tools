@@ -16,8 +16,8 @@ kp_add_library(kp_kernel_timer kp_kernel_timer.cpp)
 target_link_libraries(kp_kernel_timer PRIVATE kp_kernel_shared)
 
 # Add binary utilities
-add_executable(kp_reader kp_reader.cpp)
+kp_add_executable(kp_reader kp_reader.cpp)
 target_link_libraries(kp_reader PRIVATE kp_kernel_timer)
 
-add_executable(kp_json_writer kp_json_writer.cpp)
+kp_add_executable(kp_json_writer kp_json_writer.cpp)
 target_link_libraries(kp_json_writer PRIVATE kp_kernel_timer)
