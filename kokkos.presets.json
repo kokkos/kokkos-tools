@@ -5,54 +5,51 @@
             "name"          : "default",
             "binaryDir"     : "${sourceDir}/build-with-${presetName}",
             "cacheVariables" : {
-                "CMAKE_EXPORT_COMPILE_COMMANDS" : {"type" : "BOOL"  , "value" : "ON"},
-                "CMAKE_BUILD_TYPE"              : {"type" : "STRING", "value" : "Release"},
-                "CMAKE_CXX_STANDARD"            : {"type" : "STRING", "value" : "17"},
-                "CMAKE_CXX_EXTENSIONS"          : {"type" : "BOOL"  , "value" : "OFF"},
-                "BUILD_SHARED_LIBS"             : {"type" : "BOOL"  , "value" : "ON"}
+                "CMAKE_EXPORT_COMPILE_COMMANDS" : "ON",
+                "CMAKE_BUILD_TYPE"              : "Release",
+                "CMAKE_CXX_STANDARD"            : "17",
+                "CMAKE_CXX_EXTENSIONS"          : "OFF",
+                "BUILD_SHARED_LIBS"             : "ON"
             }
         },
         {
             "name"        : "OpenMP",
             "inherits"    : "default",
             "cacheVariables" : {
-                "Kokkos_ENABLE_OPENMP" : {"type" : "BOOL"  , "value" : "ON"}
+                "Kokkos_ENABLE_OPENMP" : "ON"
             }
         },
         {
             "name"        : "Cuda",
             "inherits"    : "default",
             "cacheVariables" : {
-                "Kokkos_ENABLE_CUDA"        : {"type" : "BOOL"  , "value" : "ON"},
-                "Kokkos_ARCH_VOLTA70"       : {"type" : "BOOL"  , "value" : "ON"},
-                "CMAKE_CXX_COMPILER"        : {"type" : "STRING", "value" : "${sourceDir}/bin/nvcc_wrapper"}
+                "Kokkos_ENABLE_CUDA"  : "ON",
+                "Kokkos_ARCH_VOLTA70" : "ON",
+                "CMAKE_CXX_COMPILER"  : "${sourceDir}/bin/nvcc_wrapper"
             }
         },
         {
             "name"        : "ROCm",
             "inherits"    : "default",
             "cacheVariables" : {
-                "Kokkos_ENABLE_HIP"   : {"type" : "BOOL"  , "value" : "ON"},
-                "Kokkos_ARCH_VEGA906" : {"type" : "BOOL"  , "value" : "ON"},
-                "CMAKE_CXX_COMPILER"  : {"type" : "STRING", "value" : "hipcc"}
+                "Kokkos_ENABLE_HIP"   : "ON",
+                "Kokkos_ARCH_VEGA906" : "ON",
+                "CMAKE_CXX_COMPILER"  : "hipcc"
             }
         }
     ],
     "buildPresets" : [
         {
             "name"                        : "OpenMP",
-            "configurePreset"             : "OpenMP",
-            "inheritConfigureEnvironment" : true
+            "configurePreset"             : "OpenMP"
         },
         {
             "name"                        : "Cuda",
-            "configurePreset"             : "Cuda",
-            "inheritConfigureEnvironment" : true
+            "configurePreset"             : "Cuda"
         },
         {
             "name"                        : "ROCm",
-            "configurePreset"             : "ROCm",
-            "inheritConfigureEnvironment" : true
+            "configurePreset"             : "ROCm"
         }
     ]
 }

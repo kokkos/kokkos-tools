@@ -5,13 +5,13 @@
             "name"          : "default",
             "binaryDir"     : "${sourceDir}/build-with-${presetName}",
             "cacheVariables" : {
-                "CMAKE_EXPORT_COMPILE_COMMANDS"     : {"type" : "BOOL"  , "value" : "ON"},
-                "CMAKE_BUILD_TYPE"                  : {"type" : "STRING", "value" : "Release"},
-                "CMAKE_CXX_STANDARD"                : {"type" : "STRING", "value" : "17"},
-                "KokkosTools_REUSE_KOKKOS_COMPILER" : {"type" : "BOOL"  , "value" : "ON"},
-                "KokkosTools_ENABLE_EXAMPLES"       : {"type" : "BOOL"  , "value" : "ON"},
-                "KokkosTools_ENABLE_SINGLE"         : {"type" : "BOOL"  , "value" : "ON"},
-                "KokkosTools_ENABLE_MPI"            : {"type" : "BOOL"  , "value" : "ON"}
+                "CMAKE_EXPORT_COMPILE_COMMANDS"     : "ON",
+                "CMAKE_BUILD_TYPE"                  : "Release",
+                "CMAKE_CXX_STANDARD"                : "17",
+                "KokkosTools_REUSE_KOKKOS_COMPILER" : "ON",
+                "KokkosTools_ENABLE_EXAMPLES"       : "ON",
+                "KokkosTools_ENABLE_SINGLE"         : "ON",
+                "KokkosTools_ENABLE_MPI"            : "ON"
             }
         },
         {
@@ -22,7 +22,7 @@
             "name"        : "Cuda",
             "inherits"    : "default",
             "cacheVariables" : {
-                "CMAKE_CXX_COMPILER" : {"type" : "STRING", "value" : "$env{Kokkos_ROOT}/bin/nvcc_wrapper"}
+                "CMAKE_CXX_COMPILER" : "$env{Kokkos_ROOT}/bin/nvcc_wrapper"
             }
         },
         {
@@ -32,7 +32,7 @@
                 "ROCM_PATH" : "/opt/rocm"
             },
             "cacheVariables" : {
-                "CMAKE_CXX_COMPILER" : {"type" : "STRING", "value" : "hipcc"}
+                "CMAKE_CXX_COMPILER" : "hipcc"
             }
         }
     ],
