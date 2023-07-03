@@ -5,10 +5,8 @@
             "name"          : "default",
             "binaryDir"     : "${sourceDir}/build-with-${presetName}",
             "cacheVariables" : {
-                "CMAKE_EXPORT_COMPILE_COMMANDS"     : "ON",
                 "CMAKE_BUILD_TYPE"                  : "Release",
                 "CMAKE_CXX_STANDARD"                : "17",
-                "KokkosTools_REUSE_KOKKOS_COMPILER" : "ON",
                 "KokkosTools_ENABLE_EXAMPLES"       : "ON",
                 "KokkosTools_ENABLE_SINGLE"         : "ON",
                 "KokkosTools_ENABLE_MPI"            : "ON"
