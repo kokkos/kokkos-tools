@@ -5,14 +5,13 @@
 #include <dlfcn.h>
 #include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
-#include <ctime>
-#include <time.h>
+#include <ctime> // for random number generation
 
 namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID           = 0;
-static uint64_t kernelSampleSkip = 101;
-static int tool_prob_num         = 100;
+static uint64_t kernelSampleSkip = 101; // Default skip rate of every 100 invocations
+static float tool_prob_num       = 1.0; // Default probability of 1 percent of all invocations
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
 
@@ -58,11 +57,11 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
   if (NULL == profileLibrary) {
     printf(
-        "Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a depreciated "
-        "variable. Please use KOKKOS_TOOLS_LIBS\n");
+        "KokkosP: Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a deprecated "
+        "variable. Please use KOKKOS_TOOLS_LIBS. \n");
     profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
     if (NULL == profileLibrary) {
-      printf("KokkosP: No library to call in %s\n", profileLibrary);
+      printf("KokkosP: No library to call in %s.\n", profileLibrary);
       exit(-1);
     }
   }
@@ -148,19 +147,22 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   }
 
   if (NULL != tool_probability) {
-    //  read sampling probability as an integer between 1 and 100, but
-    //  programs reasons about probability as a double between 0.0 and 1.0.
-    tool_prob_num = atoi(tool_probability);
-    if (tool_prob_num > 100) {
+    //  read sampling probability as an float between 0 and 100, representing
+    //  a percentage that data should be gathered.
+    //  Connector reasons about probability as a double between 0.0 and 1.0.
+    tool_prob_num = atof(tool_probability);
+    if (tool_prob_num > 100.0) {
       printf(
-          "KokkosP: Tool sample probability was set to be greater than 100. "
-          "Setting to 100.\n");
-      tool_prob_num = 100;
-    } else if (tool_prob_num < 0) {
+          "KokkosP: The sampling probability value is set to be greater than 100.0. " 
+          "Setting sampling probability to 100 percent; all of the "
+          "invocations of a Kokkos Kernel will be profiled.\n");
+      tool_prob_num = 100.0;
+    } else if (tool_prob_num < 0.0) {
       printf(
-          "KokkosP: Tool sample probability was set to be less than 0. Setting "
-          "to 0.\n");
-      tool_prob_num = 0;
+          "KokkosP: The sampling probability value is set to be negative number. Setting "
+          "sampling probability to 0 percent; none of the invocations of "
+          "a Kokkos Kernel will be profiled.\n");
+      tool_prob_num = 0.0;
     }
   }
   // srand48((unsigned)clock());
@@ -177,9 +179,11 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
   if ((NULL != tool_probability) && (NULL != tool_sample)) {
     printf(
-        "KokkosP: Note that both probability and skip rate are set. Kokkos "
-        "Tools Sampler utility will invoke Kokkos Tool child event with a "
-        "probability at the skip rate.\n");
+        "KokkosP: Note that both probability and skip rate are set. The Kokkos "
+        "Tools Sampler utility will invoke a Kokkos Tool child event you specified "  
+        "(e.g., the profiler or debugger tool connector you specified " 
+        "in KOKKOS_TOOLS_LIBS) with the specified sampling probability applied to the " 
+        "specified sampling skip rate set.\n");
   }
 }  // end kokkosp_init_library
 
@@ -193,7 +197,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    if ((rand() % 100) < tool_prob_num) {
+    if ((rand()/RAND_MAX) < (tool_prob_num/100.0)) {
       *kID = 1;  // set kernel ID to 1 so that it is matched with the end.
       if (tool_verbosity > 0) {
         printf(
@@ -229,7 +233,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    if ((rand() % 100) < tool_prob_num) {
+    if ((rand()/RAND_MAX) < (tool_prob_num/100.0)) {
       *kID = 1;  // set kernel ID to 1 so that it is matched with the end.
       if (tool_verbosity > 0) {
         printf(
@@ -264,7 +268,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    if ((rand() % 100) < tool_prob_num) {
+    if ((rand()/RAND_MAX) < tool_prob_num/100.0) {
       if (tool_verbosity > 0) {
         printf(
             "KokkosP: sample %llu (a parallel_reduce on its invocation number "
