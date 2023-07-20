@@ -31,7 +31,7 @@ static endFunction endForCallee                = NULL;
 static endFunction endScanCallee               = NULL;
 static endFunction endReduceCallee             = NULL;
 
-void getGlobFenceChoice() {
+void get_global_fence_choice() {
   // re-read environment variable to get most accurate value
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
   if (NULL != tool_globFence_str) {
