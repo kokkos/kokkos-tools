@@ -32,8 +32,7 @@ void get_global_fence_choice() {
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
   if (NULL != tool_globFence_str) {
     tool_globFence = atoi(tool_globFence_str);
-  }  // else
-     // tool_globFence = 0;
+  } 
 }
 
 
@@ -87,7 +86,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
   if (NULL == profileLibrary) {
     printf(
-        "Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a depreciated "
+        "KokkosP: Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a deprecated "
         "variable. Please use KOKKOS_TOOLS_LIBS\n");
     profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
     if (NULL == profileLibrary) {
@@ -182,7 +181,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    getGlobFenceChoice();  // re-read environment variable to get most accurate
+    get_global_fence_choice();  // re-read environment variable to get most accurate
                            // value
     if (0 < tool_globFence) {
       invoke_ktools_fence(
@@ -203,7 +202,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
 
 void kokkosp_end_parallel_for(const uint64_t kID) {
   if (kID > 0) {
-    getGlobFenceChoice();  // re-read environment variable to get most accurate
+    get_global_fence_choice();  // re-read environment variable to get most accurate
                            // value
     if (0 < tool_globFence) {
       invoke_ktools_fence(
@@ -225,7 +224,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    getGlobFenceChoice();  // re-read environment variable to get most accurate
+    get_global_fence_choice();  // re-read environment variable to get most accurate
                            // value
     if (0 < tool_globFence) {
       // using tool-induced fence from Kokkos_profiling rather than
@@ -246,7 +245,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
 
 void kokkosp_end_parallel_scan(const uint64_t kID) {
   if (kID > 0) {
-    getGlobFenceChoice();  // re-read environment variable to get most accurate
+    get_global_fence_choice();  // re-read environment variable to get most accurate
                            // value
     if (0 < tool_globFence) {
       // using tool-induced fence from Kokkos_profiling rather than
@@ -270,7 +269,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    getGlobFenceChoice();  // re-read environment variable to get most accurate
+    get_global_fence_choice();  // re-read environment variable to get most accurate
                            // value
     if (0 < tool_globFence) {
       // using tool-induced fence from Kokkos_profiling rather than
@@ -291,7 +290,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
 
 void kokkosp_end_parallel_reduce(const uint64_t kID) {
   if (kID > 0) {
-    getGlobFenceChoice();  // re-read environment variable to get most accurate
+    get_global_fence_choice();  // re-read environment variable to get most accurate
                            // value
     if (0 < tool_globFence) { 
       invoke_ktools_fence(0);
