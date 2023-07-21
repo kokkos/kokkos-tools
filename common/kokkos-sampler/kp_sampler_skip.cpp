@@ -3,19 +3,15 @@
 #include <cstdlib>
 #include <cstring>
 #include <dlfcn.h>
-// #include <impl/Kokkos_Profiling_Interface.hpp>
 #include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
 
-// using Kokkos::Tools::Experimental;
-// using mytpi_type = Kokkos::Tools::Experimental::ToolProgrammingInterface;
 namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID           = 0;
 static uint64_t kernelSampleSkip = 101;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
-// mytpi_type mytpi;
 
 typedef void (*initFunction)(const int, const uint64_t, const uint32_t, void*);
 typedef void (*finalizeFunction)();
@@ -40,17 +36,11 @@ void get_global_fence_choice() {
      // tool_globFence = 0;
 }
 
-// void kokkosp_tool_invoked_fence(const uint32_t, Kokkos_Tools_SpaceHandle*
-// myspchandle, Kokkos_Tools_toolInvokedFenceFunction tool_fence)
-//{
-//(*tool_fence)(myspchandle, );
-// }
 
 // set of functions from Kokkos ToolProgrammingInterface (includes fence)
 Kokkos::Tools::Experimental::ToolProgrammingInterface tpi_funcs;
 
 void invoke_ktools_fence(uint32_t devID) {
-  // assert( tpi_funcs ! = NULL)
   if (tpi_funcs.fence != nullptr) {
     tpi_funcs.fence(devID);
   } else
@@ -303,7 +293,7 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
   if (kID > 0) {
     getGlobFenceChoice();  // re-read environment variable to get most accurate
                            // value
-    if (0 < tool_globFence) {  // Todo: see if this is a performance bottleneck
+    if (0 < tool_globFence) { 
       invoke_ktools_fence(0);
     }
     if (tool_verbosity > 0) {
