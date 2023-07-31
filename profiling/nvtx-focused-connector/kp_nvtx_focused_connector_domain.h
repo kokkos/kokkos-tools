@@ -35,7 +35,7 @@ enum KernelExecutionType {
 class KernelNVTXFocusedConnectorInfo {
  public:
   KernelNVTXFocusedConnectorInfo(std::string kName,
-                                   KernelExecutionType kernelType) {
+                                 KernelExecutionType kernelType) {
     domainNameHandle = kName;
     char* domainName = (char*)malloc(sizeof(char*) * (32 + kName.size()));
 
