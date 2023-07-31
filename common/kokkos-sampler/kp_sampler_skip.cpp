@@ -47,15 +47,12 @@ void invoke_ktools_fence(uint32_t devID) {
         "Fence is NULL!\n");
 }
 
-uint32_t getDeviceID(uint32_t devid_in)
-{
- 
- int num_device_bits = 7; 	
- int num_instance_bits = 17;
+uint32_t getDeviceID(uint32_t devid_in) {
+  int num_device_bits   = 7;
+  int num_instance_bits = 17;
 
-   return (~((uint32_t(-1)) << num_device_bits)) &
-              (devid_in >> num_instance_bits); 
-
+  return (~((uint32_t(-1)) << num_device_bits)) &
+         (devid_in >> num_instance_bits);
 }
 
 void kokkosp_provide_tool_programming_interface(
