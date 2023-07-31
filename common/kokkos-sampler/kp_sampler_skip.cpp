@@ -169,9 +169,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
           "a Kokkos Kernel will be profiled.\n");
       tool_prob_num = 0.0;
     }
-  }
-  // srand48((unsigned)clock());
-  // seed48(0);
+  };
 
   if (tool_verbosity > 0) {
     printf("KokkosP: Sampling rate set to: %s\n", tool_sample);
