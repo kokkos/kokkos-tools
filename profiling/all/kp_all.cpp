@@ -92,8 +92,8 @@ EventSet get_event_set(const char* profiler, const char* config_str) {
 #endif
 #ifdef KOKKOSTOOLS_HAS_NVPROF
   handlers["nvprof-connector"] = NVProfConnector::get_event_set();
-  handlers["nvprof-focused-connector"] =
-      NVProfFocusedConnector::get_event_set();
+  handlers["nvtx-focused-connector"] =
+      NVTXFocusedConnector::get_event_set();
 #endif
   auto e = handlers.find(profiler);
   if (e != handlers.end()) return e->second;

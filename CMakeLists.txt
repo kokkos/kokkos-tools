@@ -180,7 +180,7 @@ endif()
 # GPU profilers
 if(Kokkos_ENABLE_CUDA)
   add_subdirectory(profiling/nvprof-connector)
-  add_subdirectory(profiling/nvprof-focused-connector)
+  add_subdirectory(profiling/nvtx-focused-connector)
 endif()
 if(Kokkos_ENABLE_HIP)
   add_subdirectory(profiling/roctx-connector)
