@@ -176,7 +176,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     printf("KokkosP: Sampling probability set to: %s\n", tool_probability);
     printf(
         "KokkosP: seeding Random Number Generator using clock for "
-        "probabilistic sampling\n");
+        "probabilistic sampling.\n");
   }
   srand(time(NULL));
 
@@ -199,29 +199,41 @@ void kokkosp_finalize_library() {
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
   *kID = 0;
+
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    if ((rand() / RAND_MAX) < (tool_prob_num / 100.0)) {
-      *kID = 1;  // set kernel ID to 1 so that it is matched with the end.
+    if ((rand() / (1.0 * RAND_MAX)) < (tool_prob_num / 100.0)) {
+      *kID = 1;
+
       if (tool_verbosity > 0) {
         printf(
-            "KokkosP: sample %llu on (a parallel_for on its invocation number "
-            "%d) calling child-begin function...\n",
+            "KokkosP: sample %llu of parallel_for on its invocation number %d "
+            "calling"
+            "child-begin function...\n",
             (unsigned long long)(*kID), (int)invocationNum);
       }
       if (NULL != beginForCallee) {
         (*beginForCallee)(name, devID, kID);
       }
+      if (tool_verbosity > 1)
+        printf(
+            "KokkosP: sample for a parallel_for with kernel ID %llu on its "
+            "invocation number "
+            "%d called child-begin function...\n",
+            (unsigned long long)(*kID), (int)invocationNum);
     }
-  }
+  }  // end sampling
+
 }  // kokkosp_begin_parallel_for
 
 void kokkosp_end_parallel_for(const uint64_t kID) {
-  if (kID > 0) {
+  if (kID >
+      0) {  // the corresponding kokkosp_begin_parallel_for gathered a sample
     if (tool_verbosity > 0) {
       printf(
-          "KokkosP: sample %llu (a parallel_for) calling child-end "
+          "KokkosP: sample for a parallel_for with kernel ID %llu calling "
+          "child-end "
           "function...\n",
           (unsigned long long)(kID));
     }
@@ -229,7 +241,9 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
     if (NULL != endForCallee) {
       (*endForCallee)(kID);
     }
-  }
+
+  }  // end kID > 0
+
 }  // kokkosp_end_parallel_for
 
 void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
@@ -238,19 +252,27 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    if ((rand() / RAND_MAX) < (tool_prob_num / 100.0)) {
+    if (rand() / (1.0 * RAND_MAX) < (tool_prob_num / 100.0)) {
       *kID = 1;  // set kernel ID to 1 so that it is matched with the end.
       if (tool_verbosity > 0) {
         printf(
-            "KokkosP: sample %llu (parallel_scan on its invocation num %d) "
-            "calling child-begin function...\n",
+            "KokkosP: sample %llu for parallel_scan on its invocation number "
+            "%d calling "
+            "child-begin function...\n",
             (unsigned long long)(*kID), (int)invocationNum);
       }
       if (NULL != beginScanCallee) {
         (*beginScanCallee)(name, devID, kID);
       }
+      if (tool_verbosity > 0) {
+        printf(
+            "KokkosP: sample for parallel_scan with kernelID %llu on its "
+            "invocation number %d "
+            "called child-begin function...\n",
+            (unsigned long long)(*kID), (int)invocationNum);
+      }
     }
-  }
+  }  // end sampling
 }  // kokkosp_begin_parallel_scan
 
 void kokkosp_end_parallel_scan(const uint64_t kID) {
@@ -273,20 +295,29 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    if ((rand() / RAND_MAX) < tool_prob_num / 100.0) {
+    if ((rand() / (1.0 * RAND_MAX)) < tool_prob_num / 100.0) {
       if (tool_verbosity > 0) {
-        *kID = 1;
         printf(
-            "KokkosP: sample %llu (a parallel_reduce on its invocation number "
-            "%d) calling child-begin function...\n",
+            "KokkosP: sample %llu for a parallel_reduce on its invocation "
+            "number "
+            "%d calling child-begin function...\n",
             (unsigned long long)(*kID), (int)invocationNum);
       }
 
+      *kID = 1;  // set kernel ID to 1 so that it is matched with the end.
       if (NULL != beginReduceCallee) {
         (*beginReduceCallee)(name, devID, kID);
       }
+
+      if (tool_verbosity > 1) {
+        printf(
+            "KokkosP: sample for parallel_reduce with kID %llu on its "
+            "invocation number "
+            "%d called child-begin function...\n",
+            (unsigned long long)(*kID), (int)invocationNum);
+      }
     }
-  }
+  }  // end sampling
 }  // kokkosp_begin_parallel_reduce
 
 void kokkosp_end_parallel_reduce(const uint64_t kID) {
