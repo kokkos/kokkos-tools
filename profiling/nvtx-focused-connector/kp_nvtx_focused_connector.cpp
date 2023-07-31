@@ -23,15 +23,15 @@
 #include <cxxabi.h>
 #include <cuda_profiler_api.h>
 
-#include "kp_nvprof_focused_connector_domain.h"
+#include "kp_nvtx_focused_connector_domain.h"
 
 #include "kp_core.hpp"
 
 namespace KokkosTools {
-namespace NVProfFocusedConnector {
+namespace NVTXFocusedConnector {
 
-static KernelNVProfFocusedConnectorInfo* currentKernel;
-static std::unordered_map<std::string, KernelNVProfFocusedConnectorInfo*>
+static KernelNVTXFocusedConnectorInfo* currentKernel;
+static std::unordered_map<std::string, KernelNVTXFocusedConnectorInfo*>
     domain_map;
 static uint64_t nextKernelID;
 
@@ -41,7 +41,7 @@ void kokkosp_init_library(
     struct Kokkos_Profiling_KokkosPDeviceInfo* /*deviceInfo*/) {
   printf("-----------------------------------------------------------\n");
   printf(
-      "KokkosP: NVProf Analyzer Focused Connector (sequence is %d, version: "
+      "KokkosP: NVTX Analyzer Focused Connector (sequence is %d, version: "
       "%llu)\n",
       loadSeq, (unsigned long long)(interfaceVer));
   printf("-----------------------------------------------------------\n");
@@ -49,15 +49,15 @@ void kokkosp_init_library(
   nextKernelID = 0;
 }
 
-KernelNVProfFocusedConnectorInfo* getFocusedConnectorInfo(
+KernelNVTXFocusedConnectorInfo* getFocusedConnectorInfo(
     const char* name, KernelExecutionType kType) {
   std::string nameStr(name);
   auto kDomain  = domain_map.find(nameStr);
   currentKernel = NULL;
 
   if (kDomain == domain_map.end()) {
-    currentKernel = new KernelNVProfFocusedConnectorInfo(name, kType);
-    domain_map.insert(std::pair<std::string, KernelNVProfFocusedConnectorInfo*>(
+    currentKernel = new KernelNVTXFocusedConnectorInfo(name, kType);
+    domain_map.insert(std::pair<std::string, KernelNVTXFocusedConnectorInfo*>(
         nameStr, currentKernel));
   } else {
     currentKernel = kDomain->second;
@@ -134,12 +134,12 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
   return my_event_set;
 }
 
-}  // namespace NVProfFocusedConnector
+}  // namespace NVTXFocusedConnector
 }  // namespace KokkosTools
 
 extern "C" {
 
-namespace impl = KokkosTools::NVProfFocusedConnector;
+namespace impl = KokkosTools::NVTXFocusedConnector;
 
 EXPOSE_INIT(impl::kokkosp_init_library)
 EXPOSE_FINALIZE(impl::kokkosp_finalize_library)

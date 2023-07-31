@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _H_KOKKOSP_KERNEL_NVPROF_CONNECTOR_INFO
-#define _H_KOKKOSP_KERNEL_NVPROF_CONNECTOR_INFO
+#ifndef KOKKOSP_KERNEL_NVTX_CONNECTOR_H
+#define KOKKOSP_KERNEL_NVTX_CONNECTOR_H
 
 #include <stdio.h>
 #include <sys/time.h>
@@ -24,7 +24,7 @@
 #include "nvToolsExt.h"
 
 namespace KokkosTools {
-namespace NVProfFocusedConnector {
+namespace NVTXFocusedConnector {
 
 enum KernelExecutionType {
   PARALLEL_FOR    = 0,
@@ -32,9 +32,9 @@ enum KernelExecutionType {
   PARALLEL_SCAN   = 2
 };
 
-class KernelNVProfFocusedConnectorInfo {
+class KernelNVTXFocusedConnectorInfo {
  public:
-  KernelNVProfFocusedConnectorInfo(std::string kName,
+  KernelNVTXFocusedConnectorInfo(std::string kName,
                                    KernelExecutionType kernelType) {
     domainNameHandle = kName;
     char* domainName = (char*)malloc(sizeof(char*) * (32 + kName.size()));
@@ -71,7 +71,7 @@ class KernelNVProfFocusedConnectorInfo {
 
   std::string getDomainNameHandle() { return domainNameHandle; }
 
-  ~KernelNVProfFocusedConnectorInfo() { nvtxDomainDestroy(domain); }
+  ~KernelNVTXFocusedConnectorInfo() { nvtxDomainDestroy(domain); }
 
  private:
   std::string domainNameHandle;
@@ -81,4 +81,4 @@ class KernelNVProfFocusedConnectorInfo {
 
 #endif
 }
-}  // KokkosTools::NVProfFocusedConnector
+}  // KokkosTools::NVTXFocusedConnector
