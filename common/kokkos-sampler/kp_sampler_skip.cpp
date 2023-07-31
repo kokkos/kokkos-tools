@@ -47,6 +47,17 @@ void invoke_ktools_fence(uint32_t devID) {
         "Fence is NULL!\n");
 }
 
+uint32_t getDeviceID(uint32_t devid_in)
+{
+ 
+ int num_device_bits = 7; 	
+ int num_instance_bits = 17;
+
+   return (~((uint32_t(-1)) << num_device_bits)) &
+              (devid_in >> num_instance_bits); 
+
+}
+
 void kokkosp_provide_tool_programming_interface(
     uint32_t num_funcs, Kokkos_Tools_ToolProgrammingInterface* funcsFromTPI) {
   if (!num_funcs) {
@@ -195,7 +206,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
     }
 
     if (NULL != beginForCallee) {
-      (*beginForCallee)(name, devID, kID);
+      (*beginForCallee)(name, getDeviceID(devID), kID);
     }
   }
 }
@@ -238,7 +249,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
              (unsigned long long)(*kID));
     }
     if (NULL != beginScanCallee) {
-      (*beginScanCallee)(name, devID, kID);
+      (*beginScanCallee)(name, getDeviceID(devID), kID);
     }
   }
 }
@@ -283,7 +294,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
              (unsigned long long)(*kID));
     }
     if (NULL != beginReduceCallee) {
-      (*beginReduceCallee)(name, devID, kID);
+      (*beginReduceCallee)(name, getDeviceID(devID), kID);
     }
   }
 }
