@@ -276,7 +276,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
     if ((rand() / RAND_MAX) < tool_prob_num / 100.0) {
       if (tool_verbosity > 0) {
         *kID = 1;
-	 printf(
+        printf(
             "KokkosP: sample %llu (a parallel_reduce on its invocation number "
             "%d) calling child-begin function...\n",
             (unsigned long long)(*kID), (int)invocationNum);
