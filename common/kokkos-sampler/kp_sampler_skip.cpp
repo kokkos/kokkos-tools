@@ -5,10 +5,10 @@
 #include <dlfcn.h>
 #include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
-
+#include <atomic>
 namespace KokkosTools {
 namespace Sampler {
-static uint64_t uniqID           = 0;
+static atomic<uint64_t> uniqID   = 0;
 static uint64_t kernelSampleSkip = 101;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
@@ -167,12 +167,20 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                (beginScanCallee == NULL) ? "no" : "yes");
         printf("KokkosP: begin-parallel-reduce:   %s\n",
                (beginReduceCallee == NULL) ? "no" : "yes");
+          printf("KokkosP: begin-deep-copy:      %s\n",
+               (beginDeepCopyCallee == NULL) ? "no" : "yes");
+        printf("KokkosP: begin-fence:     %s\n",
+               (beginFenceCallee == NULL) ? "no" : "yes");
         printf("KokkosP: end-parallel-for:        %s\n",
                (endForCallee == NULL) ? "no" : "yes");
         printf("KokkosP: end-parallel-scan:       %s\n",
                (endScanCallee == NULL) ? "no" : "yes");
         printf("KokkosP: end-parallel-reduce:     %s\n",
                (endReduceCallee == NULL) ? "no" : "yes");
+        printf("KokkosP: end-deep-copy:       %s\n",
+               (endDeepCopyCallee == NULL) ? "no" : "yes");
+        printf("KokkosP: end-fence:     %s\n",
+               (endFenceCallee == NULL) ? "no" : "yes");
       }
     }
   }
@@ -195,7 +203,7 @@ void kokkosp_finalize_library() {
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
-  *kID = 0;
+  *kID = uniqID++;
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
@@ -213,13 +221,13 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
     }
 
     if (NULL != beginForCallee) {
-      (*beginForCallee)(name, getDeviceID(devID), kID);
+      (*beginForCallee)(name, devID, kID);
     }
   }
 }
 
 void kokkosp_end_parallel_for(const uint64_t kID) {
-  if (kID > 0) {
+  if (kID > 0) { // check whether the corresponding begin parallel for was called // TODO: fix to hashmap
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
     if (0 < tool_globFence) {
@@ -238,7 +246,7 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
 
 void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
                                  uint64_t* kID) {
-  *kID = 0;  // set memory location value of kID to 0.
+  *kID = uniqID++;  // set memory location value of kID to uniqID 
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
@@ -256,13 +264,13 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
              (unsigned long long)(*kID));
     }
     if (NULL != beginScanCallee) {
-      (*beginScanCallee)(name,devID, kID);
+      (*beginScanCallee)(name, devID, kID);
     }
   }
 }
 
 void kokkosp_end_parallel_scan(const uint64_t kID) {
-  if (kID > 0) {
+  if (kID > 0) { // check that we match the begin scan kernel call
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
     if (0 < tool_globFence) {
@@ -283,7 +291,7 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
 
 void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
                                    uint64_t* kID) {
-  *kID = 0;
+  *kID = uniqID++;
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
@@ -295,7 +303,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
       // only invokes a global (device 0 invoked) fence.
       invoke_ktools_fence(0);
     }
-    *kID = 1;  // set kernel ID to 1 so that it is matched with the end.
+//    *kID = 1;  // set kernel ID to 1 so that it is matched with the end.
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-begin function...\n",
              (unsigned long long)(*kID));
@@ -325,7 +333,7 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
 
 void kokkosp_begin_fence(const char* name, const uint32_t devID,
                          uint64_t* kID) {
-  *kID = 0;
+  *kID = uniqID++;
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
@@ -335,8 +343,6 @@ void kokkosp_begin_fence(const char* name, const uint32_t devID,
       invoke_ktools_fence(
           0);  // invoke tool-induced fence from device 0 for now
     }
-    *kID =
-        1;  // set kernel ID to 1 so that it is matched with the end_parallel_*
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-begin function...\n",
              (unsigned long long)(*kID));
@@ -368,31 +374,29 @@ void kokkosp_end_fence(const uint64_t kID) {
 
 void kokkosp_begin_deep_copy(const char* name, const uint32_t devID,
                              uint64_t* kID) {
-  *kID = 0;
+  *kID = uniqID++; 
   static uint64_t invocationNum;
   ++invocationNum;
-  if ((invocationNum % kernelSampleSkip) == 0) {
+  if ((invocationNum % kernelSampleSkip) == 0) { 
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
     if (0 < tool_globFence) {
       invoke_ktools_fence(
           0);  // invoke tool-induced fence from device 0 for now
-    }
-    *kID =
-        1;  // set kernel ID to 1 so that it is matched with the end_parallel_*
+    } 
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-begin function...\n",
              (unsigned long long)(*kID));
     }
 
     if (NULL != beginDeepCopyCallee) {
-      (*beginDeepCopyCallee)(name, getDeviceID(devID), kID);
+      (*beginDeepCopyCallee)(name, devID, kID);
     }
   }
 }
 
 void kokkosp_end_deep_copy(const uint64_t kID) {
-  if (kID > 0) {
+  if (kID > 0) { // check that we match the begin deep copy kernel call
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
     if (0 < tool_globFence) {
@@ -427,5 +431,10 @@ EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
 EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+EXPOSE_BEGIN_DEEP_COPY(impl::kokkosp_begin_deep_copy)
+EXPOSE_END_DEEP_COPY(impl::kokkosp_end_deep_copy)
+EXPOSE_BEGIN_FENCE(impl::kokkosp_begin_fence)
+EXPOSE_END_FENCE(impl::kokkosp_end_fence)
+
 
 }  // end extern "C"
