@@ -256,7 +256,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
              (unsigned long long)(*kID));
     }
     if (NULL != beginScanCallee) {
-      (*beginScanCallee)(name, getDeviceID(devID), kID);
+      (*beginScanCallee)(name,devID, kID);
     }
   }
 }
@@ -301,7 +301,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
              (unsigned long long)(*kID));
     }
     if (NULL != beginReduceCallee) {
-      (*beginReduceCallee)(name, getDeviceID(devID), kID);
+      (*beginReduceCallee)(name, devID, kID);
     }
   }
 }
@@ -343,7 +343,7 @@ void kokkosp_begin_fence(const char* name, const uint32_t devID,
     }
 
     if (NULL != beginFenceCallee) {
-      (*beginFenceCallee)(name, getDeviceID(devID), kID);
+      (*beginFenceCallee)(name, devID, kID);
     }
   }
 }
