@@ -1,0 +1,78 @@
+{
+    "version"   : 3,
+    "configurePresets" : [
+        {
+            "name"          : "default",
+            "binaryDir"     : "${sourceDir}/build-with-${presetName}",
+            "cacheVariables" : {
+                "CMAKE_BUILD_TYPE"                  : "Release",
+                "CMAKE_CXX_STANDARD"                : "17",
+                "KokkosTools_ENABLE_EXAMPLES"       : "ON",
+                "KokkosTools_ENABLE_SINGLE"         : "ON",
+                "KokkosTools_ENABLE_MPI"            : "ON"
+            }
+        },
+        {
+            "name"        : "OpenMP",
+            "inherits"    : "default"
+        },
+        {
+            "name"        : "Cuda",
+            "inherits"    : "default",
+            "cacheVariables" : {
+                "CMAKE_CXX_COMPILER" : "$env{Kokkos_ROOT}/bin/nvcc_wrapper"
+            }
+        },
+        {
+            "name"        : "ROCm",
+            "inherits"    : "default",
+            "environment" : {
+                "ROCM_PATH" : "/opt/rocm"
+            },
+            "cacheVariables" : {
+                "CMAKE_CXX_COMPILER" : "hipcc"
+            }
+        }
+    ],
+    "buildPresets" : [
+        {
+            "name"                        : "OpenMP",
+            "configurePreset"             : "OpenMP",
+            "inheritConfigureEnvironment" : true
+        },
+        {
+            "name"                        : "Cuda",
+            "configurePreset"             : "Cuda",
+            "inheritConfigureEnvironment" : true
+        },
+        {
+            "name"                        : "ROCm",
+            "configurePreset"             : "ROCm",
+            "inheritConfigureEnvironment" : true
+        }
+    ],
+    "testPresets" : [
+        {
+            "name"            : "default",
+            "configurePreset" : "default",
+            "inheritConfigureEnvironment" : true,
+            "output"          : {"outputOnFailure": true},
+            "execution"       : {"noTestsAction": "error", "stopOnFailure": false}
+        },
+        {
+            "name"            : "OpenMP",
+            "configurePreset" : "OpenMP",
+            "inherits"        : "default"
+        },
+        {
+            "name"            : "Cuda",
+            "configurePreset" : "Cuda",
+            "inherits"        : "default"
+        },
+        {
+            "name"            : "ROCm",
+            "configurePreset" : "ROCm",
+            "inherits"        : "default"
+        }
+    ]
+}

@@ -1,1 +1,1 @@
-add_library(kp_kernel_logger ${KOKKOSTOOLS_LIBRARY_MODE} kp_kernel_logger.cpp)
+kp_add_library(kp_kernel_logger kp_kernel_logger.cpp)
