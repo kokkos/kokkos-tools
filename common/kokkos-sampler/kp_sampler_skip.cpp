@@ -182,7 +182,6 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
     }
 
     if (NULL != beginScanCallee) {
-      uint64_t nestedID = 0;
       (*beginScanCallee)(name, devID, kID);
     }
   }
