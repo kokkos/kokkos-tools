@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _H_KOKKOSP_KERNEL_NVPROF_CONNECTOR_INFO
-#define _H_KOKKOSP_KERNEL_NVPROF_CONNECTOR_INFO
+#ifndef KOKKOSP_NVTX_CONNECTOR_H
+#define KOKKOSP_NVTX_CONNECTOR_H
 
 #include <stdio.h>
 #include <sys/time.h>
@@ -29,9 +29,9 @@ enum KernelExecutionType {
   PARALLEL_SCAN   = 2
 };
 
-class KernelNVProfConnectorInfo {
+class KernelNVTXConnectorInfo {
  public:
-  KernelNVProfConnectorInfo(std::string kName, KernelExecutionType kernelType) {
+  KernelNVTXConnectorInfo(std::string kName, KernelExecutionType kernelType) {
     domainNameHandle = kName;
     char* domainName = (char*)malloc(sizeof(char*) * (32 + kName.size()));
 
@@ -67,7 +67,7 @@ class KernelNVProfConnectorInfo {
 
   std::string getDomainNameHandle() { return domainNameHandle; }
 
-  ~KernelNVProfConnectorInfo() { nvtxDomainDestroy(domain); }
+  ~KernelNVTXConnectorInfo() { nvtxDomainDestroy(domain); }
 
  private:
   std::string domainNameHandle;
