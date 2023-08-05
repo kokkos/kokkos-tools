@@ -5,11 +5,10 @@
 #include <dlfcn.h>
 #include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
-#include <atomic>
 
 namespace KokkosTools {
 namespace Sampler {
-static atomic<uint64_t> uniqID   = 0;
+static uint64_t uniqID   = 0;
 static uint64_t kernelSampleSkip = 101;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
@@ -153,7 +152,6 @@ void kokkosp_finalize_library() {
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
-  *kID = uniqID++;
 
   if (((*kID) % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
@@ -178,16 +176,12 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
 
     if (NULL != endForCallee) {
         (*endForCallee)(kID);
-      // (*endForCallee)(map.find(kID));
-      
-      // map.clear(nestedID);
     }
   }
 }
 
 void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
                                  uint64_t* kID) {
-  *kID = uniqID++;
   if (((*kID) % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-begin function...\n",
@@ -197,7 +191,6 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
     if (NULL != beginScanCallee) {
       uint64_t nestedID = 0;
       (*beginScanCallee)(name, devID, kID);
-         // map.insert(kID, nestedID);  
     }
   }
 }
@@ -211,8 +204,6 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
 
     if (NULL != endScanCallee) {
       (*endScanCallee)(kID);
-      // (*endForCallee)(map.find(kID)); 
-      // map.clear(nestedID);
     }
   }
 }
@@ -243,8 +234,6 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
 
     if (NULL != endReduceCallee) {
       (*endReduceCallee)(kID);
-     // (*endForCallee)(map.find(kID)); 
-      // map.clear(nestedID);
     }
   }
 }
