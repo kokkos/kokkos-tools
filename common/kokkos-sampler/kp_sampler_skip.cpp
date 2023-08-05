@@ -133,14 +133,11 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   }
 
   free(envBuffer);
-
   uniqID = 1;
-
   const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
   if (NULL != tool_sample) {
     kernelSampleSkip = atoi(tool_sample) + 1;
   }
-
   if (tool_verbosity > 0) {
     printf("KokkosP: Sampling rate set to: %s\n", tool_sample);
   }
@@ -152,17 +149,13 @@ void kokkosp_finalize_library() {
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
-
   if (((*kID) % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-begin function...\n",
              (unsigned long long)(*kID));
     }
-
-    if (NULL != beginForCallee) { 
-       uint64_t nestedID; 
-      (*beginForCallee)(name, devID, nestedID);
-      // map.insert(kID, nestedID);  
+    if (NULL != beginForCallee) {
+      (*beginForCallee)(name, devID, kID);
     }
   }
 }
