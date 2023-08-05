@@ -79,7 +79,8 @@ void focusedConnectorExecuteEnd() {
 
 void kokkosp_finalize_library() {
   printf("-----------------------------------------------------------\n");
-  printf("KokkosP: Finalization of NVProf Connector. Complete.\n");
+  printf(
+      "KokkosP: Finalization of NVTX Analyzer Focused Connector. Complete.\n");
   printf("-----------------------------------------------------------\n");
 }
 
