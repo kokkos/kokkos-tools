@@ -61,6 +61,7 @@ uint32_t getDeviceID(uint32_t devid_in) {
          (devid_in >> num_instance_bits);
 }
 
+bool isValidNestkID(uint64_t nestkID) { return true; }
 bool isValidDevNum(uint32_t devNum) { return true; }
 void kokkosp_provide_tool_programming_interface(
     uint32_t num_funcs, Kokkos_Tools_ToolProgrammingInterface* funcsFromTPI) {
@@ -200,20 +201,14 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
     if (0 < tool_globFence) {
-      if (isValidDevNum(
-              devNum)) {  // check for valid device Num (setting to 1 for now to
-                          // figure out what a valid number is)
-        invoke_ktools_fence(
-            devNum);  // invoke tool-induced fence from device number
-      } else {        // device number is negative
-        if (tool_verbosity > 0)
-          printf(
-              "KokkosP: warning: device number obtained (%lu) from "
-              "sampler is negative. Tool-induced "
-              " fence called with argument 0. \n",
-              (unsigned long)devNum);
-        invoke_ktools_fence(0);
-      }
+      invoke_ktools_fence(
+          devNum);  // invoke tool-induced fence from device number
+                    // device number is negative
+      if (tool_verbosity > 0)
+        printf(
+            "KokkosP:device number obtained (%lu) from "
+            "sampler. \n",
+            (unsigned long)devNum);
     }
     infoOfSample.second = devID;
     if (tool_verbosity > 0) {
@@ -252,34 +247,30 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
     if (0 < tool_globFence) {
-      if (isValidDevNum(devNum)) {
-        invoke_ktools_fence(
-            devNum);  // invoke tool-induced fence from device number
-      } else {        // device number is negative
-        if (tool_verbosity > 0) {
-          printf(
-              "KokkosP: Warning: device number of sample's kernel ID is %lu "
-              "and is corrupted! Invoking global fence. \n",
-              (unsigned long)devNum);
-        }
-        invoke_ktools_fence(0);
+      invoke_ktools_fence(
+          devNum);  // invoke tool-induced fence from device number
+                    // make sure device number is not negative
+      if (tool_verbosity > 0) {
+        printf(
+            "KokkosP: device number of sample's kernel ID is %lu "
+            " \n",
+            (unsigned long)devNum);
       }
     }
+
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-end function...\n",
              (unsigned long long)(kID));
     }
 
     if (NULL != endForCallee) {
-      // (*endForCallee)(kID);
       uint64_t nestedkID = infoOfMatchedSample.first;
-      if (0 > nestedkID) {
+      if (tool_verbosity > 0) {
         printf(
-            "KokkosP: Warning: not calling endForCallee. sampler's child's kID "
+            "KokkosP: sampler's child's kID "
             "(nested "
-            " kID) is %llu - less than 0 - and hence is corrupted!\n",
+            " kID) is %llu. \n",
             (unsigned long long)nestedkID);
-      } else {
         (*endForCallee)(nestedkID);
       }
       infokIDSample.erase(kID);
@@ -306,24 +297,16 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
       // using tool-induced fence from Kokkos_profiling rather than
       // Kokkos_C_Profiling_interface. Note that this function
       // only invokes a fence on the device of the devID passed
-      if (isValidDevNum(devNum)) {
-        invoke_ktools_fence(devNum);
-        if (tool_verbosity > 1) {
-          printf(
-              "KokkosP: sampler begin_parallel_scan callback"
-              " invoked fence on device number %lu\n",
-              (unsigned long)devNum);
-        }
-      } else {  // device obtained was negative
-        if (tool_verbosity > 0)
-          printf(
-              "KokkosP: warning: device number obtained was negative, "
-              "specifically %lu."
-              " Calling global tool induced fence.\n",
-              (unsigned long)devNum);
-        invoke_ktools_fence(0);
+      //
+      invoke_ktools_fence(devNum);
+      if (tool_verbosity > 1) {
+        printf(
+            "KokkosP: sampler begin_parallel_scan callback"
+            " invoked fence on device number %lu\n",
+            (unsigned long)devNum);
       }
     }
+
     infoOfSample.second = devID;
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-begin function...\n",
@@ -353,33 +336,21 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
            .end())) {  // check that we match the begin scan kernel call
     infoOfMatchedSample = infokIDSample.at(kID);
     uint32_t devNum;
-    // devNum = devNumofkID.find(kID);
     uint32_t devID = infoOfMatchedSample.second;
     devNum         = getDeviceID(devID);
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
     if (0 < tool_globFence) {
-      if (!isValidDevNum(devNum)) {
+      // using tool-induced fence from Kokkos_profiling rather than
+      // Kokkos_C_Profiling_interface. Note that this function
+      // only invokes a fence on the device fenced on the begin parallel scan.
+      invoke_ktools_fence(devNum);
+      if (tool_verbosity > 1) {
         printf(
-            "KokkosP: Warning: global tool-induced fence for end_parallel_scan "
-            "invoked."
-            " Retrieved device ID of sampler"
-            " is %lu and hence is corrupted!\n",
+            "KokkosP: sampler end_parallel_scan callback"
+            " invoked tool-induced fence on device %lu\n",
             (unsigned long)devNum);
-        // using tool-induced fence from Kokkos_profiling rather than
-        // Kokkos_C_Profiling_interface. Note that this function
-        // only invokes a fence on the device fenced on the begin parallel scan.
-        invoke_ktools_fence(0);
-      } else {  // device is non-negative
-        invoke_ktools_fence(devNum);
-        if (tool_verbosity > 1) {
-          printf(
-              "KokkosP: sampler end_parallel_scan callback"
-              " invoked tool-induced fence on device %lu\n",
-              (unsigned long)devNum);
-        }
       }
-
     }  // end invoke fence conditional
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-end function...\n",
@@ -387,13 +358,7 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
     }
     if (NULL != endScanCallee) {
       uint64_t nestedkID = infoOfMatchedSample.first;
-      if (nestedkID < 0) {
-        printf(
-            "KokkosP: Warning: sampler's child's kID (nested kID) is %llu - "
-            "less than 0 - and hence is corrupted!\n",
-            (unsigned long long)nestedkID);
-      } else
-        (*endScanCallee)(nestedkID);
+      (*endScanCallee)(nestedkID);
       infokIDSample.erase(kID);
     } else {
       if (tool_verbosity > 1)
@@ -416,25 +381,19 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
     devNum = getDeviceID(devID);
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
-    if (isValidDevNum(devNum)) {
-      if (0 < tool_globFence) {
-        // using tool-induced fence from Kokkos_profiling rather than
-        // Kokkos_C_Profiling_interface. Note that this function
-        // only invokes a fence on devNum of devID specified
-        invoke_ktools_fence(devNum);
-      }
-    } else {  // device number is negative
-      if (tool_verbosity > 0) {
+    if (0 < tool_globFence) {
+      // using tool-induced fence from Kokkos_profiling rather than
+      // Kokkos_C_Profiling_interface. Note that this function
+      // only invokes a fence on devNum of devID specified
+      invoke_ktools_fence(devNum);
+      if (tool_verbosity > 1) {
         printf(
-            "KokkosP: warning: sampler begin_parallel_reduce obtained negative "
-            "dev number, i.e., %d \n",
-            devNum);
+            "KokkosP: sampler begin_parallel_reduce obtained "
+            "dev number, i.e., %lu \n",
+            (unsigned long)devNum);
       }
-      invoke_ktools_fence(0);
     }
-
     infoOfSample.second = devID;
-
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-begin function...\n",
              (unsigned long long)(*kID));
@@ -468,22 +427,10 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
     if (0 < tool_globFence) {
-      if (isValidDevNum(devNum)) {
-        invoke_ktools_fence(devNum);
-        if (tool_verbosity > 1) {
-          printf(
-              "KokkosP: sampler's end parallel reduce obtained devNum %lu \n",
-              (unsigned long)devNum);
-        }
-      } else {  // device number is negative
-        if (tool_verbosity > 0) {
-          printf(
-              "KokkosP: warning: calling tool induced fence on all devices "
-              "from sampler end_parallel_reduce. "
-              "obtained negative device number, i.e., %lu \n",
-              (unsigned long)devNum);
-        }
-        invoke_ktools_fence(0);
+      invoke_ktools_fence(devNum);
+      if (tool_verbosity > 1) {
+        printf("KokkosP: sampler's end parallel reduce obtained devNum %lu \n",
+               (unsigned long)devNum);
       }
     }  // end tool invoked fence
     if (tool_verbosity > 0) {
@@ -492,11 +439,9 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
     }
     if (NULL != endReduceCallee) {
       uint64_t nestedkID = infoOfMatchedSample.second;
-      if (0 > nestedkID) {
-        printf(
-            "KokkosP: sampler's child's kID (nested kID) is %llu - less than 0 "
-            "- and hence is corrupted!\n",
-            (unsigned long long)nestedkID);
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sampler's endReduceCallee kID (nested kID) is %llu \n",
+               (unsigned long long)nestedkID);
       }
       (*endReduceCallee)(nestedkID);
       infokIDSample.erase(kID);
