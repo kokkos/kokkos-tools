@@ -61,8 +61,6 @@ uint32_t getDeviceID(uint32_t devid_in) {
          (devid_in >> num_instance_bits);
 }
 
-bool isValidNestkID(uint64_t nestkID) { return true; }
-bool isValidDevNum(uint32_t devNum) { return true; }
 void kokkosp_provide_tool_programming_interface(
     uint32_t num_funcs, Kokkos_Tools_ToolProgrammingInterface* funcsFromTPI) {
   if (!num_funcs) {
@@ -201,9 +199,8 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
     if (0 < tool_globFence) {
-      invoke_ktools_fence(
-          devNum);  // invoke tool-induced fence from device number
-                    // device number is negative
+      invoke_ktools_fence(devNum);  // invoke tool-induced fence from device
+                                    // number device number is negative
       if (tool_verbosity > 0)
         printf(
             "KokkosP:device number obtained (%lu) from "
