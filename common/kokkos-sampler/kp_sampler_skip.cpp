@@ -15,10 +15,7 @@ namespace KokkosTools {
 namespace Sampler {
 static atomic<uint64_t> uniqID = 0;
 static mutex sampler_mtx;
-// static tuple<uint64_t, int> tupleofkID;
-// static pair<uint64_t, int> nestedkIDdevID;
 static unordered_map<uint64_t, pair<uint64_t, uint32_t>> infokIDSample;
-// static unordered_map<uint64_t,uint64_t> nestedkIDofkID;
 static uint64_t kernelSampleSkip = 101;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
@@ -197,9 +194,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    // accurate value
-    pair<uint64_t, uint32_t> infoOfSample = make_tuple(0, 0);
-    // infoOfSample = new pair<uint64_t,uint64_t>(0, 0);
+    pair<uint64_t, uint32_t> infoOfSample;
     uint32_t devNum = getDeviceID(devID);
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
@@ -218,8 +213,6 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
       }
     }
     infoOfSample.second = devID;
-    // devNumofkID.insert(devNum);
-
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-begin function...\n",
              (unsigned long long)(*kID));
@@ -302,8 +295,8 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
   ++invocationNum;
   uint32_t devNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    pair<uint64_t, uint32_t> infoOfSample = make_tuple(0, 0);
-    devNum                                = getDeviceID(devID);
+    pair<uint64_t, uint32_t> infoOfSample;
+    devNum = getDeviceID(devID);
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
     if (0 < tool_globFence) {
@@ -414,7 +407,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
   *kID = uniqID++;
   static uint64_t invocationNum;
   ++invocationNum;
-  pair<uint64_t, uint32_t> infoOfSample = make_tuple(0, 0);
+  pair<uint64_t, uint32_t> infoOfSample;
   uint32_t devNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
     devNum = getDeviceID(devID);
@@ -461,7 +454,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
 }  // end begin_parallel_reduce callback
 
 void kokkosp_end_parallel_reduce(const uint64_t kID) {
-  pair<uint64_t, uint32_t> infoOfMatchedSample = make_tuple(0, 0);
+  pair<uint64_t, uint32_t> infoOfMatchedSample;
   uint32_t devNum;
   uint32_t devID;
   sampler_mtx.lock();
