@@ -61,6 +61,7 @@ uint32_t getDeviceID(uint32_t devid_in) {
          (devid_in >> num_instance_bits);
 }
 
+bool isValidDevNum(uint32_t devNum) { return true; }
 void kokkosp_provide_tool_programming_interface(
     uint32_t num_funcs, Kokkos_Tools_ToolProgrammingInterface* funcsFromTPI) {
   if (!num_funcs) {
@@ -199,7 +200,9 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
     if (0 < tool_globFence) {
-      if (0 <= devNum) {
+      if (isValidDevNum(
+              devNum)) {  // check for valid device Num (setting to 1 for now to
+                          // figure out what a valid number is)
         invoke_ktools_fence(
             devNum);  // invoke tool-induced fence from device number
       } else {        // device number is negative
@@ -249,7 +252,7 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
     if (0 < tool_globFence) {
-      if (0 <= devNum) {
+      if (isValidDevNum(devNum)) {
         invoke_ktools_fence(
             devNum);  // invoke tool-induced fence from device number
       } else {        // device number is negative
@@ -303,7 +306,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
       // using tool-induced fence from Kokkos_profiling rather than
       // Kokkos_C_Profiling_interface. Note that this function
       // only invokes a fence on the device of the devID passed
-      if (0 <= devNum) {
+      if (isValidDevNum(devNum)) {
         invoke_ktools_fence(devNum);
         if (tool_verbosity > 1) {
           printf(
@@ -356,7 +359,7 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
     if (0 < tool_globFence) {
-      if (devNum < 0) {
+      if (!isValidDevNum(devNum)) {
         printf(
             "KokkosP: Warning: global tool-induced fence for end_parallel_scan "
             "invoked."
@@ -413,7 +416,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
     devNum = getDeviceID(devID);
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
-    if (0 < devNum) {
+    if (isValidDevNum(devNum)) {
       if (0 < tool_globFence) {
         // using tool-induced fence from Kokkos_profiling rather than
         // Kokkos_C_Profiling_interface. Note that this function
@@ -465,7 +468,7 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate value
     if (0 < tool_globFence) {
-      if (0 < devNum) {
+      if (isValidDevNum(devNum)) {
         invoke_ktools_fence(devNum);
         if (tool_verbosity > 1) {
           printf(
