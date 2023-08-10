@@ -23,11 +23,10 @@
 
 #include "kp_core.hpp"
 
-static int tool_globfences; // use an integer   
-static uint64_t nextKernelID; 
+static int tool_globfences;  // use an integer
 
 namespace KokkosTools {
-namespace NVProfConnector {
+namespace NVTXConnector {
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
@@ -48,25 +47,13 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
          loadSeq, (unsigned long long)(interfaceVer));
   printf("-----------------------------------------------------------\n");
 
-  const char* tool_global_fences = getenv("KOKKOS_TOOLS_NVTXCONNECTOR_GLOBALFENCES");
+  const char* tool_global_fences = getenv("KOKKOS_TOOLS_GLOBALFENCES");
   if (NULL != tool_global_fences) {
     tool_globfences = atoi(tool_global_fences);
   } else {
     tool_globfences =
         1;  // default to 1 to be conservative for capturing state by the tool
   }
-
-  char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
-  if (NULL == profileLibrary) {
-    printf(
-        "Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a deprecated "
-        "variable. Please use KOKKOS_TOOLS_LIBS.\n");
-    profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
-    if (NULL == profileLibrary) {
-      printf("KokkosP: No library to call in %s\n", profileLibrary);
-      exit(-1);
-    }
-
 
   nvtxNameOsThread(pthread_self(), "Application Main Thread");
   nvtxMarkA("Kokkos::Initialization Complete");
@@ -120,17 +107,20 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
   Kokkos::Tools::Experimental::EventSet my_event_set;
   memset(&my_event_set, 0,
          sizeof(my_event_set));  // zero any pointers not set here
-  my_event_set.request_tool_settings = kokkosp_request_tool_settings;
-  my_event_set.init                  = kokkosp_init_library;
-  my_event_set.finalize              = kokkosp_finalize_library;
-  my_event_set.push_region           = kokkosp_push_profile_region;
-  my_event_set.pop_region            = kokkosp_pop_profile_region;
-  my_event_set.begin_parallel_for    = kokkosp_begin_parallel_for;
-  my_event_set.begin_parallel_reduce = kokkosp_begin_parallel_reduce;
-  my_event_set.begin_parallel_scan   = kokkosp_begin_parallel_scan;
-  my_event_set.end_parallel_for      = kokkosp_end_parallel_for;
-  my_event_set.end_parallel_reduce   = kokkosp_end_parallel_reduce;
-  my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
+  my_event_set.request_tool_settings  = kokkosp_request_tool_settings;
+  my_event_set.init                   = kokkosp_init_library;
+  my_event_set.finalize               = kokkosp_finalize_library;
+  my_event_set.push_region            = kokkosp_push_profile_region;
+  my_event_set.pop_region             = kokkosp_pop_profile_region;
+  my_event_set.begin_parallel_for     = kokkosp_begin_parallel_for;
+  my_event_set.begin_parallel_reduce  = kokkosp_begin_parallel_reduce;
+  my_event_set.begin_parallel_scan    = kokkosp_begin_parallel_scan;
+  my_event_set.end_parallel_for       = kokkosp_end_parallel_for;
+  my_event_set.end_parallel_reduce    = kokkosp_end_parallel_reduce;
+  my_event_set.end_parallel_scan      = kokkosp_end_parallel_scan;
+  my_event_set.create_profile_section = kokkosp_create_profile_section;
+  my_event_set.start_profile_section  = kokkosp_start_profile_section;
+  my_event_set.stop_profile_section   = kokkosp_stop_profile_section;
   return my_event_set;
 }
 
@@ -154,40 +144,36 @@ void kokkosp_profile_event(const char* name) { nvtxMarkA(name); }
 
 void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
                          uint64_t* handle) {
-   if (nullptr == name) {
+  if (nullptr == name) {
     name = "anonymous. Kokkos fence";
   }
-    // filter out fence as this is a duplicate and unneeded (causing the tool to
+  // filter out fence as this is a duplicate and unneeded (causing the tool to
   // hinder performance of application). We use strstr for checking if the
   // string contains the label of a fence (we assume the user will always have
   // the word fence in the label of the fence).
   if (std::strstr(name, "Kokkos Profile Tool Fence")) {
     // set the dereferenced execution identifier to be the maximum value of
     // uint64_t, which is assumed to never be assigned
-   *handle = std::numeric_limits<uint64_t>::max();
+    *handle = std::numeric_limits<uint64_t>::max();
+  } else {
+    nvtxRangeId_t id = nvtxRangeStartA(name);
+    *handle          = id;  // handle will be provided back to end_fence
   }
-  else 
-  {
-     nvtxRangeId_t id = nvtxRangeStartA(name);
-     *handle          = id;  // handle will be provided back to end_fence
-  }
-  
- }
+}
 
 void kokkosp_end_fence(uint64_t handle) {
   nvtxRangeId_t id = handle;
-  if(handle != std::numeric_limits<uint64_t>::max()) 
-  {
+  if (handle != std::numeric_limits<uint64_t>::max()) {
     nvtxRangeEnd(id);
   }
- }
+}
 
-}  // namespace NVProfConnector
+}  // namespace NVTXConnector
 }  // namespace KokkosTools
 
 extern "C" {
 
-namespace impl = KokkosTools::NVProfConnector;
+namespace impl = KokkosTools::NVTXConnector;
 
 EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
 EXPOSE_INIT(impl::kokkosp_init_library)
@@ -200,5 +186,7 @@ EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
 EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
-// TODO: expose section stuff
+EXPOSE_CREATE_PROFILE_SECTION(impl::kokkosp_create_profile_section)
+EXPOSE_START_PROFILE_SECTION(impl::kokkosp_start_profile_section)
+EXPOSE_STOP_PROFILE_SECTION(impl::kokkosp_stop_profile_section)
 }  // extern "C"
