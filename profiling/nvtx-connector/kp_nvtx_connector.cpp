@@ -144,9 +144,6 @@ void kokkosp_profile_event(const char* name) { nvtxMarkA(name); }
 
 void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
                          uint64_t* handle) {
-  if (nullptr == name) {
-    name = "anonymous. Kokkos fence";
-  }
   // filter out fence as this is a duplicate and unneeded (causing the tool to
   // hinder performance of application). We use strstr for checking if the
   // string contains the label of a fence (we assume the user will always have
