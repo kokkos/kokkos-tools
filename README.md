@@ -73,14 +73,6 @@ The following provides an overview of the tools available in the set of Kokkos T
 
     Provides Kokkos Kernel Names to NVTX, so that analysis can be performed on a per kernel base.
 
-+ [**NVProfFocusedConnector:**](https://github.com/kokkos/kokkos-tools/wiki/NVTXFocusedConnector)
-
-    Like NVTXConnector but turns profiling off outside of kernels. Should be used in conjunction with the KernelFilter tool. (Note: this will soon be renamed to NVTXFocusedConnector.)
-
-+ [**ROCTXConnector:**](https://github.com/kokkos/kokkos-tools/wiki/ROCTXConnector)
-
-    Provides Kokkos Kernel Names to RocTX, so that analysis can be performed on a per kernel base.
-
 + [**Timemory:**](https://github.com/kokkos/kokkos-tools/wiki/Timemory)
 
     Modular connector for accumulating timing, memory usage, hardware counters, and other various metrics.
