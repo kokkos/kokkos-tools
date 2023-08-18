@@ -18,13 +18,13 @@
 #include <cstdint>
 #include <vector>
 #include <string>
-
+#include <limits>
 #include "nvToolsExt.h"
 
 #include "kp_core.hpp"
 
-static int tool_globfences;  // use an integer
-
+static int tool_globfences;  // use an integer for other options
+using namespace std;
 namespace KokkosTools {
 namespace NVTXConnector {
 
@@ -130,7 +130,7 @@ void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
   if (std::strstr(name, "Kokkos Profile Tool Fence")) {
     // set the dereferenced execution identifier to be the maximum value of
     // uint64_t, which is assumed to never be assigned
-    *handle = std::numeric_limits<uint64_t>::max();
+    *handle = numeric_limits<uint64_t>::max();
   } else {
     nvtxRangeId_t id = nvtxRangeStartA(name);
     *handle          = id;  // handle will be provided back to end_fence
@@ -139,7 +139,7 @@ void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
 
 void kokkosp_end_fence(uint64_t handle) {
   nvtxRangeId_t id = handle;
-  if (handle != std::numeric_limits<uint64_t>::max()) {
+  if (handle != numeric_limits<uint64_t>::max()) {
     nvtxRangeEnd(id);
   }
 }
