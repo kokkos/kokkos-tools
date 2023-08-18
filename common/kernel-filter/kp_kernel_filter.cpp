@@ -101,18 +101,14 @@ extern "C" void kokkosp_init_library(const int loadSeq,
     printf("============================================================\n");
     printf("KokkosP: Filter File: %s\n", kernelFilterPath);
     printf("============================================================\n");
-
     FILE* kernelFilterFile = fopen(kernelFilterPath, "rt");
-
     if (NULL == kernelFilterFile) {
       fprintf(stderr, "Unable to open kernel filter: %s\n", kernelFilterPath);
       exit(-1);
     } else {
       char* lineBuffer = (char*)malloc(sizeof(char) * 65536);
-
       while (kokkospReadLine(kernelFilterFile, lineBuffer)) {
         printf("KokkosP: Filter [%s]\n", lineBuffer);
-
         std::regex nextRegEx(lineBuffer, std::regex::optimize);
         kernelNames.push_back(nextRegEx);
       }
@@ -137,7 +133,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
          printf("KokkosP: No library to call in %s\n", profileLibrary);
          exit(-1);
        }
-
+      
       char* envBuffer =
           (char*)malloc(sizeof(char) * (strlen(profileLibrary) + 1));
       strcpy(envBuffer, profileLibrary);
@@ -168,7 +164,6 @@ extern "C" void kokkosp_init_library(const int loadSeq,
               (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_scan");
           beginReduceCallee = (beginFunction)dlsym(
               childLibrary, "kokkosp_begin_parallel_reduce");
-          
           endScanCallee =
               (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_scan");
           endForCallee =
@@ -185,14 +180,15 @@ extern "C" void kokkosp_init_library(const int loadSeq,
                                   deviceInfo);
           }
         }
-      }
-
       free(envBuffer);
     }
-
+   }
+    } 
     printf("============================================================\n");
   }
-}
+
+} // end kokkosp_init_library 
+ 
 
 extern "C" void kokkosp_finalize_library() {
   if (NULL != finalizeProfileLibrary) {
