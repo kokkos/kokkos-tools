@@ -119,76 +119,75 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 
     printf("KokkosP: Kernel Filtering is %s\n",
            (filterKernels ? "enabled" : "disabled"));
-    
-    if (filterKernels) { 
+
+    if (filterKernels) {
       char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
       // check deprecated environment variable.
       if (NULL == profileLibrary) {
-       printf(
-        "Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a deprecated "
-        "variable. Please use KOKKOS_TOOLS_LIBS.\n");
-       profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
-       
-       if (NULL == profileLibrary) {
-         printf("KokkosP: No library to call in %s\n", profileLibrary);
-         exit(-1);
-       }
-      
-      char* envBuffer =
-          (char*)malloc(sizeof(char) * (strlen(profileLibrary) + 1));
-      strcpy(envBuffer, profileLibrary);
+        printf(
+            "Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a deprecated "
+            "variable. Please use KOKKOS_TOOLS_LIBS.\n");
+        profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
 
-      char* nextLibrary = strtok(envBuffer, ";");
-
-      for (int i = 0; i < loadSeq; i++) {
-        nextLibrary = strtok(NULL, ";");
-      }
-      
-      nextLibrary = strtok(NULL, ";");
-
-      if (NULL == nextLibrary) {
-        printf("KokkosP: No child library to call in %s\n", profileLibrary);
-      } else {
-        printf("KokkosP: Next library to call: %s\n", nextLibrary);
-        printf("KokkosP: Loading child library ..\n");
-
-        void* childLibrary = dlopen(nextLibrary, RTLD_NOW | RTLD_GLOBAL);
-
-        if (NULL == childLibrary) {
-          fprintf(stderr, "KokkosP: Error: Unable to load: %s (Error=%s)\n",
-                  nextLibrary, dlerror());
-        } else {
-          beginForCallee =
-              (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_for");
-          beginScanCallee =
-              (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_scan");
-          beginReduceCallee = (beginFunction)dlsym(
-              childLibrary, "kokkosp_begin_parallel_reduce");
-          endScanCallee =
-              (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_scan");
-          endForCallee =
-              (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_for");
-          endReduceCallee =
-              (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_reduce");
-          initProfileLibrary =
-              (initFunction)dlsym(childLibrary, "kokkosp_init_library");
-          finalizeProfileLibrary =
-              (finalizeFunction)dlsym(childLibrary, "kokkosp_finalize_library");
-          
-          if (NULL != initProfileLibrary) {
-            (*initProfileLibrary)(loadSeq + 1, interfaceVer, devInfoCount,
-                                  deviceInfo);
-          }
+        if (NULL == profileLibrary) {
+          printf("KokkosP: No library to call in %s\n", profileLibrary);
+          exit(-1);
         }
-      free(envBuffer);
+
+        char* envBuffer =
+            (char*)malloc(sizeof(char) * (strlen(profileLibrary) + 1));
+        strcpy(envBuffer, profileLibrary);
+
+        char* nextLibrary = strtok(envBuffer, ";");
+
+        for (int i = 0; i < loadSeq; i++) {
+          nextLibrary = strtok(NULL, ";");
+        }
+
+        nextLibrary = strtok(NULL, ";");
+
+        if (NULL == nextLibrary) {
+          printf("KokkosP: No child library to call in %s\n", profileLibrary);
+        } else {
+          printf("KokkosP: Next library to call: %s\n", nextLibrary);
+          printf("KokkosP: Loading child library ..\n");
+
+          void* childLibrary = dlopen(nextLibrary, RTLD_NOW | RTLD_GLOBAL);
+
+          if (NULL == childLibrary) {
+            fprintf(stderr, "KokkosP: Error: Unable to load: %s (Error=%s)\n",
+                    nextLibrary, dlerror());
+          } else {
+            beginForCallee  = (beginFunction)dlsym(childLibrary,
+                                                  "kokkosp_begin_parallel_for");
+            beginScanCallee = (beginFunction)dlsym(
+                childLibrary, "kokkosp_begin_parallel_scan");
+            beginReduceCallee = (beginFunction)dlsym(
+                childLibrary, "kokkosp_begin_parallel_reduce");
+            endScanCallee =
+                (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_scan");
+            endForCallee =
+                (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_for");
+            endReduceCallee =
+                (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_reduce");
+            initProfileLibrary =
+                (initFunction)dlsym(childLibrary, "kokkosp_init_library");
+            finalizeProfileLibrary = (finalizeFunction)dlsym(
+                childLibrary, "kokkosp_finalize_library");
+
+            if (NULL != initProfileLibrary) {
+              (*initProfileLibrary)(loadSeq + 1, interfaceVer, devInfoCount,
+                                    deviceInfo);
+            }
+          }
+          free(envBuffer);
+        }
+      }
     }
-   }
-    } 
     printf("============================================================\n");
   }
 
-} // end kokkosp_init_library 
- 
+}  // end kokkosp_init_library
 
 extern "C" void kokkosp_finalize_library() {
   if (NULL != finalizeProfileLibrary) {
