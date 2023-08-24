@@ -134,13 +134,16 @@ extern "C" void kokkosp_init_library(const int loadSeq,
         if (NULL == profileLibrary) {
           printf("KokkosP: No library to call in %s\n", profileLibrary);
           exit(-1);
-        }
-        else {
-         printf("KokkosP: Found that KOKKOS_PROFILE_LIBRARY is set and it will be used.\n");
-         printf("KokkosP: Note that KOKKOS_PROFILE_LIBRARY is a deprecated variable. " 
-         "Please use KOKKOS_TOOLS_LIBS in the future.\n");
-	  } // end note for KOKKOS_PROFILE_LIBRARY
-        }  // end check for backward compatability
+        } else {
+          printf(
+              "KokkosP: Found that KOKKOS_PROFILE_LIBRARY is set and it will "
+              "be used.\n");
+          printf(
+              "KokkosP: Note that KOKKOS_PROFILE_LIBRARY is a deprecated "
+              "variable. "
+              "Please use KOKKOS_TOOLS_LIBS in the future.\n");
+        }  // end note for KOKKOS_PROFILE_LIBRARY
+      }    // end check for backward compatability
 
       char* envBuffer =
           (char*)malloc(sizeof(char) * (strlen(profileLibrary) + 1));
