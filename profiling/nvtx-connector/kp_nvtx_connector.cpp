@@ -24,7 +24,8 @@
 
 #include "kp_core.hpp"
 
-static bool tool_globfences;  // use an integer for other options
+static bool tool_globfences;
+
 namespace KokkosTools {
 namespace NVTXConnector {
 
