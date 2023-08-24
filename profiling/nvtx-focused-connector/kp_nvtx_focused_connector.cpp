@@ -58,7 +58,8 @@ void kokkosp_init_library(
   printf("-----------------------------------------------------------\n");
   const char* tool_global_fences = getenv("KOKKOS_TOOLS_GLOBALFENCES");
   if (NULL != tool_global_fences) {
-    tool_globfences = (atoi(tool_global_fences) != 0); // if user sets to 0, no global fences
+    tool_globfences =
+        (atoi(tool_global_fences) != 0);  // if user sets to 0, no global fences
   } else {
     tool_globfences =
         true;  // default to true to be conservative for capturing state by tool
@@ -105,7 +106,7 @@ void kokkosp_finalize_library() {
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t /*devID*/,
                                 uint64_t* kID) {
-  *kID = nextKernelID++;
+  *kID          = nextKernelID++;
   currentKernel = getFocusedConnectorInfo(name, PARALLEL_FOR);
   focusedConnectorExecuteStart();
 }
@@ -116,7 +117,7 @@ void kokkosp_end_parallel_for(const uint64_t /*kID*/) {
 
 void kokkosp_begin_parallel_scan(const char* name, const uint32_t /*devID*/,
                                  uint64_t* kID) {
-  *kID = nextKernelID++;
+  *kID          = nextKernelID++;
   currentKernel = getFocusedConnectorInfo(name, PARALLEL_SCAN);
   focusedConnectorExecuteStart();
 }
@@ -127,7 +128,7 @@ void kokkosp_end_parallel_scan(const uint64_t /*kID*/) {
 
 void kokkosp_begin_parallel_reduce(const char* name, const uint32_t /*devID*/,
                                    uint64_t* kID) {
-  *kID = nextKernelID++;
+  *kID          = nextKernelID++;
   currentKernel = getFocusedConnectorInfo(name, PARALLEL_REDUCE);
   focusedConnectorExecuteStart();
 }
