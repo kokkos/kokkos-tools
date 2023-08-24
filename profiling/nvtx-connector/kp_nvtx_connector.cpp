@@ -19,24 +19,23 @@
 #include <vector>
 #include <string>
 #include <limits>
+
 #include "nvToolsExt.h"
 
 #include "kp_core.hpp"
 
-static int tool_globfences;  // use an integer for other options
-using namespace std;
+static bool tool_globfences;  // use an integer for other options
 namespace KokkosTools {
 namespace NVTXConnector {
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
   settings->requires_global_fencing = true;
-  if (tool_globfences == 1) {
+  if (tool_globfences) {
     settings->requires_global_fencing = true;
   } else {
     settings->requires_global_fencing = false;
   }
-  // leave the door open for other nonzero values of tools
 }
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
@@ -49,15 +48,12 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
   const char* tool_global_fences = getenv("KOKKOS_TOOLS_GLOBALFENCES");
   if (NULL != tool_global_fences) {
-    tool_globfences = atoi(tool_global_fences);
-  } else {
-    tool_globfences =
-        1;  // default to 1 to be conservative for capturing state by the tool
-  }
+         tool_globfences = (atoi(tool_global_fences) != 0);
+         nvtxNameOsThread(pthread_self(), "Application Main Thread");
+         nvtxMarkA("Kokkos::Initialization Complete");
+   }
 
-  nvtxNameOsThread(pthread_self(), "Application Main Thread");
-  nvtxMarkA("Kokkos::Initialization Complete");
-}
+} // end kokkosp_init_library 
 
 void kokkosp_finalize_library() {
   printf("-----------------------------------------------------------\n");
@@ -130,7 +126,7 @@ void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
   if (std::strstr(name, "Kokkos Profile Tool Fence")) {
     // set the dereferenced execution identifier to be the maximum value of
     // uint64_t, which is assumed to never be assigned
-    *handle = numeric_limits<uint64_t>::max();
+    *handle = std::numeric_limits<uint64_t>::max();
   } else {
     nvtxRangeId_t id = nvtxRangeStartA(name);
     *handle          = id;  // handle will be provided back to end_fence
@@ -139,7 +135,7 @@ void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
 
 void kokkosp_end_fence(uint64_t handle) {
   nvtxRangeId_t id = handle;
-  if (handle != numeric_limits<uint64_t>::max()) {
+  if (handle != std::numeric_limits<uint64_t>::max()) {
     nvtxRangeEnd(id);
   }
 }
