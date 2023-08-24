@@ -95,7 +95,7 @@ endif()
 include(cmake/configure_variorum.cmake)
 
 set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
-set(KOKKOSTOOLS_HAS_NVPROF ${Kokkos_ENABLE_CUDA}) # we assume that enabling CUDA for Kokkos program means nvprof should be available
+set(KOKKOSTOOLS_HAS_NVTX ${Kokkos_ENABLE_CUDA}) # we assume that enabling CUDA for Kokkos program means nvtx should be available
 
 if(DEFINED ENV{VTUNE_HOME})
   set(VTune_ROOT $ENV{VTUNE_HOME})
@@ -180,7 +180,7 @@ endif()
 # GPU profilers
 if(Kokkos_ENABLE_CUDA)
   add_subdirectory(profiling/nvtx-connector)
-  add_subdirectory(profiling/nvprof-focused-connector)
+  add_subdirectory(profiling/nvtx-focused-connector)
 endif()
 if(Kokkos_ENABLE_HIP)
   add_subdirectory(profiling/roctx-connector)
