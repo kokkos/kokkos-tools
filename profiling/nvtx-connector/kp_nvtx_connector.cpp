@@ -48,12 +48,12 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
   const char* tool_global_fences = getenv("KOKKOS_TOOLS_GLOBALFENCES");
   if (NULL != tool_global_fences) {
-         tool_globfences = (atoi(tool_global_fences) != 0);
-         nvtxNameOsThread(pthread_self(), "Application Main Thread");
-         nvtxMarkA("Kokkos::Initialization Complete");
-   }
+    tool_globfences = (atoi(tool_global_fences) != 0);
+    nvtxNameOsThread(pthread_self(), "Application Main Thread");
+    nvtxMarkA("Kokkos::Initialization Complete");
+  }
 
-} // end kokkosp_init_library 
+}  // end kokkosp_init_library
 
 void kokkosp_finalize_library() {
   printf("-----------------------------------------------------------\n");
