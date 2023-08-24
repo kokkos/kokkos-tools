@@ -18,17 +18,25 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <limits>
 
 #include "nvToolsExt.h"
 
 #include "kp_core.hpp"
 
+static bool tool_globfences;
+
 namespace KokkosTools {
-namespace NVProfConnector {
+namespace NVTXConnector {
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
-  settings->requires_global_fencing = false;
+  settings->requires_global_fencing = true;
+  if (tool_globfences) {
+    settings->requires_global_fencing = true;
+  } else {
+    settings->requires_global_fencing = false;
+  }
 }
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
@@ -39,9 +47,14 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
          loadSeq, (unsigned long long)(interfaceVer));
   printf("-----------------------------------------------------------\n");
 
-  nvtxNameOsThread(pthread_self(), "Application Main Thread");
-  nvtxMarkA("Kokkos::Initialization Complete");
-}
+  const char* tool_global_fences = getenv("KOKKOS_TOOLS_GLOBALFENCES");
+  if (NULL != tool_global_fences) {
+    tool_globfences = (atoi(tool_global_fences) != 0);
+    nvtxNameOsThread(pthread_self(), "Application Main Thread");
+    nvtxMarkA("Kokkos::Initialization Complete");
+  }
+
+}  // end kokkosp_init_library
 
 void kokkosp_finalize_library() {
   printf("-----------------------------------------------------------\n");
@@ -87,24 +100,6 @@ struct Section {
 std::vector<Section> kokkosp_sections;
 }  // namespace
 
-Kokkos::Tools::Experimental::EventSet get_event_set() {
-  Kokkos::Tools::Experimental::EventSet my_event_set;
-  memset(&my_event_set, 0,
-         sizeof(my_event_set));  // zero any pointers not set here
-  my_event_set.request_tool_settings = kokkosp_request_tool_settings;
-  my_event_set.init                  = kokkosp_init_library;
-  my_event_set.finalize              = kokkosp_finalize_library;
-  my_event_set.push_region           = kokkosp_push_profile_region;
-  my_event_set.pop_region            = kokkosp_pop_profile_region;
-  my_event_set.begin_parallel_for    = kokkosp_begin_parallel_for;
-  my_event_set.begin_parallel_reduce = kokkosp_begin_parallel_reduce;
-  my_event_set.begin_parallel_scan   = kokkosp_begin_parallel_scan;
-  my_event_set.end_parallel_for      = kokkosp_end_parallel_for;
-  my_event_set.end_parallel_reduce   = kokkosp_end_parallel_reduce;
-  my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
-  return my_event_set;
-}
-
 void kokkosp_create_profile_section(const char* name, uint32_t* sID) {
   *sID = kokkosp_sections.size();
   kokkosp_sections.push_back(
@@ -121,12 +116,61 @@ void kokkosp_stop_profile_section(const uint32_t sID) {
   nvtxRangeEnd(section.id);
 }
 
-}  // namespace NVProfConnector
+void kokkosp_profile_event(const char* name) { nvtxMarkA(name); }
+
+void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
+                         uint64_t* handle) {
+  // filter out fence as this is a duplicate and unneeded (causing the tool to
+  // hinder performance of application). We use strstr for checking if the
+  // string contains the label of a fence (we assume the user will always have
+  // the word fence in the label of the fence).
+  if (std::strstr(name, "Kokkos Profile Tool Fence")) {
+    // set the dereferenced execution identifier to be the maximum value of
+    // uint64_t, which is assumed to never be assigned
+    *handle = std::numeric_limits<uint64_t>::max();
+  } else {
+    nvtxRangeId_t id = nvtxRangeStartA(name);
+    *handle          = id;  // handle will be provided back to end_fence
+  }
+}
+
+void kokkosp_end_fence(uint64_t handle) {
+  nvtxRangeId_t id = handle;
+  if (handle != std::numeric_limits<uint64_t>::max()) {
+    nvtxRangeEnd(id);
+  }
+}
+
+Kokkos::Tools::Experimental::EventSet get_event_set() {
+  Kokkos::Tools::Experimental::EventSet my_event_set;
+  memset(&my_event_set, 0,
+         sizeof(my_event_set));  // zero any pointers not set here
+  my_event_set.request_tool_settings  = kokkosp_request_tool_settings;
+  my_event_set.init                   = kokkosp_init_library;
+  my_event_set.finalize               = kokkosp_finalize_library;
+  my_event_set.push_region            = kokkosp_push_profile_region;
+  my_event_set.pop_region             = kokkosp_pop_profile_region;
+  my_event_set.begin_parallel_for     = kokkosp_begin_parallel_for;
+  my_event_set.begin_parallel_reduce  = kokkosp_begin_parallel_reduce;
+  my_event_set.begin_parallel_scan    = kokkosp_begin_parallel_scan;
+  my_event_set.end_parallel_for       = kokkosp_end_parallel_for;
+  my_event_set.end_parallel_reduce    = kokkosp_end_parallel_reduce;
+  my_event_set.end_parallel_scan      = kokkosp_end_parallel_scan;
+  my_event_set.create_profile_section = kokkosp_create_profile_section;
+  my_event_set.start_profile_section  = kokkosp_start_profile_section;
+  my_event_set.stop_profile_section   = kokkosp_stop_profile_section;
+  my_event_set.profile_event          = kokkosp_profile_event;
+  my_event_set.begin_fence            = kokkosp_begin_fence;
+  my_event_set.end_fence              = kokkosp_end_fence;
+  return my_event_set;
+}
+
+}  // namespace NVTXConnector
 }  // namespace KokkosTools
 
 extern "C" {
 
-namespace impl = KokkosTools::NVProfConnector;
+namespace impl = KokkosTools::NVTXConnector;
 
 EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
 EXPOSE_INIT(impl::kokkosp_init_library)
@@ -139,5 +183,10 @@ EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
 EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
-// TODO: expose section stuff
+EXPOSE_CREATE_PROFILE_SECTION(impl::kokkosp_create_profile_section)
+EXPOSE_START_PROFILE_SECTION(impl::kokkosp_start_profile_section)
+EXPOSE_STOP_PROFILE_SECTION(impl::kokkosp_stop_profile_section)
+EXPOSE_PROFILE_EVENT(impl::kokkosp_profile_event);
+EXPOSE_BEGIN_FENCE(impl::kokkosp_begin_fence);
+EXPOSE_END_FENCE(impl::kokkosp_end_fence);
 }  // extern "C"

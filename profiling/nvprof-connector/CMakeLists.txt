@@ -1,4 +1,0 @@
-find_package(CUDAToolkit REQUIRED)
-kp_add_library(kp_nvprof_connector kp_nvprof_connector.cpp)
-
-target_link_libraries(kp_nvprof_connector CUDA::nvToolsExt)

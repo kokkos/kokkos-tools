@@ -46,6 +46,8 @@ using Kokkos::Tools::SpaceHandle;
 #define EXPOSE_STOP_PROFILE_SECTION(FUNC_NAME)
 #define EXPOSE_DESTROY_PROFILE_SECTION(FUNC_NAME)
 #define EXPOSE_PROFILE_EVENT(FUNC_NAME)
+#define EXPOSE_BEGIN_FENCE(FUNC_NAME)
+#define EXPOSE_END_FENCE(FUNC_NAME)
 
 #else
 
@@ -163,6 +165,17 @@ using Kokkos::Tools::SpaceHandle;
 #define EXPOSE_PROFILE_EVENT(FUNC_NAME)                                \
   __attribute__((weak)) void kokkosp_profile_event(const char* name) { \
     FUNC_NAME(name);                                                   \
+  }
+
+#define EXPOSE_BEGIN_FENCE(FUNC_NAME)                                \
+  __attribute__((weak)) void kokkosp_begin_fence(                    \
+      const char* name, const uint32_t deviceId, uint64_t* handle) { \
+    FUNC_NAME(name, deviceId, handle);                               \
+  }
+
+#define EXPOSE_END_FENCE(FUNC_NAME)                               \
+  __attribute__((weak)) void kokkosp_end_fence(uint64_t handle) { \
+    FUNC_NAME(handle);                                            \
   }
 
 #define EXPOSE_DUAL_VIEW_SYNC(FUNC_NAME)                         \

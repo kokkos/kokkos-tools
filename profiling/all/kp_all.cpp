@@ -49,7 +49,7 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(VTuneFocusedConnector)
 KOKKOSTOOLS_EXTERN_EVENT_SET(VariorumConnector)
 #endif
 #ifdef KOKKOSTOOLS_HAS_NVPROF
-KOKKOSTOOLS_EXTERN_EVENT_SET(NVProfConnector)
+KOKKOSTOOLS_EXTERN_EVENT_SET(NVTXConnector)
 KOKKOSTOOLS_EXTERN_EVENT_SET(NVProfFocusedConnector)
 #endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
@@ -91,7 +91,7 @@ EventSet get_event_set(const char* profiler, const char* config_str) {
   handlers["caliper"] = cali::get_kokkos_event_set(config_str);
 #endif
 #ifdef KOKKOSTOOLS_HAS_NVPROF
-  handlers["nvprof-connector"] = NVProfConnector::get_event_set();
+  handlers["nvtx-connector"] = NVTXConnector::get_event_set();
   handlers["nvprof-focused-connector"] =
       NVProfFocusedConnector::get_event_set();
 #endif
