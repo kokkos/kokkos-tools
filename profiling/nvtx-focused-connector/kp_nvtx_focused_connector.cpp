@@ -27,19 +27,18 @@
 
 #include "kp_core.hpp"
 
-static int tool_globfences;
+static bool tool_globfences;
 namespace KokkosTools {
 namespace NVTXFocusedConnector {
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
   settings->requires_global_fencing = true;
-  if (tool_globfences == 1) {
+  if (tool_globfences) {
     settings->requires_global_fencing = true;
   } else {
     settings->requires_global_fencing = false;
   }
-  // leave the door open for other non-zero values of tools
 }  // end request tool settings
 
 static KernelNVTXFocusedConnectorInfo* currentKernel;
@@ -59,10 +58,10 @@ void kokkosp_init_library(
   printf("-----------------------------------------------------------\n");
   const char* tool_global_fences = getenv("KOKKOS_TOOLS_GLOBALFENCES");
   if (NULL != tool_global_fences) {
-    tool_globfences = atoi(tool_global_fences);
+    tool_globfences = (atoi(tool_global_fences) != 0); // if user sets to 0, no global fences
   } else {
     tool_globfences =
-        1;  // default to 1 to be conservative for capturing state by tool
+        true;  // default to true to be conservative for capturing state by tool
   }
   nvtxNameOsThread(pthread_self(), "Application Main Thread");
   nvtxMarkA("Kokkos::Initialization Complete");
@@ -107,7 +106,6 @@ void kokkosp_finalize_library() {
 void kokkosp_begin_parallel_for(const char* name, const uint32_t /*devID*/,
                                 uint64_t* kID) {
   *kID = nextKernelID++;
-
   currentKernel = getFocusedConnectorInfo(name, PARALLEL_FOR);
   focusedConnectorExecuteStart();
 }
@@ -119,7 +117,6 @@ void kokkosp_end_parallel_for(const uint64_t /*kID*/) {
 void kokkosp_begin_parallel_scan(const char* name, const uint32_t /*devID*/,
                                  uint64_t* kID) {
   *kID = nextKernelID++;
-
   currentKernel = getFocusedConnectorInfo(name, PARALLEL_SCAN);
   focusedConnectorExecuteStart();
 }
@@ -131,7 +128,6 @@ void kokkosp_end_parallel_scan(const uint64_t /*kID*/) {
 void kokkosp_begin_parallel_reduce(const char* name, const uint32_t /*devID*/,
                                    uint64_t* kID) {
   *kID = nextKernelID++;
-
   currentKernel = getFocusedConnectorInfo(name, PARALLEL_REDUCE);
   focusedConnectorExecuteStart();
 }
@@ -160,9 +156,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
 }  // namespace KokkosTools
 
 extern "C" {
-
 namespace impl = KokkosTools::NVTXFocusedConnector;
-
 EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
 EXPOSE_INIT(impl::kokkosp_init_library)
 EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
@@ -172,5 +166,4 @@ EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
 EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
-
 }  // extern "C"
