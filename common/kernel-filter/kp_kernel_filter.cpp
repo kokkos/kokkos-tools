@@ -129,14 +129,16 @@ extern "C" void kokkosp_init_library(const int loadSeq,
       char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
       if (NULL == profileLibrary) {  // check for backward compatibility with
                                      // old environment variable
-        printf(
-            "Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a deprecated "
-            "variable. Please use KOKKOS_TOOLS_LIBS.\n");
+        printf("KokkosP: KOKKOS_TOOLS_LIBS not set.\n");
         profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
         if (NULL == profileLibrary) {
           printf("KokkosP: No library to call in %s\n", profileLibrary);
           exit(-1);
         }
+        else {
+         printf("KokkosP: Found that KOKKOS_PROFILE_LIBRARY is set and it will be used.\n");
+         printf("KokkosP: Note that KOKKOS_PROFILE_LIBRARY is a deprecated variable. " 
+         "Please use KOKKOS_TOOLS_LIBS in the future.\n");
       }  // end check for backward compatability
 
       char* envBuffer =
