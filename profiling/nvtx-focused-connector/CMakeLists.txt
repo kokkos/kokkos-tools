@@ -1,4 +1,4 @@
 find_package(CUDAToolkit REQUIRED)
-kp_add_library(kp_nvprof_focused_connector kp_nvprof_focused_connector.cpp)
+kp_add_library(kp_nvtx_focused_connector kp_nvtx_focused_connector.cpp)
 
-target_link_libraries(kp_nvprof_focused_connector CUDA::nvToolsExt)
+target_link_libraries(kp_nvtx_focused_connector CUDA::nvToolsExt)
