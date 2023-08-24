@@ -1,7 +1,7 @@
 CXX=g++
 CXXFLAGS=-O3 -std=c++11 -g -I$(CUDA_ROOT)/include -I./
 LDFLAGS=-L$(CUDA_ROOT)/lib64
-LIBS=-lnvToolsExt -lcudart
+LIBS=
 SHARED_CXXFLAGS=-shared -fPIC
 
 all: kp_nvtx_focused_connector.so
