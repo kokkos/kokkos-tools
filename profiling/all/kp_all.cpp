@@ -48,9 +48,9 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(VTuneFocusedConnector)
 #ifdef KOKKOSTOOLS_HAS_VARIORUM
 KOKKOSTOOLS_EXTERN_EVENT_SET(VariorumConnector)
 #endif
-#ifdef KOKKOSTOOLS_HAS_NVPROF
+#ifdef KOKKOSTOOLS_HAS_NVTX
 KOKKOSTOOLS_EXTERN_EVENT_SET(NVTXConnector)
-KOKKOSTOOLS_EXTERN_EVENT_SET(NVProfFocusedConnector)
+KOKKOSTOOLS_EXTERN_EVENT_SET(NVTXFocusedConnector)
 #endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
 namespace cali {
@@ -90,10 +90,9 @@ EventSet get_event_set(const char* profiler, const char* config_str) {
 #ifdef KOKKOSTOOLS_HAS_CALIPER
   handlers["caliper"] = cali::get_kokkos_event_set(config_str);
 #endif
-#ifdef KOKKOSTOOLS_HAS_NVPROF
-  handlers["nvtx-connector"] = NVTXConnector::get_event_set();
-  handlers["nvprof-focused-connector"] =
-      NVProfFocusedConnector::get_event_set();
+#ifdef KOKKOSTOOLS_HAS_NVTX
+  handlers["nvtx-connector"]         = NVTXConnector::get_event_set();
+  handlers["nvtx-focused-connector"] = NVTXFocusedConnector::get_event_set();
 #endif
   auto e = handlers.find(profiler);
   if (e != handlers.end()) return e->second;
