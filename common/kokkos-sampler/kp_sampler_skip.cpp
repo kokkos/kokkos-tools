@@ -11,11 +11,11 @@ namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID = 0;
 static uint64_t kernelSampleSkip =
-    101;  // Default skip rate of every 100 invocations
+    std::numeric_limits<uint64_t>::max;  // Default skip rate to max
 static float tool_prob_num =
-    1.0;  // Default probability of 1 percent of all invocations
+    -1.0;  // Default probability of undefined percent of all invocations
 static int tool_verbosity = 0;
-static bool tool_globFence = 0;
+static int tool_globFence = 0;
 
 typedef void (*initFunction)(const int, const uint64_t, const uint32_t, void*);
 typedef void (*finalizeFunction)();
@@ -33,11 +33,10 @@ static endFunction endReduceCallee             = NULL;
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
-  settings->requires_global_fencing = true;
-  if (tool_globFence) {
-    settings->requires_global_fencing = true;
+  if (0 == tool_globFence) {
+    settings->requires_global_fencing = 0;
   } else {
-    settings->requires_global_fencing = false;
+    settings->requires_global_fencing = 1;
   }
 }
 
@@ -52,9 +51,9 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     tool_verbosity = 0;
   }
   if (NULL != tool_globFence_str) {
-    tool_globFence = (atoi(tool_global_fences) != 0);
+    tool_globFence = atoi(tool_global_fences);
   } else {
-    tool_globFence = false;
+    tool_globFence = 0;
   }
 
   char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
@@ -170,7 +169,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
           "a Kokkos Kernel will be profiled.\n");
       tool_prob_num = 0.0;
     }
-  };
+  }
 
   if (tool_verbosity > 0) {
     printf("KokkosP: Sampling rate set to: %s\n", tool_sample);
