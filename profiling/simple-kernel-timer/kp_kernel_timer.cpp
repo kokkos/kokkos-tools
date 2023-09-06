@@ -238,7 +238,7 @@ void kokkosp_end_parallel_reduce(const uint64_t /*kID*/) {
   currentEntry->addFromTimer();
 }
 
-void kokkosp_push_profile_region(char* regionName) {
+void kokkosp_push_profile_region(char const* regionName) {
   increment_counter_region(regionName, REGION);
 }
 
@@ -284,6 +284,8 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
   my_event_set.end_parallel_for      = kokkosp_end_parallel_for;
   my_event_set.end_parallel_reduce   = kokkosp_end_parallel_reduce;
   my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
+  my_event_set.push_region           = kokkosp_push_profile_region;
+  my_event_set.pop_region            = kokkosp_pop_profile_region;
   return my_event_set;
 }
 
@@ -302,5 +304,7 @@ EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
 EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
+EXPOSE_POP_REGION(impl::kokkosp_pop_profile_region)
 
 }  // extern "C"
