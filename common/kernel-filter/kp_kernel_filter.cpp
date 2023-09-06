@@ -126,7 +126,25 @@ extern "C" void kokkosp_init_library(const int loadSeq,
            (filterKernels ? "enabled" : "disabled"));
 
     if (filterKernels) {
-      char* profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
+      char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
+      if (NULL == profileLibrary) {  // check for backward compatibility with
+                                     // old environment variable
+        printf("KokkosP: KOKKOS_TOOLS_LIBS not set.\n");
+        profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
+        if (NULL == profileLibrary) {
+          printf("KokkosP: No library to call in %s\n", profileLibrary);
+          exit(-1);
+        } else {
+          printf(
+              "KokkosP: Found that KOKKOS_PROFILE_LIBRARY is set and it will "
+              "be used.\n");
+          printf(
+              "KokkosP: Note that KOKKOS_PROFILE_LIBRARY is a deprecated "
+              "variable. "
+              "Please use KOKKOS_TOOLS_LIBS in the future.\n");
+        }  // end note for KOKKOS_PROFILE_LIBRARY
+      }    // end check for backward compatability
+
       char* envBuffer =
           (char*)malloc(sizeof(char) * (strlen(profileLibrary) + 1));
       strcpy(envBuffer, profileLibrary);
@@ -182,7 +200,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 
     printf("============================================================\n");
   }
-}
+}  // end kokkosp_init_library
 
 extern "C" void kokkosp_finalize_library() {
   if (NULL != finalizeProfileLibrary) {
