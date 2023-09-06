@@ -15,7 +15,7 @@ static uint64_t kernelSampleSkip =
 static float tool_prob_num =
     1.0;  // Default probability of 1 percent of all invocations
 static int tool_verbosity = 0;
-static int tool_globFence = 0;
+static bool tool_globFence = 0;
 
 typedef void (*initFunction)(const int, const uint64_t, const uint32_t, void*);
 typedef void (*finalizeFunction)();
@@ -33,10 +33,11 @@ static endFunction endReduceCallee             = NULL;
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
-  if (0 == tool_globFence) {
-    settings->requires_global_fencing = false;
-  } else {
+  settings->requires_global_fencing = true;
+  if (tool_globFence) {
     settings->requires_global_fencing = true;
+  } else {
+    settings->requires_global_fencing = false;
   }
 }
 
@@ -51,9 +52,9 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     tool_verbosity = 0;
   }
   if (NULL != tool_globFence_str) {
-    tool_globFence = atoi(tool_globFence_str);
+    tool_globFence = (atoi(tool_global_fences) != 0);
   } else {
-    tool_globFence = 0;
+    tool_globFence = false;
   }
 
   char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
