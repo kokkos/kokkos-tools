@@ -170,10 +170,27 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       tool_prob_num = 0.0;
     }
   }
-
+  if ((tool_prob_num < 0.0 ) && (kernelSampleSkip == std::numeric_limits<uint64_t>::max)) {
+      if (tool_verbosity > 0) {
+         printf("KokkosP: Neither sampling utility's probability for sampling "
+             "nor sampling utility's skip rate were set. \n");
+      }
+      tool_prob_num = 10.0;
+      if (tool_verbosity > 0) {
+         printf("KokkosP: Set the sampling utility's probability "
+             "for sampling to be %f percent. Sampler's skip rate "
+             "will not be used.\n", tool_prob_num);
+      }
+  }
+    
   if (tool_verbosity > 0) {
-    printf("KokkosP: Sampling rate set to: %s\n", tool_sample);
-    printf("KokkosP: Sampling probability set to: %s\n", tool_probability);
+    if (tool_verbosity > 1) 
+    {
+      printf("KokkosP: Sampling rate provided as input: %s\n", tool_sample);
+      printf("KokkosP: Sampling probability provided as input: %s\n", tool_probability);
+    }
+    printf("KokkosP: Sampling rate set to: %llu\n", kernelSampleSkip);
+    printf("KokkosP: Sampling probability set to %f\n", tool_prob_num);
     printf(
         "KokkosP: seeding Random Number Generator using clock for "
         "probabilistic sampling.\n");
@@ -186,10 +203,15 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
         "Tools Sampler utility will invoke a Kokkos Tool child event you "
         "specified "
         "(e.g., the profiler or debugger tool connector you specified "
-        "in KOKKOS_TOOLS_LIBS) with the specified sampling probability applied "
-        "to the "
-        "specified sampling skip rate set.\n");
+        "in KOKKOS_TOOLS_LIBS) with only specified sampling probability applied "
+        "and sampling skip rate set is ignored with no "
+        "predefined periodicity for sampling used.\n");
   }
+  if (tool_verbosity > 0) {
+      printf("KokkosP: The skip rate in the sampler utility "
+          "is being set to 1.\n"); 
+  }
+  kernelSampleSkip = 1; 
 }  // end kokkosp_init_library
 
 void kokkosp_finalize_library() {
