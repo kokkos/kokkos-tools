@@ -156,7 +156,7 @@ void kokkosp_finalize_library() {
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
-  *kID = uniqID++;
+  *kID                          = uniqID++;
   static uint64_t invocationNum = 0;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
@@ -172,27 +172,25 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
   }
 }
 
-void kokkosp_end_parallel_for(const uint64_t kID) { 
-
-    if (NULL != endForCallee) {
-     if ( !(infokIDSample.find(kID) == infokIDSample.end()) )
-      {
-       uint64_t retrievedNestedkID = infokIDSample[kID];
-       if (tool_verbosity > 0) { 
-       printf("KokkosP: sample %llu calling child-end function...\n",
-             (unsigned long long)(kID));
-        }
-       (*endForCallee)(retrievedNestedkID);
-       }
-     }
+void kokkosp_end_parallel_for(const uint64_t kID) {
+  if (NULL != endForCallee) {
+    if (!(infokIDSample.find(kID) == infokIDSample.end())) {
+      uint64_t retrievedNestedkID = infokIDSample[kID];
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu calling child-end function...\n",
+               (unsigned long long)(kID));
+      }
+      (*endForCallee)(retrievedNestedkID);
+    }
+  }
 }
 
 void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
                                  uint64_t* kID) {
- *kID = uniqID++;
- static uint64_t invocationNum = 0;
- ++invocationNum;
- if ((invocationNum % kernelSampleSkip) == 0) {
+  *kID                          = uniqID++;
+  static uint64_t invocationNum = 0;
+  ++invocationNum;
+  if ((invocationNum % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
       printf("KokkosP: sample %llu calling child-begin function...\n",
              (unsigned long long)(*kID));
@@ -206,23 +204,21 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
 }
 
 void kokkosp_end_parallel_scan(const uint64_t kID) {
-
-   if (NULL != endScanCallee) {
-     if ( !(infokIDSample.find(kID) == infokIDSample.end()) )
-      {
-       uint64_t retrievedNestedkID = infokIDSample[kID];
-       if (tool_verbosity > 0) { 
-       printf("KokkosP: sample %llu calling child-end function...\n",
-             (unsigned long long)(kID));
-        }
-       (*endScanCallee)(retrievedNestedkID);
-       }
-     }
+  if (NULL != endScanCallee) {
+    if (!(infokIDSample.find(kID) == infokIDSample.end())) {
+      uint64_t retrievedNestedkID = infokIDSample[kID];
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu calling child-end function...\n",
+               (unsigned long long)(kID));
+      }
+      (*endScanCallee)(retrievedNestedkID);
+    }
   }
+}
 
 void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
                                    uint64_t* kID) {
-  *kID = uniqID++;
+  *kID                          = uniqID++;
   static uint64_t invocationNum = 0;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
@@ -240,17 +236,16 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
 }
 
 void kokkosp_end_parallel_reduce(const uint64_t kID) {
-   if (NULL != endScanCallee) {
-     if ( !(infokIDSample.find(kID) == infokIDSample.end()) )
-      {
-       uint64_t retrievedNestedkID = infokIDSample[kID];
-       if (tool_verbosity > 0) { 
-       printf("KokkosP: sample %llu calling child-end function...\n",
-             (unsigned long long)(kID));
-        }
-       (*endScanCallee)(retrievedNestedkID);
-       }
-     }
+  if (NULL != endScanCallee) {
+    if (!(infokIDSample.find(kID) == infokIDSample.end())) {
+      uint64_t retrievedNestedkID = infokIDSample[kID];
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu calling child-end function...\n",
+               (unsigned long long)(kID));
+      }
+      (*endScanCallee)(retrievedNestedkID);
+    }
+  }
 }
 
 }  // namespace Sampler
