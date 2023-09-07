@@ -170,7 +170,8 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       tool_prob_num = 0.0;
     }
   }
-  if ((tool_prob_num < 0.0) && (kernelSampleSkip == std::numeric_limits<uint64_t>::max())) {
+  if ((tool_prob_num < 0.0) &&
+      (kernelSampleSkip == std::numeric_limits<uint64_t>::max())) {
     if (tool_verbosity > 0) {
       printf(
           "KokkosP: Neither sampling utility's probability for sampling "
