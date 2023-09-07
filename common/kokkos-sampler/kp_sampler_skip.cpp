@@ -240,7 +240,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
             (unsigned long long)(*kID), (int)invocationNum);
       }
       uint64_t* nestedkID;
-      *nestedkID = 0;
+      *nestedkID = 1;
       if (NULL != beginForCallee) {
         (*beginForCallee)(name, devID, nestedkID);
       }
@@ -287,7 +287,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
             (unsigned long long)(*kID), (int)invocationNum);
       }
       uint64_t* nestedkID;
-      *nestedkID = 0;
+      *nestedkID = 1;
       if (NULL != beginScanCallee) {
         (*beginScanCallee)(name, devID, nestedkID);
       }
@@ -333,7 +333,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
       }
 
       uint64_t* nestedkID;  // set nested kernel ID
-      *nestedkID = 0;
+      *nestedkID = 1;
       if (NULL != beginReduceCallee) {
         (*beginReduceCallee)(name, devID, nestedkID);
       }
