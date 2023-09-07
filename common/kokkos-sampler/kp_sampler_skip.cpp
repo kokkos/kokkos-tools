@@ -11,7 +11,7 @@
 namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID          = 0;
-static int64_t kernelSampleSkip = 0;
+static int64_t kernelSampleSkip = std::numeric_limits<uint64_t>::max();
 static float tool_prob_num =
     -1.0;  // Default probability of undefined percent of all invocations
 static int tool_verbosity = 0;
@@ -44,7 +44,6 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t devInfoCount, void* deviceInfo) {
   const char* tool_verbose_str   = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
-  kernelSampleSkip               = 0;  // use min for undefined skip rate
 
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
@@ -171,7 +170,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       tool_prob_num = 0.0;
     }
   }
-  if ((tool_prob_num < 0.0) && (kernelSampleSkip == 0)) {
+  if ((tool_prob_num < 0.0) && (kernelSampleSkip == std::numeric_limits<uint64_t>::max())) {
     if (tool_verbosity > 0) {
       printf(
           "KokkosP: Neither sampling utility's probability for sampling "
