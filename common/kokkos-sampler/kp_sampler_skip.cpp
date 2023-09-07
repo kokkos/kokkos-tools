@@ -6,12 +6,12 @@
 #include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
 #include <ctime>  // for random number generation
+#include <limits>
 
 namespace KokkosTools {
 namespace Sampler {
-static uint64_t uniqID = 0;
-static uint64_t kernelSampleSkip =
-    std::numeric_limits<uint64_t>::max;  // Default skip rate to max
+static uint64_t uniqID          = 0;
+static int64_t kernelSampleSkip = 0;
 static float tool_prob_num =
     -1.0;  // Default probability of undefined percent of all invocations
 static int tool_verbosity = 0;
@@ -44,6 +44,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t devInfoCount, void* deviceInfo) {
   const char* tool_verbose_str   = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
+  kernelSampleSkip               = 0;  // use min for undefined skip rate
 
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
@@ -51,7 +52,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     tool_verbosity = 0;
   }
   if (NULL != tool_globFence_str) {
-    tool_globFence = atoi(tool_global_fences);
+    tool_globFence = atoi(tool_globFence_str);
   } else {
     tool_globFence = 0;
   }
@@ -170,26 +171,30 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       tool_prob_num = 0.0;
     }
   }
-  if ((tool_prob_num < 0.0 ) && (kernelSampleSkip == std::numeric_limits<uint64_t>::max)) {
-      if (tool_verbosity > 0) {
-         printf("KokkosP: Neither sampling utility's probability for sampling "
-             "nor sampling utility's skip rate were set. \n");
-      }
-      tool_prob_num = 10.0;
-      if (tool_verbosity > 0) {
-         printf("KokkosP: Set the sampling utility's probability "
-             "for sampling to be %f percent. Sampler's skip rate "
-             "will not be used.\n", tool_prob_num);
-      }
-  }
-    
-  if (tool_verbosity > 0) {
-    if (tool_verbosity > 1) 
-    {
-      printf("KokkosP: Sampling rate provided as input: %s\n", tool_sample);
-      printf("KokkosP: Sampling probability provided as input: %s\n", tool_probability);
+  if ((tool_prob_num < 0.0) && (kernelSampleSkip == 0)) {
+    if (tool_verbosity > 0) {
+      printf(
+          "KokkosP: Neither sampling utility's probability for sampling "
+          "nor sampling utility's skip rate were set. \n");
     }
-    printf("KokkosP: Sampling rate set to: %llu\n", kernelSampleSkip);
+    tool_prob_num = 10.0;
+    if (tool_verbosity > 0) {
+      printf(
+          "KokkosP: Set the sampling utility's probability "
+          "for sampling to be %f percent. Sampler's skip rate "
+          "will not be used.\n",
+          tool_prob_num);
+    }
+  }
+
+  if (tool_verbosity > 0) {
+    if (tool_verbosity > 1) {
+      printf("KokkosP: Sampling rate provided as input: %s\n", tool_sample);
+      printf("KokkosP: Sampling probability provided as input: %s\n",
+             tool_probability);
+    }
+    printf("KokkosP: Sampling rate set to: %llu\n",
+           (unsigned long long)(kernelSampleSkip));
     printf("KokkosP: Sampling probability set to %f\n", tool_prob_num);
     printf(
         "KokkosP: seeding Random Number Generator using clock for "
@@ -203,15 +208,17 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
         "Tools Sampler utility will invoke a Kokkos Tool child event you "
         "specified "
         "(e.g., the profiler or debugger tool connector you specified "
-        "in KOKKOS_TOOLS_LIBS) with only specified sampling probability applied "
+        "in KOKKOS_TOOLS_LIBS) with only specified sampling probability "
+        "applied "
         "and sampling skip rate set is ignored with no "
         "predefined periodicity for sampling used.\n");
   }
   if (tool_verbosity > 0) {
-      printf("KokkosP: The skip rate in the sampler utility "
-          "is being set to 1.\n"); 
+    printf(
+        "KokkosP: The skip rate in the sampler utility "
+        "is being set to 1.\n");
   }
-  kernelSampleSkip = 1; 
+  kernelSampleSkip = 1;
 }  // end kokkosp_init_library
 
 void kokkosp_finalize_library() {
@@ -220,14 +227,11 @@ void kokkosp_finalize_library() {
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
-  *kID = 0;
-
+  *kID = uniqID++;
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
     if ((rand() / (1.0 * RAND_MAX)) < (tool_prob_num / 100.0)) {
-      *kID = 1;
-
       if (tool_verbosity > 0) {
         printf(
             "KokkosP: sample %llu of parallel_for on its invocation number %d "
@@ -235,8 +239,10 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
             "child-begin function...\n",
             (unsigned long long)(*kID), (int)invocationNum);
       }
+      uint64_t* nestedkID;
+      *nestedkID = 0;
       if (NULL != beginForCallee) {
-        (*beginForCallee)(name, devID, kID);
+        (*beginForCallee)(name, devID, nestedkID);
       }
       if (tool_verbosity > 1)
         printf(
@@ -250,8 +256,8 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
 }  // kokkosp_begin_parallel_for
 
 void kokkosp_end_parallel_for(const uint64_t kID) {
-  if (kID >
-      0) {  // the corresponding kokkosp_begin_parallel_for gathered a sample
+  // match the corresponding kokkosp_begin_parallel_for gathered a sample
+  if (kID == uniqID) {
     if (tool_verbosity > 0) {
       printf(
           "KokkosP: sample for a parallel_for with kernel ID %llu calling "
@@ -263,19 +269,16 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
     if (NULL != endForCallee) {
       (*endForCallee)(kID);
     }
-
-  }  // end kID > 0
-
+  }
 }  // kokkosp_end_parallel_for
 
 void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
                                  uint64_t* kID) {
-  *kID = 0;
+  *kID = uniqID++;  // set kernel ID to a uniqID to match it
   static uint64_t invocationNum;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
     if (rand() / (1.0 * RAND_MAX) < (tool_prob_num / 100.0)) {
-      *kID = 1;  // set kernel ID to 1 so that it is matched with the end.
       if (tool_verbosity > 0) {
         printf(
             "KokkosP: sample %llu for parallel_scan on its invocation number "
@@ -283,8 +286,10 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
             "child-begin function...\n",
             (unsigned long long)(*kID), (int)invocationNum);
       }
+      uint64_t* nestedkID;
+      *nestedkID = 0;
       if (NULL != beginScanCallee) {
-        (*beginScanCallee)(name, devID, kID);
+        (*beginScanCallee)(name, devID, nestedkID);
       }
       if (tool_verbosity > 0) {
         printf(
@@ -298,7 +303,8 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
 }  // kokkosp_begin_parallel_scan
 
 void kokkosp_end_parallel_scan(const uint64_t kID) {
-  if (kID > 0) {
+  // match corresponding scan with kernel ID kID
+  if (kID == uniqID) {
     if (tool_verbosity > 0) {
       printf(
           "KokkosP: sample %llu (a parallel_scan) calling child-end "
@@ -313,9 +319,9 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
 
 void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
                                    uint64_t* kID) {
-  *kID = 0;
   static uint64_t invocationNum;
   ++invocationNum;
+  *kID = uniqID++;
   if ((invocationNum % kernelSampleSkip) == 0) {
     if ((rand() / (1.0 * RAND_MAX)) < tool_prob_num / 100.0) {
       if (tool_verbosity > 0) {
@@ -326,9 +332,10 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
             (unsigned long long)(*kID), (int)invocationNum);
       }
 
-      *kID = 1;  // set kernel ID to 1 so that it is matched with the end.
+      uint64_t* nestedkID;  // set nested kernel ID
+      *nestedkID = 0;
       if (NULL != beginReduceCallee) {
-        (*beginReduceCallee)(name, devID, kID);
+        (*beginReduceCallee)(name, devID, nestedkID);
       }
 
       if (tool_verbosity > 1) {
@@ -343,7 +350,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
 }  // kokkosp_begin_parallel_reduce
 
 void kokkosp_end_parallel_reduce(const uint64_t kID) {
-  if (kID > 0) {
+  if (kID == uniqID) {
     if (tool_verbosity > 0) {
       printf(
           "KokkosP: sample %llu (a parallel_reduce) calling child-end "
