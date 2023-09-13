@@ -212,7 +212,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
     if (tool_globFence) {
-      invoke_ktools_fence(devID);
+      invoke_ktools_fence(0);
     }
     if (NULL != beginForCallee) {
       uint64_t nestedkID = 0;
@@ -233,7 +233,7 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
       get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
       if (tool_globFence) {
-        invoke_ktools_fence(devID);
+        invoke_ktools_fence(0);
        }
       (*endForCallee)(retrievedNestedkID);
     }
@@ -255,7 +255,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
       get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
       if (tool_globFence) {
-          invoke_ktools_fence(devID);
+          invoke_ktools_fence(0);
       }
       (*beginScanCallee)(name, devID, &nestedkID);
       infokIDSample.insert({*kID, nestedkID});
@@ -274,7 +274,7 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
        get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
        if (tool_globFence) {
-          invoke_ktools_fence(devID);
+          invoke_ktools_fence(0);
        }
       (*endScanCallee)(retrievedNestedkID);
     }
@@ -297,7 +297,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
       get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
       if (tool_globFence) {
-        invoke_ktools_fence(devID);
+        invoke_ktools_fence(0);
       }
       (*beginReduceCallee)(name, devID, &nestedkID);
       infokIDSample.insert({*kID, nestedkID});
@@ -316,7 +316,7 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
        get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
        if (tool_globFence) {
-          invoke_ktools_fence(devID);
+          invoke_ktools_fence(0);
        }
       (*endScanCallee)(retrievedNestedkID);
     }
