@@ -81,8 +81,9 @@ void kokkosp_provide_tool_programming_interface(
           "KokkosP: Note: Number of functions in Tools Programming Interface "
           "is 0!\n");
   }
+ 
   tpi_funcs = *funcsFromTPI;
-}
+ }
 
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
@@ -329,8 +330,8 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
 extern "C" {
 
 namespace impl = KokkosTools::Sampler;
-
 EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
+EXPOSE_PROVIDE_TOOL_PROGRAMMING_INTERFACE(impl::kokkosp_provide_tool_programming_interface)
 EXPOSE_INIT(impl::kokkosp_init_library)
 EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
 EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)

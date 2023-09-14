@@ -48,14 +48,22 @@ using Kokkos::Tools::SpaceHandle;
 #define EXPOSE_PROFILE_EVENT(FUNC_NAME)
 #define EXPOSE_BEGIN_FENCE(FUNC_NAME)
 #define EXPOSE_END_FENCE(FUNC_NAME)
+#define EXPOSE_PROVIDE_TOOL_PROGRAMMING_INTERFACE(FUNC_NAME)
+
 
 #else
+
+#define EXPOSE_PROVIDE_TOOL_PROGRAMMING_INTERFACE(FUNC_NAME)                                  \
+  __attribute__((weak)) void kokkosp_provide_tool_programming_interface(              \
+      const uint32_t num_actions, Kokkos_Tools_ToolProgrammingInterface* ptpi) { \
+    FUNC_NAME(num_actions, ptpi);                                    \
+  }
 
 #define EXPOSE_TOOL_SETTINGS(FUNC_NAME)                                  \
   __attribute__((weak)) void kokkosp_request_tool_settings(              \
       const uint32_t num_actions, Kokkos_Tools_ToolSettings* settings) { \
     FUNC_NAME(num_actions, settings);                                    \
-  }
+  } 
 
 #define EXPOSE_INIT(FUNC_NAME)                                  \
   __attribute__((weak)) void kokkosp_init_library(              \
