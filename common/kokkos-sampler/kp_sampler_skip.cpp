@@ -212,7 +212,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
     get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
     if (tool_globFence) {
-      invoke_ktools_fence(0);
+      invoke_ktools_fence(devID);
     }
     if (NULL != beginForCallee) {
       uint64_t nestedkID = 0;
@@ -255,7 +255,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
       get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
       if (tool_globFence) {
-          invoke_ktools_fence(0);
+          invoke_ktools_fence(devID);
       }
       (*beginScanCallee)(name, devID, &nestedkID);
       infokIDSample.insert({*kID, nestedkID});
@@ -297,7 +297,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
       get_global_fence_choice();  // re-read environment variable to get most
                                 // accurate
       if (tool_globFence) {
-        invoke_ktools_fence(0);
+        invoke_ktools_fence(devID);
       }
       (*beginReduceCallee)(name, devID, &nestedkID);
       infokIDSample.insert({*kID, nestedkID});
