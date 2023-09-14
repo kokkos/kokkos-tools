@@ -181,6 +181,7 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
                (unsigned long long)(kID));
       }
       (*endForCallee)(retrievedNestedkID);
+      infokIDSample.erase(kID);
     }
   }
 }
@@ -212,6 +213,7 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
                (unsigned long long)(kID));
       }
       (*endScanCallee)(retrievedNestedkID);
+      infokIDSample.erase(kID);
     }
   }
 }
