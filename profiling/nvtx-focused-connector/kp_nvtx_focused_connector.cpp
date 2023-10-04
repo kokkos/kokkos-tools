@@ -23,6 +23,8 @@
 #include <cxxabi.h>
 #include <cuda_profiler_api.h>
 
+#include <pthread.h>
+
 #include "kp_nvtx_focused_connector_domain.h"
 
 #include "nvToolsExt.h"

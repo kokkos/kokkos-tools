@@ -20,6 +20,8 @@
 #include <string>
 #include <limits>
 
+#include <pthread.h>
+
 #include "nvToolsExt.h"
 
 #include "kp_core.hpp"
