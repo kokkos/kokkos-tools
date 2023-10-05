@@ -279,7 +279,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
     if (NULL != beginReduceCallee) {
       uint64_t nestedkID = 0;
       if (tool_globFence) {
-        invoke_ktools_fence(devID);
+        invoke_ktools_fence(0);
       }
       (*beginReduceCallee)(name, devID, &nestedkID);
       infokIDSample.insert({*kID, nestedkID});
