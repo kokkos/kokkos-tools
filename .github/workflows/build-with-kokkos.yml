@@ -16,6 +16,8 @@ jobs:
             preset: Cuda
           - image: rocm/dev-ubuntu-22.04:5.4
             preset: ROCm
+          - image: rocm/dev-ubuntu-22.04:5.7
+            preset: ROCm
     container:
       image: ${{ matrix.image }}
     env:
