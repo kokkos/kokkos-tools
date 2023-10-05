@@ -12,31 +12,69 @@ jobs:
         include:
           - image: ubuntu:22.04
             preset: OpenMP
+            compiler: default
           - image: nvidia/cuda:12.1.0-devel-ubuntu22.04
             preset: Cuda
+            compiler: default
+          - image: nvidia/cuda:12.2.0-devel-ubuntu22.04
+            preset: Cuda
+            compiler: {cpp: g++-12, c: gcc-12}
           - image: rocm/dev-ubuntu-22.04:5.4
             preset: ROCm
+            compiler: default
           - image: rocm/dev-ubuntu-22.04:5.7
             preset: ROCm
+            compiler: default
     container:
       image: ${{ matrix.image }}
     env:
       Kokkos_ROOT: /opt/kokkos
     steps:
       - name: Checkout Kokkos Tools
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Checkout Kokkos repository at latest develop
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: kokkos/kokkos
           path: kokkos
           ref: develop
-      - name: Install CMake, compilers, OpenMPI and dtrace
-        run: |
+      - name: Install compilers
+        run : |
           apt update
+
+          if [ ${{ matrix.compiler }} != 'default' ];then
+              apt --yes --no-install-recommends install ${{ matrix.compiler.c }} ${{ matrix.compiler.cpp }}
+              export CC=${{ matrix.compiler.c }}
+              export CXX=${{ matrix.compiler.cpp }}
+          else
+              apt --yes --no-install-recommends install gcc g++
+              export CC=gcc
+              export CXX=g++
+          fi
+
+          echo "CC=$CC"   >> $GITHUB_ENV
+          echo "CXX=$CXX" >> $GITHUB_ENV
+
+          case ${{ matrix.preset }} in
+              *OpenMP* )
+                  echo "Preset is OpenMP, nothing to do."
+                  ;;
+              *Cuda* )
+                  echo "Preset is Cuda. Setting 'NVCC_WRAPPER_DEFAULT_COMPILER' to '$CXX'."
+                  echo "NVCC_WRAPPER_DEFAULT_COMPILER=$CXX" >> $GITHUB_ENV
+                  ;;
+              *ROCm* )
+                  echo "Preset is ROCm, nothing to do."
+                  ;;
+              * )
+                  echo "Unsupported preset '${{ matrix.preset }}'."
+                  exit -1
+          esac
+
+      - name: Install CMake, OpenMPI and dtrace
+        run: |
           apt --yes --no-install-recommends install \
             cmake make \
-            gcc g++ \
             libopenmpi-dev \
             systemtap-sdt-dev
       - name: Compile and install Kokkos
