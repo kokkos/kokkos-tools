@@ -33,11 +33,45 @@ static endFunction endReduceCallee             = NULL;
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
-  if (0 == tool_globFence) {
-    settings->requires_global_fencing = false;
+  settings->requires_global_fencing = false;
+}
+
+// set of functions from Kokkos ToolProgrammingInterface (includes fence)
+Kokkos::Tools::Experimental::ToolProgrammingInterface tpi_funcs;
+
+uint32_t getDeviceID(uint32_t devid_in) {
+  int num_device_bits   = 7;
+  int num_instance_bits = 17;
+  return (~((uint32_t(-1)) << num_device_bits)) &
+         (devid_in >> num_instance_bits);
+}
+
+void invoke_ktools_fence(uint32_t devID) {
+  if (tpi_funcs.fence != nullptr) {
+    tpi_funcs.fence(devID);
+    if (tool_verbosity > 1) {
+      printf(
+          "KokkosP: Sampler utility sucessfully invoked "
+          " tool-induced fence on device %d\n",
+          getDeviceID(devID));
+    }
   } else {
-    settings->requires_global_fencing = true;
+    printf(
+        "KokkosP: FATAL: Kokkos Tools Programming Interface's tool-invoked "
+        "Fence is NULL!\n");
+    exit(-1);
   }
+}
+
+void kokkosp_provide_tool_programming_interface(
+    uint32_t num_funcs, Kokkos_Tools_ToolProgrammingInterface* funcsFromTPI) {
+  if (!num_funcs) {
+    if (tool_verbosity > 0)
+      printf(
+          "KokkosP: Note: Number of functions in Tools Programming Interface "
+          "is 0!\n");
+  }
+  tpi_funcs = *funcsFromTPI;
 }
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
@@ -164,6 +198,9 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
       printf("KokkosP: sample %llu calling child-begin function...\n",
              (unsigned long long)(*kID));
     }
+    if (tool_globFence) {
+      invoke_ktools_fence(0);
+    }
     if (NULL != beginForCallee) {
       uint64_t nestedkID = 0;
       (*beginForCallee)(name, devID, &nestedkID);
@@ -179,6 +216,9 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
       if (tool_verbosity > 0) {
         printf("KokkosP: sample %llu calling child-end function...\n",
                (unsigned long long)(kID));
+      }
+      if (tool_globFence) {
+        invoke_ktools_fence(0);
       }
       (*endForCallee)(retrievedNestedkID);
       infokIDSample.erase(kID);
@@ -198,6 +238,9 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
     }
     if (NULL != beginScanCallee) {
       uint64_t nestedkID = 0;
+      if (tool_globFence) {
+        invoke_ktools_fence(0);
+      }
       (*beginScanCallee)(name, devID, &nestedkID);
       infokIDSample.insert({*kID, nestedkID});
     }
@@ -211,6 +254,9 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
       if (tool_verbosity > 0) {
         printf("KokkosP: sample %llu calling child-end function...\n",
                (unsigned long long)(kID));
+      }
+      if (tool_globFence) {
+        invoke_ktools_fence(0);
       }
       (*endScanCallee)(retrievedNestedkID);
       infokIDSample.erase(kID);
@@ -228,9 +274,11 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
       printf("KokkosP: sample %llu calling child-begin function...\n",
              (unsigned long long)(*kID));
     }
-
     if (NULL != beginReduceCallee) {
       uint64_t nestedkID = 0;
+      if (tool_globFence) {
+        invoke_ktools_fence(0);
+      }
       (*beginReduceCallee)(name, devID, &nestedkID);
       infokIDSample.insert({*kID, nestedkID});
     }
@@ -245,6 +293,9 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
         printf("KokkosP: sample %llu calling child-end function...\n",
                (unsigned long long)(kID));
       }
+      if (tool_globFence) {
+        invoke_ktools_fence(0);
+      }
       (*endScanCallee)(retrievedNestedkID);
       infokIDSample.erase(kID);
     }
@@ -257,8 +308,9 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
 extern "C" {
 
 namespace impl = KokkosTools::Sampler;
-
 EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
+EXPOSE_PROVIDE_TOOL_PROGRAMMING_INTERFACE(
+    impl::kokkosp_provide_tool_programming_interface)
 EXPOSE_INIT(impl::kokkosp_init_library)
 EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
 EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
