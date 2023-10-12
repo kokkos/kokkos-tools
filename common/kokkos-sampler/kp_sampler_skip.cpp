@@ -33,11 +33,7 @@ static endFunction endReduceCallee             = NULL;
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
-  if (0 == tool_globFence) {
     settings->requires_global_fencing = false;
-  } else {
-    settings->requires_global_fencing = true;
-  }
 }
 
 // set of functions from Kokkos ToolProgrammingInterface (includes fence)
