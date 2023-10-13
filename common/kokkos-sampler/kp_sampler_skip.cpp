@@ -13,7 +13,7 @@ namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID           = 0;
 static uint64_t kernelSampleSkip = std::numeric_limits<uint64_t>::max();
-static double tool_prob_num      = 0.1;
+static double tool_prob_num      = -1.0;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
 
