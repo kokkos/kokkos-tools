@@ -1,4 +1,10 @@
-This is a sampler utility that is intended to complement other tools in the Kokkos Tools set. This utility allows for sampling (rather than collecting) of profiling or debugging data gathered from a particular tool of the Kokkos Tools set. The Kokkos Tools user provides a sampling rate via the environment variable KOKKOS_TOOLS_SAMPLER_SKIP.  
+This is a sampler utility that is intended to complement other tools in the Kokkos Tools set. This utility allows for sampling of profiling or debugging data collected from a particular tool of the Kokkos Tools set at each Kokkos kernel invocation.
+
+To use this utility, a Kokkos Tools user provides a sampling probability by setting the environment variable `KOKKOS_TOOLS_SAMPLER_PROB` to a positive real number between 0.0 and 100.0. 
+The user can alternatively set a sampling skip rate, i.e., the number of Kokkos kernel invocations to skip before the next sample is taken.  
+The user does so by setting the environment variable `KOKKOS_TOOLS_SAMPLER_SKIP` to a non-negative integer.
+
+If both sampling probability and sampling skip rate is set by the user, this sampling utility only uses the sampling probability for sampling, with the utility setting the sampling skip rate to 1.
 
 In order for the state of the sampled profiling and logging data in memory to be captured at the time of the utility's callback invocation, it might be important to enforce fences. However, this also means that there are more synchronization points compared with running the program without the tool.
 This fencing behavior can be controlled by setting the environment variable `KOKKOS_TOOLS_GLOBALFENCES`. A non-zero value implies global fences on invocation of the tool. The default is not to introduce extra fences.	
