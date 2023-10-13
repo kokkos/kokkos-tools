@@ -6,11 +6,14 @@
 #include <dlfcn.h>
 #include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
+#include <ctime>
+#include <limits>
 
 namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID           = 0;
-static uint64_t kernelSampleSkip = 101;
+static uint64_t kernelSampleSkip = std::numeric_limits<uint64_t>::max();
+static double tool_prob_num      = 0.1;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
 
@@ -33,7 +36,7 @@ static endFunction endReduceCallee             = NULL;
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
-  settings->requires_global_fencing = false;
+  settings->requires_global_fencing = 0;
 }
 
 // set of functions from Kokkos ToolProgrammingInterface (includes fence)
@@ -182,6 +185,79 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   if (tool_verbosity > 0) {
     printf("KokkosP: Sampling rate set to: %s\n", tool_sample);
   }
+  const char* tool_probability = getenv("KOKKOS_TOOLS_SAMPLER_PROB");
+
+  if (NULL != tool_probability) {
+    //  read sampling probability as an float between 0 and 100, representing
+    //  a percentage that data should be gathered.
+    //  Connector reasons about probability as a double between 0.0 and 1.0.
+    tool_prob_num = atof(tool_probability);
+    if (tool_prob_num > 100.0) {
+      printf(
+          "KokkosP: The sampling probability value is set to be greater than "
+          "100.0. "
+          "Setting sampling probability to 100 percent; all of the "
+          "invocations of a Kokkos Kernel will be profiled.\n");
+      tool_prob_num = 100.0;
+    } else if (tool_prob_num < 0.0) {
+      printf(
+          "KokkosP: The sampling probability value is set to be negative "
+          "number. Setting "
+          "sampling probability to 0 percent; none of the invocations of "
+          "a Kokkos Kernel will be profiled.\n");
+      tool_prob_num = 0.0;
+    }
+  }
+  if ((tool_prob_num < 0.0) &&
+      (kernelSampleSkip == std::numeric_limits<uint64_t>::max())) {
+    if (tool_verbosity > 0) {
+      printf(
+          "KokkosP: Neither sampling utility's probability for sampling "
+          "nor sampling utility's skip rate were set. \n");
+    }
+    tool_prob_num = 10.0;
+    if (tool_verbosity > 0) {
+      printf(
+          "KokkosP: Set the sampling utility's probability "
+          "for sampling to be %f percent. Sampler's skip rate "
+          "will not be used.\n",
+          tool_prob_num);
+    }
+  }
+
+  if (tool_verbosity > 0) {
+    if (tool_verbosity > 1) {
+      printf("KokkosP: Sampling rate provided as input: %s\n", tool_sample);
+      printf("KokkosP: Sampling probability provided as input: %s\n",
+             tool_probability);
+    }
+    printf("KokkosP: Sampling rate set to: %llu\n",
+           (unsigned long long)(kernelSampleSkip));
+    printf("KokkosP: Sampling probability set to %f\n", tool_prob_num);
+    printf(
+        "KokkosP: seeding Random Number Generator using clock for "
+        "probabilistic sampling.\n");
+  }
+  srand(time(NULL));
+
+  if ((NULL != tool_probability) && (NULL != tool_sample)) {
+    printf(
+        "KokkosP: Note that both probability and skip rate are set. The Kokkos "
+        "Tools Sampler utility will invoke a Kokkos Tool child event you "
+        "specified "
+        "(e.g., the profiler or debugger tool connector you specified "
+        "in KOKKOS_TOOLS_LIBS) with only specified sampling probability "
+        "applied "
+        "and sampling skip rate set is ignored with no "
+        "predefined periodicity for sampling used.\n");
+
+    if (tool_verbosity > 0) {
+      printf(
+          "KokkosP: The skip rate in the sampler utility "
+          "is being set to 1.\n");
+    }
+    kernelSampleSkip = 1;
+  }
 }
 
 void kokkosp_finalize_library() {
@@ -194,17 +270,19 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
   static uint64_t invocationNum = 0;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n",
-             (unsigned long long)(*kID));
-    }
-    if (tool_globFence) {
-      invoke_ktools_fence(0);
-    }
-    if (NULL != beginForCallee) {
-      uint64_t nestedkID = 0;
-      (*beginForCallee)(name, devID, &nestedkID);
-      infokIDSample.insert({*kID, nestedkID});
+    if ((rand() / (1.0 * RAND_MAX)) < (tool_prob_num / 100.0)) {
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu calling child-begin function...\n",
+               (unsigned long long)(*kID));
+      }
+      if (tool_globFence) {
+        invoke_ktools_fence(0);
+      }
+      if (NULL != beginForCallee) {
+        uint64_t nestedkID = 0;
+        (*beginForCallee)(name, devID, &nestedkID);
+        infokIDSample.insert({*kID, nestedkID});
+      }
     }
   }
 }
@@ -221,7 +299,6 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
         invoke_ktools_fence(0);
       }
       (*endForCallee)(retrievedNestedkID);
-      infokIDSample.erase(kID);
     }
   }
 }
@@ -232,17 +309,19 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
   static uint64_t invocationNum = 0;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n",
-             (unsigned long long)(*kID));
-    }
-    if (NULL != beginScanCallee) {
-      uint64_t nestedkID = 0;
-      if (tool_globFence) {
-        invoke_ktools_fence(0);
+    if ((rand() / (1.0 * RAND_MAX)) < (tool_prob_num / 100.0)) {
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu calling child-begin function...\n",
+               (unsigned long long)(*kID));
       }
-      (*beginScanCallee)(name, devID, &nestedkID);
-      infokIDSample.insert({*kID, nestedkID});
+      if (NULL != beginScanCallee) {
+        uint64_t nestedkID = 0;
+        if (tool_globFence) {
+          invoke_ktools_fence(0);
+        }
+        (*beginScanCallee)(name, devID, &nestedkID);
+        infokIDSample.insert({*kID, nestedkID});
+      }
     }
   }
 }
@@ -259,7 +338,6 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
         invoke_ktools_fence(0);
       }
       (*endScanCallee)(retrievedNestedkID);
-      infokIDSample.erase(kID);
     }
   }
 }
@@ -270,17 +348,19 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
   static uint64_t invocationNum = 0;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
-    if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n",
-             (unsigned long long)(*kID));
-    }
-    if (NULL != beginReduceCallee) {
-      uint64_t nestedkID = 0;
-      if (tool_globFence) {
-        invoke_ktools_fence(0);
+    if ((rand() / (1.0 * RAND_MAX)) < (tool_prob_num / 100.0)) {
+      if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu calling child-begin function...\n",
+               (unsigned long long)(*kID));
       }
-      (*beginReduceCallee)(name, devID, &nestedkID);
-      infokIDSample.insert({*kID, nestedkID});
+      if (NULL != beginReduceCallee) {
+        uint64_t nestedkID = 0;
+        if (tool_globFence) {
+          invoke_ktools_fence(0);
+        }
+        (*beginReduceCallee)(name, devID, &nestedkID);
+        infokIDSample.insert({*kID, nestedkID});
+      }
     }
   }
 }
@@ -297,7 +377,6 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
         invoke_ktools_fence(0);
       }
       (*endScanCallee)(retrievedNestedkID);
-      infokIDSample.erase(kID);
     }
   }
 }
