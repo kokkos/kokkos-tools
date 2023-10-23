@@ -16,7 +16,7 @@ static uint64_t kernelSampleSkip = std::numeric_limits<uint64_t>::max();
 static double tool_prob_num      = -1.0;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
-static unsigned int tool_seed    = 1;
+static int tool_seed             = -1;
 
 // a hash table mapping kID to nestedkID
 static std::unordered_map<uint64_t, uint64_t> infokIDSample;
@@ -51,11 +51,23 @@ uint32_t getDeviceID(uint32_t devid_in) {
 }
 
 void invoke_ktools_fence(uint32_t devID) {
+  if (tool_verbosity > 1) {
+      printf(
+          "KokkosP: Sampler utility finding"
+          " tool-induced fence function and invoking it.\n");
+    }
+
   if (tpi_funcs.fence != nullptr) {
+  if (tool_verbosity > 1) {
+      printf(
+          "KokkosP: Sampler utility found fence function. Attempting to invoke"
+          " tool-induced fence on device %d.\n",
+          getDeviceID(devID));
+    }
     tpi_funcs.fence(devID);
     if (tool_verbosity > 1) {
       printf(
-          "KokkosP: Sampler utility sucessfully invoked "
+          "KokkosP: Sampler utility sucessfully invoked"
           " tool-induced fence on device %d\n",
           getDeviceID(devID));
     }
@@ -256,7 +268,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     srand(tool_seed);
     if(tool_verbosity > 0) {
     printf(
-        "KokkosP: seeding Random Number Generator using seed %u for "
+        "KokkosP: Seeding random number generator using seed %u for "
         "probabilistic sampling.\n", tool_seed);
     }
    }
@@ -296,12 +308,16 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
         printf("KokkosP: sample %llu calling child-begin function...\n",
                (unsigned long long)(*kID));
       }
-      if (tool_globFence) {
-        invoke_ktools_fence(0);
-      }
       if (NULL != beginForCallee) {
+      	if (tool_globFence) {
+        	invoke_ktools_fence(0);
+      	}
         uint64_t nestedkID = 0;
         (*beginForCallee)(name, devID, &nestedkID);
+        if (tool_verbosity > 0) {
+        	printf("KokkosP: sample %llu finished with child-begin function.\n",
+               		(unsigned long long)(*kID));
+        }
         infokIDSample.insert({*kID, nestedkID});
       }
     }
@@ -342,6 +358,10 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
           invoke_ktools_fence(0);
         }
         (*beginScanCallee)(name, devID, &nestedkID);
+        if (tool_verbosity > 0) {
+        printf("KokkosP: sample %llu finished with child-begin function.\n",
+               (unsigned long long)(*kID));
+        }
         infokIDSample.insert({*kID, nestedkID});
       }
     }
@@ -382,6 +402,10 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
           invoke_ktools_fence(0);
         }
         (*beginReduceCallee)(name, devID, &nestedkID);
+        if (tool_verbosity > 0) {
+          printf("KokkosP: sample %llu finished with child-begin function.\n",
+               (unsigned long long)(*kID));
+        }
         infokIDSample.insert({*kID, nestedkID});
       }
     }
@@ -399,6 +423,7 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
       if (tool_globFence) {
         invoke_ktools_fence(0);
       }
+
       (*endScanCallee)(retrievedNestedkID);
       infokIDSample.erase(kID);
     }
