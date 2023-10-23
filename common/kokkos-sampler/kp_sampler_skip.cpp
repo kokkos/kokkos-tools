@@ -16,6 +16,7 @@ static uint64_t kernelSampleSkip = std::numeric_limits<uint64_t>::max();
 static double tool_prob_num      = -1.0;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
+static unsigned int tool_seed    = 1;
 
 // a hash table mapping kID to nestedkID
 static std::unordered_map<uint64_t, uint64_t> infokIDSample;
@@ -81,6 +82,8 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t devInfoCount, void* deviceInfo) {
   const char* tool_verbose_str   = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
+  const char* tool_seed_str = getenv("KOKKOS_TOOLS_SEED");
+
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
   } else {
@@ -90,6 +93,11 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     tool_globFence = atoi(tool_globFence_str);
   } else {
     tool_globFence = 0;
+  }
+  if (NULL != tool_seed_str) {
+    tool_seed = atoi(tool_seed_str);
+  } else {
+    tool_seed = 1;
   }
 
   char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
@@ -234,11 +242,24 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     printf("KokkosP: Sampling rate set to: %llu\n",
            (unsigned long long)(kernelSampleSkip));
     printf("KokkosP: Sampling probability set to %f\n", tool_prob_num);
+  }
+   
+  if(0 > tool_seed) {
+    srand(time(NULL));
+    if(tool_verbosity > 0) {
     printf(
         "KokkosP: seeding Random Number Generator using clock for "
         "probabilistic sampling.\n");
+    }
   }
-  srand(time(NULL));
+  else {
+    srand(tool_seed);
+    if(tool_verbosity > 0) {
+    printf(
+        "KokkosP: seeding Random Number Generator using seed %u for "
+        "probabilistic sampling.\n", tool_seed);
+    }
+   }
 
   if ((NULL != tool_probability) && (NULL != tool_sample)) {
     printf(
