@@ -299,6 +299,7 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
         invoke_ktools_fence(0);
       }
       (*endForCallee)(retrievedNestedkID);
+      infokIDSample.erase(kID);
     }
   }
 }
@@ -338,6 +339,7 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
         invoke_ktools_fence(0);
       }
       (*endScanCallee)(retrievedNestedkID);
+      infokIDSample.erase(kID);
     }
   }
 }
@@ -377,6 +379,7 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
         invoke_ktools_fence(0);
       }
       (*endScanCallee)(retrievedNestedkID);
+      infokIDSample.erase(kID);
     }
   }
 }
