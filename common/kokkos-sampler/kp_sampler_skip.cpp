@@ -52,13 +52,13 @@ uint32_t getDeviceID(uint32_t devid_in) {
 
 void invoke_ktools_fence(uint32_t devID) {
   if (tool_verbosity > 1) {
-      printf(
-          "KokkosP: Sampler utility finding"
-          " tool-induced fence function and invoking it.\n");
-    }
+    printf(
+        "KokkosP: Sampler utility finding"
+        " tool-induced fence function and invoking it.\n");
+  }
 
   if (tpi_funcs.fence != nullptr) {
-  if (tool_verbosity > 1) {
+    if (tool_verbosity > 1) {
       printf(
           "KokkosP: Sampler utility found fence function. Attempting to invoke"
           " tool-induced fence on device %d.\n",
@@ -94,7 +94,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t devInfoCount, void* deviceInfo) {
   const char* tool_verbose_str   = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
-  const char* tool_seed_str = getenv("KOKKOS_TOOLS_SEED");
+  const char* tool_seed_str      = getenv("KOKKOS_TOOLS_SEED");
 
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
@@ -255,23 +255,23 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
            (unsigned long long)(kernelSampleSkip));
     printf("KokkosP: Sampling probability set to %f\n", tool_prob_num);
   }
-   
-  if(0 > tool_seed) {
+
+  if (0 > tool_seed) {
     srand(time(NULL));
-    if(tool_verbosity > 0) {
-    printf(
-        "KokkosP: seeding Random Number Generator using clock for "
-        "probabilistic sampling.\n");
+    if (tool_verbosity > 0) {
+      printf(
+          "KokkosP: seeding Random Number Generator using clock for "
+          "probabilistic sampling.\n");
+    }
+  } else {
+    srand(tool_seed);
+    if (tool_verbosity > 0) {
+      printf(
+          "KokkosP: Seeding random number generator using seed %u for "
+          "probabilistic sampling.\n",
+          tool_seed);
     }
   }
-  else {
-    srand(tool_seed);
-    if(tool_verbosity > 0) {
-    printf(
-        "KokkosP: Seeding random number generator using seed %u for "
-        "probabilistic sampling.\n", tool_seed);
-    }
-   }
 
   if ((NULL != tool_probability) && (NULL != tool_sample)) {
     printf(
@@ -309,14 +309,14 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                (unsigned long long)(*kID));
       }
       if (NULL != beginForCallee) {
-      	if (tool_globFence) {
-        	invoke_ktools_fence(0);
-      	}
+        if (tool_globFence) {
+          invoke_ktools_fence(0);
+        }
         uint64_t nestedkID = 0;
         (*beginForCallee)(name, devID, &nestedkID);
         if (tool_verbosity > 0) {
-        	printf("KokkosP: sample %llu finished with child-begin function.\n",
-               		(unsigned long long)(*kID));
+          printf("KokkosP: sample %llu finished with child-begin function.\n",
+                 (unsigned long long)(*kID));
         }
         infokIDSample.insert({*kID, nestedkID});
       }
@@ -359,8 +359,8 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
         }
         (*beginScanCallee)(name, devID, &nestedkID);
         if (tool_verbosity > 0) {
-        printf("KokkosP: sample %llu finished with child-begin function.\n",
-               (unsigned long long)(*kID));
+          printf("KokkosP: sample %llu finished with child-begin function.\n",
+                 (unsigned long long)(*kID));
         }
         infokIDSample.insert({*kID, nestedkID});
       }
@@ -404,7 +404,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
         (*beginReduceCallee)(name, devID, &nestedkID);
         if (tool_verbosity > 0) {
           printf("KokkosP: sample %llu finished with child-begin function.\n",
-               (unsigned long long)(*kID));
+                 (unsigned long long)(*kID));
         }
         infokIDSample.insert({*kID, nestedkID});
       }
