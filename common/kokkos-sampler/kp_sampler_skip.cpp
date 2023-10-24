@@ -51,23 +51,17 @@ uint32_t getDeviceID(uint32_t devid_in) {
 }
 
 void invoke_ktools_fence(uint32_t devID) {
-  if (tool_verbosity > 1) {
-    printf(
-        "KokkosP: Sampler utility finding"
-        " tool-induced fence function and invoking it.\n");
-  }
-
   if (tpi_funcs.fence != nullptr) {
     if (tool_verbosity > 1) {
       printf(
-          "KokkosP: Sampler utility found fence function. Attempting to invoke"
+          "KokkosP: Sampler attempting to invoke"
           " tool-induced fence on device %d.\n",
           getDeviceID(devID));
     }
     tpi_funcs.fence(devID);
     if (tool_verbosity > 1) {
       printf(
-          "KokkosP: Sampler utility sucessfully invoked"
+          "KokkosP: Sampler sucessfully invoked"
           " tool-induced fence on device %d\n",
           getDeviceID(devID));
     }
@@ -208,7 +202,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   const char* tool_probability = getenv("KOKKOS_TOOLS_SAMPLER_PROB");
 
   if (NULL != tool_probability) {
-    //  read sampling probability as an float between 0 and 100, representing
+    //  read sampling probability as a float between 0 and 100, representing
     //  a percentage that data should be gathered.
     //  Connector reasons about probability as a double between 0.0 and 1.0.
     tool_prob_num = atof(tool_probability);
@@ -216,15 +210,17 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       printf(
           "KokkosP: The sampling probability value is set to be greater than "
           "100.0. "
-          "Setting sampling probability to 100 percent; all of the "
-          "invocations of a Kokkos Kernel will be profiled.\n");
+          "The probability for the sampler will be set to 100 percent; all of "
+          "the "
+          "invocations of a Kokkos kernel will be profiled.\n");
       tool_prob_num = 100.0;
     } else if (tool_prob_num < 0.0) {
       printf(
-          "KokkosP: The sampling probability value is set to be negative "
-          "number. Setting "
-          "sampling probability to 0 percent; none of the invocations of "
-          "a Kokkos Kernel will be profiled.\n");
+          "KokkosP: The sampling probability value is set to be a negative "
+          "number. The "
+          "sampler's probability will be set to 0 percent; none of the "
+          "invocations of "
+          "a Kokkos kernel will be profiled.\n");
       tool_prob_num = 0.0;
     }
   }
@@ -232,14 +228,15 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       (kernelSampleSkip == std::numeric_limits<uint64_t>::max())) {
     if (tool_verbosity > 0) {
       printf(
-          "KokkosP: Neither sampling utility's probability for sampling "
-          "nor sampling utility's skip rate were set. \n");
+          "KokkosP: Neither the probability "
+          "nor the skip rate for sampling were set...\n");
     }
     tool_prob_num = 10.0;
     if (tool_verbosity > 0) {
       printf(
-          "KokkosP: Set the sampling utility's probability "
-          "for sampling to be %f percent. Sampler's skip rate "
+          "KokkosP: The probability "
+          "for the sampler is set to the default of %f percent. The skip rate "
+          "for sampler"
           "will not be used.\n",
           tool_prob_num);
     }
@@ -247,47 +244,45 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
   if (tool_verbosity > 0) {
     if (tool_verbosity > 1) {
-      printf("KokkosP: Sampling rate provided as input: %s\n", tool_sample);
-      printf("KokkosP: Sampling probability provided as input: %s\n",
+      printf("KokkosP: Sampling skip rate provided as input is: %s\n",
+             tool_sample);
+      printf("KokkosP: Sampling probability provided as input is: %s\n",
              tool_probability);
     }
-    printf("KokkosP: Sampling rate set to: %llu\n",
+    printf("KokkosP: Sampling skip rate is set to: %llu\n",
            (unsigned long long)(kernelSampleSkip));
-    printf("KokkosP: Sampling probability set to %f\n", tool_prob_num);
+    printf("KokkosP: Sampling probability is set to %f\n", tool_prob_num);
   }
 
   if (0 > tool_seed) {
     srand(time(NULL));
     if (tool_verbosity > 0) {
       printf(
-          "KokkosP: seeding Random Number Generator using clock for "
-          "probabilistic sampling.\n");
+          "KokkosP: Seeding random number generator using clock for "
+          "random sampling.\n");
     }
   } else {
     srand(tool_seed);
     if (tool_verbosity > 0) {
       printf(
           "KokkosP: Seeding random number generator using seed %u for "
-          "probabilistic sampling.\n",
+          "random sampling.\n",
           tool_seed);
     }
   }
 
   if ((NULL != tool_probability) && (NULL != tool_sample)) {
     printf(
-        "KokkosP: Note that both probability and skip rate are set. The Kokkos "
-        "Tools Sampler utility will invoke a Kokkos Tool child event you "
-        "specified "
-        "(e.g., the profiler or debugger tool connector you specified "
-        "in KOKKOS_TOOLS_LIBS) with only specified sampling probability "
-        "applied "
-        "and sampling skip rate set is ignored with no "
-        "predefined periodicity for sampling used.\n");
+        "KokkosP: You set both the probability and skip rate for the sampler. "
+        "Only random sampling "
+        "will be done, using the probabability you set; "
+        "The skip rate you set will be ignored.\n");
 
-    if (tool_verbosity > 0) {
+    if (tool_verbosity > 1) {
       printf(
-          "KokkosP: The skip rate in the sampler utility "
-          "is being set to 1.\n");
+          "KokkosP: Note: The skip rate will be set to 1. Sampling will not be "
+          "based "
+          " on a pre-defined periodicity.\n");
     }
     kernelSampleSkip = 1;
   }
