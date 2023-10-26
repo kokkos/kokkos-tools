@@ -88,7 +88,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t devInfoCount, void* deviceInfo) {
   const char* tool_verbose_str   = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
-  const char* tool_seed_str      = getenv("KOKKOS_TOOLS_SEED");
+  const char* tool_seed_str      = getenv("KOKKOS_TOOLS_RANDOM_SEED");
 
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
@@ -102,8 +102,6 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   }
   if (NULL != tool_seed_str) {
     tool_seed = atoi(tool_seed_str);
-  } else {
-    tool_seed = 1;
   }
 
   char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
