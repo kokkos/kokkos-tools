@@ -29,18 +29,19 @@ Before starting with contributing a change to the kokkos-tools repo, one must as
 
     github.com/<YOURGITHUBID>/kokkos-tools 
 
-1. Open up a Terminal and find a location for your fork of kokkos-tools, and then set the environment variable Kokkos_TOOLS_LIB to that location. 
+1. Open up a Terminal on your computer and find a location for your fork of kokkos-tools, and then set the environment variable `Kokkos_TOOLS_LIBS` to that location. 
 
-1. Clone the repo in the location in 2   
+1. Clone the repo in the location in 2
 
  `git clone https://github.com/<YOURGITHUBID>/kokkos-tools .`
-
-1. NOTE: Be sure to use/checkout the develop branch (this will be default soon and master won't be available - instead we will have releases) 
+ 
+1. Do a checkout of the `develop` branch. This branch is the default on the kokkos project's Kokkos Tools repo. 
+     a. Note 1: your `master` branch is irrelevant here for development. That is designated as a stable release branch. 
+     a. Note 2: You should synch your fork's `develop` branch periodically with the Kokkos project's Kokkos Tools repo. 
 
   `git checkout develop`
 
-1. Do a `git status` to make sure you have the latest `develop` branch
- 
+1. Do a `git status` to make sure you have the latest `develop` branch from the remote, i.e., the version showing up on github.com/<YOURGITHUBID>/kokkos-tools in a browser. 
   
   ---- 
   
@@ -61,15 +62,14 @@ As mentioned in Step 0, note that:
 ### Step 3: Make the changes and test them 
 
 * Open up a vi editor, and make changes to `<yourfilename>`. 
-    - Vi is suggested to use as it is readily available on nearly any platform, and Kokkos development happens across different platforms.
+    - The editor `vi` is suggested to use as it is readily available on nearly any platform, and Kokkos development happens across different platforms.
 
 
 ### Step 4: Test the code works
 
-* Compile and run the code with changes on platforms of importance, making sure no errors exist. 
-
-* (Optional): Use `clang-format-8` on the file to comply with formatting that git will perform.
- use `clang-format-8` on `<yourfilename>` to ensure code formatting of your code files before committing 
+1. Compile and run the code with changes on platforms of importance, making sure no errors exist.
+2. Use `clang-format-8` on the file to comply with formatting that git will perform.
+ use `clang-format-8` on `<yourfilename>` to ensure code formatting of your code files before committing. If on a mac, you can obtain clang-format by downloading homebrew if you don't have it and the using homebrew to install clang-format-8 by typing `brew install clang-format-8`. 
 
 
 -----
@@ -117,10 +117,9 @@ As mentioned in Step 0, note that:
  want the reviewers to see that you have a draft getting ready and that a review is needed soon), then submit a draft pull request 
  Otherwise, submit the PR for review. 
  
- * Message individuals on Kokkosteam.slack.com about the PR to promote its timely review. 
+ * Message individuals on Kokkosteam.slack.com about the PR to promote its timely review. You can also directly ping Vivek Kale on that slack along with Christian Trott on that slack to get it moving.
  
- * Once it is approved, you must merge the PR into Kokkos-tools:develop. Note that kokkos-tools has no master branch, and the kokkosteam
- only provides periodic releases of kokkos-tools.  
+ * Once your PR approved, you must merge the PR into Kokkos-tools:develop. Again, note that kokkos-tools only has a `develop` branch, and the kokkosteam only provides periodic releases of kokkos-tools via merging `develop` branch into the `master` branch.
   
 -----------
 
