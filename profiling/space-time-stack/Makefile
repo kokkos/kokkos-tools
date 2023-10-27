@@ -1,15 +1,15 @@
 CXX=mpicxx
-CFLAGS=-shared -O3 -g -fPIC -std=c++11 -Wall -Wextra
+CXXFLAGS=-shared -O3 -g -fPIC -std=c++11 -Wall -Wextra
 
 #Turn MPI support off:
-#CFLAGS += -DUSE_MPI=0
+#CXXFLAGS += -DUSE_MPI=0
 
 MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
 
-CXXFLAGS+=-I${MAKEFILE_PATH}
+CXXFLAGS+=-I${MAKEFILE_PATH} -I${MAKEFILE_PATH}/../../common/makefile-only -I${MAKEFILE_PATH}../all
 
 kp_space_time_stack.so: ${MAKEFILE_PATH}kp_space_time_stack.cpp
-	$(CXX) $(CFLAGS) -o $@ $<
+	$(CXX) $(CXXFLAGS) -o $@ $<
 
 clean:
 	rm *.so 

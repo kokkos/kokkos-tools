@@ -8,7 +8,7 @@ all: kp_vtune_focused_connector.so
 
 MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
 
-CXXFLAGS+=-I${MAKEFILE_PATH}
+CXXFLAGS+=-I${MAKEFILE_PATH} -I${MAKEFILE_PATH}/../../common/makefile-only -I${MAKEFILE_PATH}../all
 
 kp_vtune_focused_connector.so: ${MAKEFILE_PATH}kp_vtune_focused_connector.cpp ${MAKEFILE_PATH}kp_vtune_focused_connector_domain.h
 	$(CXX) $(SHARED_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) \

@@ -1,0 +1,54 @@
+{
+    "version"   : 3,
+    "configurePresets" : [
+        {
+            "name"          : "default",
+            "binaryDir"     : "${sourceDir}/build-with-${presetName}",
+            "cacheVariables" : {
+                "CMAKE_BUILD_TYPE"              : "Release",
+                "CMAKE_CXX_STANDARD"            : "17",
+                "CMAKE_CXX_EXTENSIONS"          : "OFF",
+                "BUILD_SHARED_LIBS"             : "ON"
+            }
+        },
+        {
+            "name"        : "OpenMP",
+            "inherits"    : "default",
+            "cacheVariables" : {
+                "Kokkos_ENABLE_OPENMP" : "ON"
+            }
+        },
+        {
+            "name"        : "Cuda",
+            "inherits"    : "default",
+            "cacheVariables" : {
+                "Kokkos_ENABLE_CUDA"  : "ON",
+                "Kokkos_ARCH_VOLTA70" : "ON",
+                "CMAKE_CXX_COMPILER"  : "${sourceDir}/bin/nvcc_wrapper"
+            }
+        },
+        {
+            "name"        : "ROCm",
+            "inherits"    : "default",
+            "cacheVariables" : {
+                "Kokkos_ENABLE_HIP"   : "ON",
+                "Kokkos_ARCH_VEGA906" : "ON",
+                "CMAKE_CXX_COMPILER"  : "hipcc"
+            }
+        }
+    ],
+    "buildPresets" : [
+        {
+            "name"                        : "OpenMP",
+            "configurePreset"             : "OpenMP"
+        },
+        {
+            "name"                        : "Cuda",
+            "configurePreset"             : "Cuda"
+        },
+        {
+            "name"                        : "ROCm",
+            "configurePreset"             : "ROCm"
+        }
+    ]
+}

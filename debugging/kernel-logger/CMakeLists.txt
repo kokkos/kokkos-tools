@@ -1,0 +1,1 @@
+kp_add_library(kp_kernel_logger kp_kernel_logger.cpp)
