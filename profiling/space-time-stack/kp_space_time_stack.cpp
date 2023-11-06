@@ -34,6 +34,10 @@
 #include "utils/demangle.hpp"
 
 #include "kp_core.hpp"
+#include "kp_space_time_stack.hpp"
+#include "../../common/FrameType.hpp"
+#include "../../common/SpaceHandle.hpp"
+#include "../../common/utils_time.hpp"
 
 #if USE_MPI
 #include <mpi.h>
@@ -46,62 +50,6 @@ namespace SpaceTimeStack {
 
 // Threshold to use for output (can be set via CLI options)
 double output_threshold = 0.1;
-
-enum Space { SPACE_HOST, SPACE_CUDA, SPACE_HIP, SPACE_SYCL, SPACE_OMPT };
-
-enum { NSPACES = 5 };
-
-Space get_space(SpaceHandle const& handle) {
-  // check that name starts with "Cuda"
-  if (strncmp(handle.name, "Cuda", 4) == 0) return SPACE_CUDA;
-  // check that name starts with "SYCL"
-  if (strncmp(handle.name, "SYCL", 4) == 0) return SPACE_SYCL;
-  // check that name starts with "OpenMPTarget"
-  if (strncmp(handle.name, "OpenMPTarget", 12) == 0) return SPACE_OMPT;
-  // check that name starts with "HIP"
-  if (strncmp(handle.name, "HIP", 3) == 0) return SPACE_HIP;
-  if (strcmp(handle.name, "Host") == 0) return SPACE_HOST;
-
-  abort();
-  return SPACE_HOST;
-}
-
-const char* get_space_name(int space) {
-  switch (space) {
-    case SPACE_HOST: return "HOST";
-    case SPACE_CUDA: return "CUDA";
-    case SPACE_SYCL: return "SYCL";
-    case SPACE_OMPT: return "OpenMPTarget";
-    case SPACE_HIP: return "HIP";
-  }
-  abort();
-  return nullptr;
-}
-
-struct Now {
-  typedef std::chrono::time_point<std::chrono::high_resolution_clock> Impl;
-  Impl impl;
-};
-
-Now now() {
-  Now t;
-  t.impl = std::chrono::high_resolution_clock::now();
-  return t;
-}
-
-double operator-(Now b, Now a) {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(b.impl - a.impl)
-             .count() *
-         1e-9;
-}
-
-enum StackKind {
-  STACK_FOR,
-  STACK_REDUCE,
-  STACK_SCAN,
-  STACK_REGION,
-  STACK_COPY
-};
 
 void print_process_hwm(bool mpi_usable) {
   struct rusage sys_resources;
@@ -148,7 +96,7 @@ void print_process_hwm(bool mpi_usable) {
 struct StackNode {
   StackNode* parent;
   std::string name;
-  StackKind kind;
+  FrameType kind;
   std::set<StackNode> children;
   double total_runtime;
   double total_kokkos_runtime;
@@ -159,7 +107,7 @@ struct StackNode {
                                               // not region calls) this node and
                                               // below this node in the tree
   Now start_time;
-  StackNode(StackNode* parent_in, std::string&& name_in, StackKind kind_in)
+  StackNode(StackNode* parent_in, std::string&& name_in, FrameType kind_in)
       : parent(parent_in),
         name(std::move(name_in)),
         kind(kind_in),
@@ -167,7 +115,7 @@ struct StackNode {
         total_kokkos_runtime(0.),
         number_of_calls(0),
         total_number_of_kernel_calls(0) {}
-  StackNode* get_child(std::string&& child_name, StackKind child_kind) {
+  StackNode* get_child(std::string&& child_name, FrameType child_kind) {
     StackNode candidate(this, std::move(child_name), child_kind);
     auto it = children.find(candidate);
     if (it == children.end()) {
@@ -195,8 +143,7 @@ struct StackNode {
     number_of_calls++;
 
     // Regions are not kernels, so we don't tally those
-    if (kind == STACK_FOR || kind == STACK_REDUCE || kind == STACK_SCAN ||
-        kind == STACK_COPY)
+    if (is_a_kernel(kind))
       total_number_of_kernel_calls++;
     start_time = now();
   }
@@ -205,7 +152,7 @@ struct StackNode {
     total_runtime += runtime;
   }
   void adopt() {
-    if (this->kind != STACK_REGION) {
+    if (this->kind != FrameType::REGION) {
       this->total_kokkos_runtime += this->total_runtime;
     }
     for (auto& child : this->children) {
@@ -216,7 +163,7 @@ struct StackNode {
     assert(this->total_kokkos_runtime >= 0.);
   }
   StackNode invert() const {
-    StackNode inv_root(nullptr, "", STACK_REGION);
+    StackNode inv_root(nullptr, "", FrameType::REGION);
     std::queue<StackNode const*> q;
     q.push(this);
     while (!q.empty()) {
@@ -272,7 +219,7 @@ struct StackNode {
       os << "\"imbalance\" : " << imbalance << ",\n";
 
       // Sum over kids if we're a region
-      if (kind == STACK_REGION) {
+      if (kind == FrameType::REGION) {
         double child_runtime = 0.0;
         for (auto& child : children) {
           child_runtime += child.total_runtime;
@@ -294,13 +241,7 @@ struct StackNode {
       os << "\"id\" : \"" << this << "\",\n";
 
       os << "\"kernel-type\" : ";
-      switch (kind) {
-        case STACK_FOR: os << "\"for\""; break;
-        case STACK_REDUCE: os << "\"reduce\""; break;
-        case STACK_SCAN: os << "\"scan\""; break;
-        case STACK_REGION: os << "\"region\""; break;
-        case STACK_COPY: os << "\"copy\""; break;
-      };
+      os << kind;
 
       os << "\n}";
     }
@@ -348,7 +289,7 @@ struct StackNode {
       auto percent_kokkos = (total_kokkos_runtime / total_runtime) * 100.0;
 
       // Sum over kids if we're a region
-      if (kind == STACK_REGION) {
+      if (kind == FrameType::REGION) {
         double child_runtime = 0.0;
         for (auto& child : children) {
           child_runtime += child.total_runtime;
@@ -362,13 +303,7 @@ struct StackNode {
         os << percent << "% " << percent_kokkos << "% " << imbalance << "% "
            << "------ " << number_of_calls << " " << name;
 
-      switch (kind) {
-        case STACK_FOR: os << " [for]"; break;
-        case STACK_REDUCE: os << " [reduce]"; break;
-        case STACK_SCAN: os << " [scan]"; break;
-        case STACK_REGION: os << " [region]"; break;
-        case STACK_COPY: os << " [copy]"; break;
-      };
+      os << kind;
 
       os << '\n';
     }
@@ -412,7 +347,7 @@ struct StackNode {
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
       MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
       std::queue<StackNode*> q;
-      std::set<std::pair<std::string, StackKind>> children_to_process;
+      std::set<std::pair<std::string, FrameType>> children_to_process;
       q.push(this);
       while (!q.empty()) {
         auto node = q.front();
@@ -457,7 +392,7 @@ struct StackNode {
                         MPI_COMM_WORLD);
               MPI_Bcast(&kind, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
               auto* child =
-                  node->get_child(std::move(child_name), StackKind(kind));
+                  node->get_child(std::move(child_name), FrameType(kind));
               q.push(child);
             }
             children_to_process.clear();
@@ -470,7 +405,7 @@ struct StackNode {
                         MPI_COMM_WORLD);
               int kind;
               MPI_Bcast(&kind, 1, MPI_INT, bcast_rank, MPI_COMM_WORLD);
-              auto child = node->get_child(std::move(name), StackKind(kind));
+              auto child = node->get_child(std::move(name), FrameType(kind));
               q.push(child);
               children_to_process.erase({child->name, child->kind});
             }
@@ -639,7 +574,7 @@ struct State {
   StackNode* stack_frame;
   Allocations current_allocations[NSPACES];
   Allocations hwm_allocations[NSPACES];
-  State() : stack_root(nullptr, "", STACK_REGION), stack_frame(&stack_root) {
+  State() : stack_root(nullptr, "", FrameType::REGION), stack_frame(&stack_root) {
     stack_frame->begin();
   }
   ~State() {
@@ -701,7 +636,7 @@ struct State {
       }
       for (int space = 0; space < NSPACES; ++space) {
         if (rank == 0) {
-          std::cout << "KOKKOS " << get_space_name(space) << " SPACE:\n";
+          std::cout << "KOKKOS " << get_space_name(static_cast<Space>(space)) << " SPACE:\n";
           std::cout << "=================== \n";
           std::cout.flush();
         }
@@ -731,7 +666,7 @@ struct State {
       inv_stack_root.print(std::cout);
 
       for (int space = 0; space < NSPACES; ++space) {
-        std::cout << "KOKKOS " << get_space_name(space) << " SPACE:\n";
+        std::cout << "KOKKOS " << get_space_name(static_cast<Space>(space)) << " SPACE:\n";
         std::cout << "===================\n";
         std::cout.flush();
         hwm_allocations[space].print(std::cout, mpi_usable);
@@ -742,7 +677,7 @@ struct State {
     }
   }
 
-  void begin_frame(const char* name, StackKind kind) {
+  void begin_frame(const char* name, FrameType kind) {
     std::string name_str(demangleNameKokkos(name));
     stack_frame = stack_frame->get_child(std::move(name_str), kind);
     stack_frame->begin();
@@ -751,7 +686,7 @@ struct State {
     stack_frame->end(end_time);
     stack_frame = stack_frame->parent;
   }
-  std::uint64_t begin_kernel(const char* name, StackKind kind) {
+  std::uint64_t begin_kernel(const char* name, FrameType kind) {
     begin_frame(name, kind);
     return reinterpret_cast<std::uint64_t>(stack_frame);
   }
@@ -765,7 +700,7 @@ struct State {
     }
     end_frame(end_time);
   }
-  void push_region(const char* name) { begin_frame(name, STACK_REGION); }
+  void push_region(const char* name) { begin_frame(name, FrameType::REGION); }
   void pop_region() { end_frame(now()); }
   void allocate(Space space, const char* name, const void* ptr,
                 std::uint64_t size) {
@@ -794,7 +729,7 @@ struct State {
     frame_name += "->";
     frame_name += get_space_name(src_space);
     frame_name += ")";
-    begin_frame(frame_name.c_str(), STACK_COPY);
+    begin_frame(frame_name.c_str(), FrameType::COPY);
   }
   void end_deep_copy() { end_frame(now()); }
 };
@@ -815,19 +750,19 @@ void kokkosp_finalize_library() {
 void kokkosp_begin_parallel_for(const char* name, std::uint32_t devid,
                                 std::uint64_t* kernid) {
   (void)devid;
-  *kernid = global_state->begin_kernel(name, STACK_FOR);
+  *kernid = global_state->begin_kernel(name, FrameType::PARALLEL_FOR);
 }
 
 void kokkosp_begin_parallel_reduce(const char* name, std::uint32_t devid,
                                    std::uint64_t* kernid) {
   (void)devid;
-  *kernid = global_state->begin_kernel(name, STACK_REDUCE);
+  *kernid = global_state->begin_kernel(name, FrameType::PARALLEL_REDUCE);
 }
 
 void kokkosp_begin_parallel_scan(const char* name, std::uint32_t devid,
                                  std::uint64_t* kernid) {
   (void)devid;
-  *kernid = global_state->begin_kernel(name, STACK_SCAN);
+  *kernid = global_state->begin_kernel(name, FrameType::PARALLEL_SCAN);
 }
 
 void kokkosp_end_parallel_for(std::uint64_t kernid) {

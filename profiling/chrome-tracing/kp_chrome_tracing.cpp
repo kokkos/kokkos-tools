@@ -32,6 +32,9 @@
 #include <unistd.h>
 
 #include "kp_core.hpp"
+#include "../../common/FrameType.hpp"
+#include "../../common/SpaceHandle.hpp"
+#include "../../common/utils_time.hpp"
 
 #if USE_MPI
 #include <mpi.h>
@@ -42,60 +45,14 @@
 namespace KokkosTools {
 namespace ChromeTracing {
 
-enum Space { SPACE_HOST, SPACE_CUDA };
-
-Space get_space(SpaceHandle const &handle) {
-  switch (handle.name[0]) {
-    case 'H': return SPACE_HOST;
-    case 'C': return SPACE_CUDA;
-  }
-  abort();
-  return SPACE_HOST;
-}
-
-struct Now {
-  typedef std::chrono::time_point<std::chrono::high_resolution_clock> Impl;
-  Impl impl;
-};
-
-Now now() {
-  Now t;
-  t.impl = std::chrono::high_resolution_clock::now();
-  return t;
-}
-
-uint64_t operator-(Now b, Now a) {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(b.impl - a.impl)
-      .count();
-}
-
-enum StackKind {
-  STACK_FOR,
-  STACK_REDUCE,
-  STACK_SCAN,
-  STACK_REGION,
-  STACK_COPY
-};
-
-std::ostream &operator<<(std::ostream &os, StackKind kind) {
-  switch (kind) {
-    case STACK_FOR: os << "[for]"; break;
-    case STACK_REDUCE: os << "[reduce]"; break;
-    case STACK_SCAN: os << "[scan]"; break;
-    case STACK_REGION: os << "[region]"; break;
-    case STACK_COPY: os << "[copy]"; break;
-  };
-  return os;
-}
-
 struct StackNode {
   std::string name;
-  StackKind kind;
+  FrameType kind;
   int rank;
   double total_runtime;
   Now start_time;
   Now base_time;
-  StackNode(std::string &&name_in, StackKind kind_in, int r, Now b)
+  StackNode(std::string &&name_in, FrameType kind_in, int r, Now b)
       : name(std::move(name_in)),
         kind(kind_in),
         rank(r),
@@ -144,7 +101,7 @@ struct State {
   }
 
   ~State() { outfile << "]\n"; }
-  void begin_frame(const char *name, StackKind kind) {
+  void begin_frame(const char *name, FrameType kind) {
     std::string name_str(name);
     current_stack.emplace_back(std::move(name_str), kind, my_mpi_rank,
                                my_base_time);
@@ -163,27 +120,27 @@ struct State {
     current_stack.pop_back();
   }
 
-  std::uint64_t begin_kernel(const char *name, StackKind kind) {
+  std::uint64_t begin_kernel(const char *name, FrameType kind) {
     begin_frame(name, kind);
     return 0;
   }
   void end_kernel(std::uint64_t) { end_frame(); }
-  void push_region(const char *name) { begin_frame(name, STACK_REGION); }
+  void push_region(const char *name) { begin_frame(name, FrameType::REGION); }
   void pop_region() { end_frame(); }
   void begin_deep_copy(Space dst, const char *dst_name, const void *, Space src,
                        const char *src_name, const void *, std::uint64_t len) {
     std::string frame_name;
     frame_name += dst_name;
     frame_name += " SPACE ";
-    frame_name += (dst == SPACE_HOST) ? 'H' : 'D';
+    frame_name += (dst == Space::HOST) ? 'H' : 'D';
     frame_name += " COPYFROM ";
     frame_name += src_name;
     frame_name += " SPACE ";
-    frame_name += (src == SPACE_HOST) ? 'H' : 'D';
+    frame_name += (src == Space::HOST) ? 'H' : 'D';
     frame_name += " LENGTH ";
     frame_name += std::to_string(len);
     frame_name += " ";
-    begin_frame(frame_name.c_str(), STACK_COPY);
+    begin_frame(frame_name.c_str(), FrameType::COPY);
   }
   void end_deep_copy() { end_frame(); }
 };
@@ -206,19 +163,19 @@ void kokkosp_finalize_library() {
 void kokkosp_begin_parallel_for(const char *name, std::uint32_t devid,
                                 std::uint64_t *kernid) {
   (void)devid;
-  *kernid = global_state->begin_kernel(name, STACK_FOR);
+  *kernid = global_state->begin_kernel(name, FrameType::PARALLEL_FOR);
 }
 
 void kokkosp_begin_parallel_reduce(const char *name, std::uint32_t devid,
                                    std::uint64_t *kernid) {
   (void)devid;
-  *kernid = global_state->begin_kernel(name, STACK_REDUCE);
+  *kernid = global_state->begin_kernel(name, FrameType::PARALLEL_REDUCE);
 }
 
 void kokkosp_begin_parallel_scan(const char *name, std::uint32_t devid,
                                  std::uint64_t *kernid) {
   (void)devid;
-  *kernid = global_state->begin_kernel(name, STACK_SCAN);
+  *kernid = global_state->begin_kernel(name, FrameType::PARALLEL_SCAN);
 }
 
 void kokkosp_end_parallel_for(std::uint64_t kernid) {

@@ -21,11 +21,11 @@
 #include <sys/time.h>
 #include <cstring>
 
+#include "../../common/SpaceHandle.hpp"
+
 #include "papi.h"
 
-struct SpaceHandle {
-  char name[64];
-};
+using SpaceHandle = KokkosTools::SpaceHandle;
 
 /* stack for parallel_for */
 std::stack<std::string> parallel_for_name;

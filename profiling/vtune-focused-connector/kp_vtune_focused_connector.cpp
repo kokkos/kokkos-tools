@@ -21,6 +21,8 @@
 #include <unordered_map>
 #include <string>
 
+#include "../../common/FrameType.hpp"
+
 #include "kp_core.hpp"
 #include "kp_vtune_focused_connector_domain.h"
 
@@ -45,7 +47,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 }
 
 KernelVTuneFocusedConnectorInfo* getFocusedConnectorInfo(
-    const char* name, KernelExecutionType kType) {
+    const char* name, FrameType kType) {
   std::string nameStr(name);
   auto kDomain  = domain_map.find(nameStr);
   currentKernel = NULL;
