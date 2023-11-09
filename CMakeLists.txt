@@ -95,7 +95,8 @@ endif()
 include(cmake/configure_variorum.cmake)
 
 set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
-set(KOKKOSTOOLS_HAS_NVTX ${Kokkos_ENABLE_CUDA}) # we assume that enabling CUDA for Kokkos program means nvtx should be available
+set(KOKKOSTOOLS_HAS_NVTX  ${Kokkos_ENABLE_CUDA}) # we assume that enabling CUDA for Kokkos program means nvtx should be available
+set(KOKKOSTOOLS_HAS_ROCTX ${Kokkos_ENABLE_HIP})  # we assume that enabling HIP for Kokkos program means roctx should be available
 
 if(DEFINED ENV{VTUNE_HOME})
   set(VTune_ROOT $ENV{VTUNE_HOME})
