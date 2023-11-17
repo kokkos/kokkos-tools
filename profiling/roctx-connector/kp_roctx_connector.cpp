@@ -36,8 +36,8 @@ namespace ROCTXConnector {
 
 static bool tool_globfences;
 
-void kokkosp_request_tool_settings(
-    const uint32_t, Kokkos_Tools_ToolSettings* settings) {
+void kokkosp_request_tool_settings(const uint32_t,
+                                   Kokkos_Tools_ToolSettings* settings) {
   if (tool_globfences) {
     settings->requires_global_fencing = true;
   } else {
@@ -45,11 +45,9 @@ void kokkosp_request_tool_settings(
   }
 }
 
-void kokkosp_init_library(const int loadSeq,
-                          const uint64_t interfaceVer,
+void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t /*devInfoCount*/,
                           Kokkos_Profiling_KokkosPDeviceInfo* /*deviceInfo*/) {
-
   const char* tool_global_fences = std::getenv("KOKKOS_TOOLS_GLOBALFENCES");
   if (tool_global_fences) {
     tool_globfences = (atoi(tool_global_fences) != 0);
@@ -58,7 +56,6 @@ void kokkosp_init_library(const int loadSeq,
   std::cout << "-----------------------------------------------------------\n"
             << "KokkosP: ROC Tracer Connector (sequence is " << loadSeq
             << ", version: " << interfaceVer << ")\n"
-            << "Global fences: " << (tool_globfences ? "ON" : "OFF") << "\n"
             << "-----------------------------------------------------------\n";
 
   roctxMark("Kokkos::Initialization Complete");
@@ -74,44 +71,32 @@ KokkosP: Finalization of ROC Tracer Connector. Complete.
   roctxMark("Kokkos::Finalization Complete");
 }
 
-void kokkosp_begin_parallel_for(const char* name,
-                                const uint32_t /*devID*/,
+void kokkosp_begin_parallel_for(const char* name, const uint32_t /*devID*/,
                                 uint64_t* /*kID*/) {
   roctxRangePush(name);
 }
 
-void kokkosp_end_parallel_for(const uint64_t /*kID*/) {
-  roctxRangePop();
-}
+void kokkosp_end_parallel_for(const uint64_t /*kID*/) { roctxRangePop(); }
 
-void kokkosp_begin_parallel_scan(const char* name,
-                                 const uint32_t /*devID*/,
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t /*devID*/,
                                  uint64_t* /*kID*/) {
   roctxRangePush(name);
 }
 
-void kokkosp_end_parallel_scan(const uint64_t /*kID*/) {
-  roctxRangePop();
-}
+void kokkosp_end_parallel_scan(const uint64_t /*kID*/) { roctxRangePop(); }
 
-void kokkosp_begin_parallel_reduce(const char* name,
-                                   const uint32_t /*devID*/,
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t /*devID*/,
                                    uint64_t* /*kID*/) {
   roctxRangePush(name);
 }
 
-void kokkosp_end_parallel_reduce(const uint64_t /*kID*/) {
-  roctxRangePop();
-}
+void kokkosp_end_parallel_reduce(const uint64_t /*kID*/) { roctxRangePop(); }
 
-void kokkosp_push_profile_region(const char* name) {
-  roctxRangePush(name);
-}
+void kokkosp_push_profile_region(const char* name) { roctxRangePush(name); }
 
 void kokkosp_pop_profile_region() { roctxRangePop(); }
 
-void kokkosp_create_profile_section(const char* name,
-                                    uint32_t* sID) {
+void kokkosp_create_profile_section(const char* name, uint32_t* sID) {
   *sID = kokkosp_sections.size();
   kokkosp_sections.push_back(
       {std::string(name), static_cast<roctx_range_id_t>(-1)});
