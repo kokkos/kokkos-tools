@@ -52,6 +52,9 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(VariorumConnector)
 KOKKOSTOOLS_EXTERN_EVENT_SET(NVTXConnector)
 KOKKOSTOOLS_EXTERN_EVENT_SET(NVTXFocusedConnector)
 #endif
+#ifdef KOKKOSTOOLS_HAS_ROCTX
+KOKKOSTOOLS_EXTERN_EVENT_SET(ROCTXConnector)
+#endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
 namespace cali {
 extern Kokkos::Tools::Experimental::EventSet get_kokkos_event_set(
@@ -93,6 +96,9 @@ EventSet get_event_set(const char* profiler, const char* config_str) {
 #ifdef KOKKOSTOOLS_HAS_NVTX
   handlers["nvtx-connector"]         = NVTXConnector::get_event_set();
   handlers["nvtx-focused-connector"] = NVTXFocusedConnector::get_event_set();
+#endif
+#ifdef KOKKOSTOOLS_HAS_ROCTX
+  handlers["roctx-connector"] = ROCTXConnector::get_event_set();
 #endif
   auto e = handlers.find(profiler);
   if (e != handlers.end()) return e->second;
