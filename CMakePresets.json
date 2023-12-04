@@ -9,7 +9,8 @@
                 "CMAKE_CXX_STANDARD"                : "17",
                 "KokkosTools_ENABLE_EXAMPLES"       : "ON",
                 "KokkosTools_ENABLE_SINGLE"         : "ON",
-                "KokkosTools_ENABLE_MPI"            : "ON"
+                "KokkosTools_ENABLE_MPI"            : "ON",
+                "KokkosTools_ENABLE_PAPI"           : "ON"
             }
         },
         {
