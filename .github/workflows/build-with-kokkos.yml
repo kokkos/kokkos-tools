@@ -13,7 +13,7 @@ jobs:
           - image: ubuntu:22.04
             preset: OpenMP
             compiler: default
-          - image: nvidia/cuda:12.1.0-devel-ubuntu22.04
+          - image: nvidia/cuda:11.0.3-devel-ubuntu20.04
             preset: Cuda
             compiler: default
           - image: nvidia/cuda:12.2.0-devel-ubuntu22.04
@@ -38,6 +38,9 @@ jobs:
           repository: kokkos/kokkos
           path: kokkos
           ref: develop
+      - name: Ensure non-interactive frontend.
+        run : |
+          echo "DEBIAN_FRONTEND=noninteractive" >> $GITHUB_ENV
       - name: Install compilers
         run : |
           apt update
@@ -70,6 +73,18 @@ jobs:
                   echo "Unsupported preset '${{ matrix.preset }}'."
                   exit -1
           esac
+
+      # Add Kitware's APT source to get the latest CMake version (or at least newer than 3.19 to support JSON presets).
+      # See also https://apt.kitware.com/.
+      - name: Add Kitware's APT source to get the latest CMake version.
+        run : |
+          apt --yes --no-install-recommends install wget lsb-release ca-certificates gnupg
+          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+          echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/kitware.list >/dev/null
+          apt update
+          rm /usr/share/keyrings/kitware-archive-keyring.gpg
+          apt --no-install-recommends --yes install kitware-archive-keyring
+          apt policy cmake
 
       - name: Install CMake, OpenMPI and dtrace
         run: |
