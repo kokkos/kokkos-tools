@@ -102,6 +102,9 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  printf("(Type)   Total Time, Call Count, Avg. Time per Call, %%Total Time in Kernels, %%Total Program Time\n");
+  printf("-------------------------------------------------------------------------\n\n");
+
   printf("Regions: \n\n");
 
   for (unsigned int i = 0; i < kernelInfo.size(); i++) {
