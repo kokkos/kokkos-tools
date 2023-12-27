@@ -19,6 +19,8 @@
 
 #include <map>
 #include <memory>
+#include <vector>
+
 #include "kp_kernel_info.h"
 
 namespace KokkosTools::KernelTimer {
@@ -38,6 +40,16 @@ inline bool compareKernelPerformanceInfo(KernelPerformanceInfo* left,
                                          KernelPerformanceInfo* right) {
   return left->getTime() > right->getTime();
 };
+
+inline int find_index(const std::vector<KernelPerformanceInfo*>& kernels,
+                      const char* kernelName) {
+  for (unsigned int i = 0; i < kernels.size(); i++) {
+    if (strcmp(kernels[i]->getName(), kernelName) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
 
 }  // namespace KokkosTools::KernelTimer
 
