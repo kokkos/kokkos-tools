@@ -14,7 +14,6 @@
 //
 //@HEADER
 
-// clang-format off
 #include <stdio.h>
 #include <cinttypes>
 #include <cstdlib>
@@ -28,7 +27,6 @@
 
 using namespace KokkosTools::KernelTimer;
 
-// clang-format on
 bool is_region(KernelPerformanceInfo const& kp) {
   return kp.getKernelType() == REGION;
 }
@@ -55,77 +53,74 @@ inline void write_json(std::ostream& os, KernelPerformanceInfo const& kp,
      << '\n';
   os << indent << '}';
 }
-// clang-format off
 
 int find_index(std::vector<KernelPerformanceInfo*>& kernels,
-	const char* kernelName) {
+               const char* kernelName) {
+  for (unsigned int i = 0; i < kernels.size(); i++) {
+    KernelPerformanceInfo* nextKernel = kernels[i];
 
-	for(unsigned int i = 0; i < kernels.size(); i++) {
-		KernelPerformanceInfo* nextKernel = kernels[i];
+    if (strcmp(nextKernel->getName(), kernelName) == 0) {
+      return i;
+    }
+  }
 
-		if(strcmp(nextKernel->getName(), kernelName) == 0) {
-			return i;
-		}
-	}
-
-	return -1;
+  return -1;
 }
 
 int main(int argc, char* argv[]) {
+  if (argc == 1) {
+    fprintf(stderr, "Did you specify any data files on the command line!\n");
+    fprintf(stderr, "Usage: ./kp_json_writer file1.dat [fileX.dat]*\n");
+    exit(-1);
+  }
 
-	if(argc == 1) {
-		fprintf(stderr, "Did you specify any data files on the command line!\n");
-		fprintf(stderr, "Usage: ./kp_json_writer file1.dat [fileX.dat]*\n");
-		exit(-1);
-	}
+  int commandline_args = 1;
+  while ((commandline_args < argc) && (argv[commandline_args][0] == '-')) {
+    commandline_args++;
+  }
 
-        int commandline_args = 1;
-        while( (commandline_args<argc ) && (argv[commandline_args][0]=='-') ) {
-          commandline_args++;
+  std::vector<KernelPerformanceInfo*> kernelInfo;
+  double totalKernelsTime    = 0;
+  double totalExecuteTime    = 0;
+  uint64_t totalKernelsCalls = 0;
+
+  for (int i = commandline_args; i < argc; i++) {
+    FILE* the_file = fopen(argv[i], "rb");
+
+    double fileExecuteTime = 0;
+    fread(&fileExecuteTime, sizeof(fileExecuteTime), 1, the_file);
+
+    totalExecuteTime += fileExecuteTime;
+
+    while (!feof(the_file)) {
+      KernelPerformanceInfo* new_kernel =
+          new KernelPerformanceInfo("", PARALLEL_FOR);
+      if (new_kernel->readFromFile(the_file)) {
+        if (strlen(new_kernel->getName()) > 0) {
+          int kernelIndex = find_index(kernelInfo, new_kernel->getName());
+
+          if (kernelIndex > -1) {
+            kernelInfo[kernelIndex]->addTime(new_kernel->getTime());
+            kernelInfo[kernelIndex]->addCallCount(new_kernel->getCallCount());
+          } else {
+            kernelInfo.push_back(new_kernel);
+          }
         }
-
-	std::vector<KernelPerformanceInfo*> kernelInfo;
-	double totalKernelsTime = 0;
-	double totalExecuteTime = 0;
-	uint64_t totalKernelsCalls = 0;
-
-	for(int i = commandline_args; i < argc; i++) {
-		FILE* the_file = fopen(argv[i], "rb");
-
-		double fileExecuteTime = 0;
-		fread(&fileExecuteTime, sizeof(fileExecuteTime), 1, the_file);
-
-		totalExecuteTime += fileExecuteTime;
-
-		while(! feof(the_file)) {
-			KernelPerformanceInfo* new_kernel = new KernelPerformanceInfo("", PARALLEL_FOR);
-			if(new_kernel->readFromFile(the_file)) {
-			   if(strlen(new_kernel->getName()) > 0) {
-				int kernelIndex = find_index(kernelInfo, new_kernel->getName());
-
-				if(kernelIndex > -1) {
-					kernelInfo[kernelIndex]->addTime(new_kernel->getTime());
-					kernelInfo[kernelIndex]->addCallCount(new_kernel->getCallCount());
-				} else {
-					kernelInfo.push_back(new_kernel);
-				}
-                           }
-			}
-		}
-
-		fclose(the_file);
-	}
-
-	std::sort(kernelInfo.begin(), kernelInfo.end(), compareKernelPerformanceInfo);
-
-	for(unsigned int i = 0; i < kernelInfo.size(); i++) {
-    if(kernelInfo[i]->getKernelType() != REGION) {
-		  totalKernelsTime += kernelInfo[i]->getTime();
-		  totalKernelsCalls += kernelInfo[i]->getCallCount();
+      }
     }
-	}
 
-  // clang-format on
+    fclose(the_file);
+  }
+
+  std::sort(kernelInfo.begin(), kernelInfo.end(), compareKernelPerformanceInfo);
+
+  for (unsigned int i = 0; i < kernelInfo.size(); i++) {
+    if (kernelInfo[i]->getKernelType() != REGION) {
+      totalKernelsTime += kernelInfo[i]->getTime();
+      totalKernelsCalls += kernelInfo[i]->getCallCount();
+    }
+  }
+
   // std::string filename = "test.json";
   // std::ofstream fout(filename);
   auto& fout = std::cout;
@@ -167,8 +162,6 @@ int main(int argc, char* argv[]) {
   fout << "  ]\n";
 
   fout << "}\n";
-  // clang-format off
 
-	return 0;
-
+  return 0;
 }
