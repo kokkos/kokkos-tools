@@ -54,19 +54,6 @@ inline void write_json(std::ostream& os, KernelPerformanceInfo const& kp,
   os << indent << '}';
 }
 
-int find_index(std::vector<KernelPerformanceInfo*>& kernels,
-               const char* kernelName) {
-  for (unsigned int i = 0; i < kernels.size(); i++) {
-    KernelPerformanceInfo* nextKernel = kernels[i];
-
-    if (strcmp(nextKernel->getName(), kernelName) == 0) {
-      return i;
-    }
-  }
-
-  return -1;
-}
-
 int main(int argc, char* argv[]) {
   if (argc == 1) {
     fprintf(stderr, "Did you specify any data files on the command line!\n");
