@@ -7,15 +7,16 @@
 #include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
 
-struct SpaceHandle {
-char* name[64];
-}
 namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID           = 0;
 static uint64_t kernelSampleSkip = 101;
 static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
+
+struct SpaceHandle {
+  char name[64];
+}
 
 // a hash table mapping kID to nestedkID
 static std::unordered_map<uint64_t, uint64_t> infokIDSample;
