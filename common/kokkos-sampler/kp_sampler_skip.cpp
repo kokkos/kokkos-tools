@@ -8,10 +8,9 @@
 #include "kp_config.hpp"
 
 // using Kokkos::Tools::SpaceHandle;
-struct SpaceHandle 
-{
+struct SpaceHandle {
 char name[64];
-}
+};
 
 namespace KokkosTools {
 namespace Sampler {
