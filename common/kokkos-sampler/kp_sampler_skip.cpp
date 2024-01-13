@@ -24,13 +24,13 @@ typedef void (*initFunction)(const int, const uint64_t, const uint32_t, void*);
 typedef void (*finalizeFunction)();
 typedef void (*beginFunction)(const char*, const uint32_t, uint64_t*);
 typedef void (*endFunction)(uint64_t);
-typedef void (*beginDeepCopyFunction)(SpaceHandle dst_handle,
+typedef void (*beginDeepCopyFunction)(SpaceHandle,
                                         const char*,
                                         const void*,
                                         SpaceHandle,
                                         const char*,
                                         const void*, 
-                                       uint64_t size);
+                                       uint64_t);
 typedef void (*endDeepCopyFunction)();
 
 static initFunction initProfileLibrary         = NULL;
