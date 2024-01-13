@@ -7,6 +7,9 @@
 #include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
 
+struct SpaceHandle {
+char* name[64];
+}
 namespace KokkosTools {
 namespace Sampler {
 static uint64_t uniqID           = 0;
@@ -325,8 +328,7 @@ void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n",
-             (unsigned long long)(*kID));
+      printf("KokkosP: sample calling child-begin deep_copy function...\n");
     }
     if (NULL != beginDeepCopyCallee) {
       if (tool_globFence) {
