@@ -9,8 +9,8 @@ make -f $ROOT_DIR/profiling/memory-events/Makefile
 make -f $ROOT_DIR/profiling/memory-hwm/Makefile
 make -f $ROOT_DIR/profiling/memory-hwm-mpi/Makefile
 make -f $ROOT_DIR/profiling/memory-usage/Makefile
-make -f $ROOT_DIR/profiling/nvprof-connector/Makefile
-make -f $ROOT_DIR/profiling/nvprof-focused-connector/Makefile
+make -f $ROOT_DIR/profiling/nvtx-connector/Makefile
+make -f $ROOT_DIR/profiling/nvtx-focused-connector/Makefile
 make -f $ROOT_DIR/profiling/papi-connector/Makefile
 make -f $ROOT_DIR/profiling/simple-kernel-timer-json/Makefile
 make -f $ROOT_DIR/profiling/simple-kernel-timer/Makefile
