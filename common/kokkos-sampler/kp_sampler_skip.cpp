@@ -312,30 +312,10 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
   }
 }
 
-void kokkosp_begin_deep_copy(const char* name, const uint32_t devID,
-                                   uint64_t* kID) {
-  *kID                          = uniqID++;
-  static uint64_t invocationNum = 0;
-  ++invocationNum;
-  if ((invocationNum % kernelSampleSkip) == 0) {
-    if (tool_verbosity > 0) {
-      printf("KokkosP: sample %llu calling child-begin function...\n",
-             (unsigned long long)(*kID));
-    }
-    if (NULL != beginDeepCopyCallee) {
-      uint64_t nestedkID = 0;
-      if (tool_globFence) {
-        invoke_ktools_fence(0);
-      }
-      (*beginDeepCopyCallee)(name, devID, &nestedkID);
-      infokIDSample.insert({*kID, nestedkID});
-    }
-  }
-}
 
 
 
-extern "C" void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
+void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
                                         const char* dst_name,
                                         const void* dst_ptr,
                                         SpaceHandle src_handle,
@@ -377,6 +357,5 @@ EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
 EXPOSE_BEGIN_DEEP_COPY(impl::kokkosp_begin_deep_copy)
-EXPOSE_END_DEEP_COPY(impl::kokkosp_end_deep_copy)
 
 }  // end extern "C"
