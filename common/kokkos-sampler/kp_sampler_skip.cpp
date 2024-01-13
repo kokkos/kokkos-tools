@@ -335,7 +335,7 @@ void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
         invoke_ktools_fence(0);
       }
       (*beginDeepCopyCallee)(dst_handle.name, dst_name, dst_ptr, src_handle.name, src_name, src_ptr,
-      (uint64_t) size);
+      size);
     }
   } 
 }
