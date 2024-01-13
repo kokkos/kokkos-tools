@@ -341,52 +341,23 @@ extern "C" void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
                                         SpaceHandle src_handle,
                                         const char* src_name,
                                         const void* src_ptr, uint64_t size) {
-
-
-  
-   *kID                          = uniqID++;
   static uint64_t invocationNum = 0;
   ++invocationNum;
   if ((invocationNum % kernelSampleSkip) == 0) {
     if (tool_verbosity > 0) {
-      
-  printf(
-      "KokkosP: DeepCopy<%s,%s> DST(name: %s pointer: %p) SRC(name: %s pointer "
-      "%p) Size: %llu\n",
-      dst_handle.name, src_handle.name, dst_name, dst_ptr, src_name, src_ptr,
-      (unsigned long long)(size));
-
       printf("KokkosP: sample %llu calling child-begin function...\n",
              (unsigned long long)(*kID));
     }
     if (NULL != beginDeepCopyCallee) {
-      uint64_t nestedkID = 0;
       if (tool_globFence) {
         invoke_ktools_fence(0);
       }
-      (*beginDeepCopyCallee)(name, devID, &nestedkID);
-      infokIDSample.insert({*kID, nestedkID});
+      (*beginDeepCopyCallee)(dst_handle.name, dst_name, dst_ptr, src_handle.name, src_name, src_ptr,
+      (unsigned long long)(size));
     }
   } 
-  
 }
 
-void kokkosp_end_deep_copy() {
-  if (NULL != endDeepCopyCallee) {
-    if (!(infokIDSample.find(kID) == infokIDSample.end())) {
-      uint64_t retrievedNestedkID = infokIDSample[kID];
-      if (tool_verbosity > 0) {
-        printf("KokkosP: sample %llu calling child-end function...\n",
-               (unsigned long long)(kID));
-      }
-      if (tool_globFence) {
-        invoke_ktools_fence(0);
-      }
-      (*endDeepCopyCallee)(retrievedNestedkID);
-      infokIDSample.erase(kID);
-    }
-  }
-}
 
 }  // namespace Sampler
 }  // end namespace KokkosTools
