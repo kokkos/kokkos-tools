@@ -7,8 +7,11 @@
 #include "../../profiling/all/kp_core.hpp"
 #include "kp_config.hpp"
 
-using Kokkos::Tools::SpaceHandle;
-
+// using Kokkos::Tools::SpaceHandle;
+struct SpaceHandle 
+{
+char name[64];
+}
 
 namespace KokkosTools {
 namespace Sampler {
@@ -364,7 +367,6 @@ EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
 EXPOSE_BEGIN_DEEP_COPY(impl::kokkosp_begin_deep_copy)
-EXPOSE_END_DEEP_COPY(impl::kokkosp_end_deep_copy)
 
 
 }  // end extern "C"
