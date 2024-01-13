@@ -24,17 +24,25 @@ typedef void (*initFunction)(const int, const uint64_t, const uint32_t, void*);
 typedef void (*finalizeFunction)();
 typedef void (*beginFunction)(const char*, const uint32_t, uint64_t*);
 typedef void (*endFunction)(uint64_t);
+typedef void (*beginDeepCopyFunction)(SpaceHandle dst_handle,
+                                        const char*,
+                                        const void*,
+                                        SpaceHandle,
+                                        const char*,
+                                        const void*, 
+                                       uint64_t size);
+typedef void (*endDeepCopyFunction)();
 
 static initFunction initProfileLibrary         = NULL;
 static finalizeFunction finalizeProfileLibrary = NULL;
 static beginFunction beginForCallee            = NULL;
 static beginFunction beginScanCallee           = NULL;
 static beginFunction beginReduceCallee         = NULL;
-static beginFunction beginDeepCopyCallee       = NULL;
+static beginDeepCopyFunction beginDeepCopyCallee = NULL;
 static endFunction endForCallee                = NULL;
 static endFunction endScanCallee               = NULL;
 static endFunction endReduceCallee             = NULL;
-static endFunction endDeepCopyCallee           = NULL;
+static endDeepCopyFunction endDeepCopyCallee   = NULL;
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
@@ -139,8 +147,8 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
           (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_scan");
       beginReduceCallee =
           (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_reduce");
-       beginDeepCopyCallee =
-          (beginFunction)dlsym(childLibrary, "kokkosp_begin_deep_copy");
+      beginDeepCopyCallee =
+          (beginDeepCopyFunction)dlsym(childLibrary, "kokkosp_begin_deep_copy");
 
       endScanCallee =
           (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_scan");
@@ -149,7 +157,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       endReduceCallee =
           (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_reduce");
       endDeepCopyCallee =
-          (endFunction)dlsym(childLibrary, "kokkosp_end_deep_copy");
+          (endDeepCopyFunction)dlsym(childLibrary, "kokkosp_end_deep_copy");
 
       initProfileLibrary =
           (initFunction)dlsym(childLibrary, "kokkosp_init_library");
@@ -314,9 +322,6 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
     }
   }
 }
-
-
-
 
 void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
                                         const char* dst_name,
