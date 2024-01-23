@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
       KernelPerformanceInfo* new_kernel =
           new KernelPerformanceInfo("", PARALLEL_FOR);
       if (new_kernel->readFromFile(the_file)) {
-        if (strlen(new_kernel->getName()) > 0) {
+        if (!new_kernel->getName().empty()) {
           int kernelIndex = find_index(kernelInfo, new_kernel->getName());
 
           if (kernelIndex > -1) {
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     if (kernelInfo[i]->getKernelType() != REGION) continue;
     if (fixed_width)
       printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
-             kernelInfo[i]->getName(),
+             kernelInfo[i]->getName().c_str(),
              (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
                  ? (" (ParFor)  ")
                  : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
              (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0);
     else
       printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
-             kernelInfo[i]->getName(),
+             kernelInfo[i]->getName().c_str(),
              (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
                  ? (" (ParFor)  ")
                  : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
     if (kernelInfo[i]->getKernelType() == REGION) continue;
     if (fixed_width)
       printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
-             kernelInfo[i]->getName(),
+             kernelInfo[i]->getName().c_str(),
              (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
                  ? (" (ParFor)  ")
                  : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
              (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0);
     else
       printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
-             kernelInfo[i]->getName(),
+             kernelInfo[i]->getName().c_str(),
              (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
                  ? (" (ParFor)  ")
                  : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)

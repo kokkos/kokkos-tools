@@ -42,9 +42,9 @@ inline bool compareKernelPerformanceInfo(KernelPerformanceInfo* left,
 };
 
 inline int find_index(const std::vector<KernelPerformanceInfo*>& kernels,
-                      const char* kernelName) {
-  for (unsigned int i = 0; i < kernels.size(); i++) {
-    if (strcmp(kernels[i]->getName(), kernelName) == 0) {
+                      const std::string& kernelName) {
+  for (unsigned int i = 0; i < kernels.size(); ++i) {
+    if (kernels[i]->getName() == kernelName) {
       return i;
     }
   }

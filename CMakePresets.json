@@ -10,7 +10,8 @@
                 "KokkosTools_ENABLE_EXAMPLES"       : "ON",
                 "KokkosTools_ENABLE_SINGLE"         : "ON",
                 "KokkosTools_ENABLE_MPI"            : "ON",
-                "KokkosTools_ENABLE_PAPI"           : "ON"
+                "KokkosTools_ENABLE_PAPI"           : "ON",
+                "KokkosTools_ENABLE_TESTS"          : "ON"
             }
         },
         {

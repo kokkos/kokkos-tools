@@ -45,6 +45,8 @@ option(KokkosTools_ENABLE_MPI     "Enable MPI support"              OFF)
 option(KokkosTools_ENABLE_CALIPER "Enable building Caliper library" OFF)
 option(KokkosTools_ENABLE_APEX    "Enable building Apex library"    OFF)
 option(KokkosTools_ENABLE_EXAMPLES "Build examples"                 OFF)
+option(KokkosTools_ENABLE_TESTS    "Build tests"                    OFF)
+
 # Advanced settings
 option(KokkosTools_REUSE_KOKKOS_COMPILER "Set the compiler and flags based on installed Kokkos settings" OFF)
 mark_as_advanced(KokkosTools_REUSE_KOKKOS_COMPILER)
@@ -115,6 +117,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiling/all)
 
 set(COMMON_HEADERS_PATH ${CMAKE_CURRENT_BINARY_DIR}/common)
 include_directories(${COMMON_HEADERS_PATH})
+
+# Allow all tools to include any file.
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/common)
 
 set(SINGLELIB_PROFILERS "" CACHE STRING "" FORCE)
 
@@ -262,6 +267,12 @@ if(KokkosTools_ENABLE_EXAMPLES)
     enable_testing()
     add_subdirectory(example)
   endif()
+endif()
+
+# Tests
+if(KokkosTools_ENABLE_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
 endif()
 
 # Install exports

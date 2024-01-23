@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
       KernelPerformanceInfo* new_kernel =
           new KernelPerformanceInfo("", PARALLEL_FOR);
       if (new_kernel->readFromFile(the_file)) {
-        if (strlen(new_kernel->getName()) > 0) {
+        if (!new_kernel->getName().empty()) {
           int kernelIndex = find_index(kernelInfo, new_kernel->getName());
 
           if (kernelIndex > -1) {
