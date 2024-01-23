@@ -107,7 +107,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   char* profileLibrary = getenv("KOKKOS_TOOLS_LIBS");
   if (NULL == profileLibrary) {
     printf(
-        "Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a depreciated "
+        "Checking KOKKOS_PROFILE_LIBRARY. WARNING: This is a deprecated "
         "variable. Please use KOKKOS_TOOLS_LIBS\n");
     profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
     if (NULL == profileLibrary) {
