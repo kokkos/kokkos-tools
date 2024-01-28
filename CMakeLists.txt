@@ -45,6 +45,8 @@ option(KokkosTools_ENABLE_MPI     "Enable MPI support"              OFF)
 option(KokkosTools_ENABLE_CALIPER "Enable building Caliper library" OFF)
 option(KokkosTools_ENABLE_APEX    "Enable building Apex library"    OFF)
 option(KokkosTools_ENABLE_EXAMPLES "Build examples"                 OFF)
+option(KokkosTools_ENABLE_TESTS    "Build tests"                    OFF)
+
 # Advanced settings
 option(KokkosTools_REUSE_KOKKOS_COMPILER "Set the compiler and flags based on installed Kokkos settings" OFF)
 mark_as_advanced(KokkosTools_REUSE_KOKKOS_COMPILER)
@@ -95,7 +97,8 @@ endif()
 include(cmake/configure_variorum.cmake)
 
 set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
-set(KOKKOSTOOLS_HAS_NVTX ${Kokkos_ENABLE_CUDA}) # we assume that enabling CUDA for Kokkos program means nvtx should be available
+set(KOKKOSTOOLS_HAS_NVTX  ${Kokkos_ENABLE_CUDA}) # we assume that enabling CUDA for Kokkos program means nvtx should be available
+set(KOKKOSTOOLS_HAS_ROCTX ${Kokkos_ENABLE_HIP})  # we assume that enabling HIP for Kokkos program means roctx should be available
 
 if(DEFINED ENV{VTUNE_HOME})
   set(VTune_ROOT $ENV{VTUNE_HOME})
@@ -114,6 +117,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiling/all)
 
 set(COMMON_HEADERS_PATH ${CMAKE_CURRENT_BINARY_DIR}/common)
 include_directories(${COMMON_HEADERS_PATH})
+
+# Allow all tools to include any file.
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/common)
 
 set(SINGLELIB_PROFILERS "" CACHE STRING "" FORCE)
 
@@ -261,6 +267,12 @@ if(KokkosTools_ENABLE_EXAMPLES)
     enable_testing()
     add_subdirectory(example)
   endif()
+endif()
+
+# Tests
+if(KokkosTools_ENABLE_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
 endif()
 
 # Install exports

@@ -22,28 +22,9 @@
 #include <string>
 #include <cstring>
 
-#if defined(__GXX_ABI_VERSION)
-#define HAVE_GCC_ABI_DEMANGLE
-#endif
-
-#if defined(HAVE_GCC_ABI_DEMANGLE)
-#include <cxxabi.h>
-#endif  // HAVE_GCC_ABI_DEMANGLE
+#include "utils/demangle.hpp"
 
 namespace KokkosTools::KernelTimer {
-
-inline char* demangleName(char* kernelName) {
-#if defined(HAVE_GCC_ABI_DEMANGLE)
-  int status = -1;
-  char* demangledKernelName =
-      abi::__cxa_demangle(kernelName, NULL, NULL, &status);
-  if (status == 0) {
-    free(kernelName);
-    kernelName = demangledKernelName;
-  }
-#endif  // HAVE_GCC_ABI_DEMANGLE
-  return kernelName;
-}
 
 inline double seconds() {
   struct timeval now;
@@ -62,15 +43,7 @@ enum KernelExecutionType {
 class KernelPerformanceInfo {
  public:
   KernelPerformanceInfo(std::string kName, KernelExecutionType kernelType)
-      : kType(kernelType) {
-    kernelName = (char*)malloc(sizeof(char) * (kName.size() + 1));
-    strcpy(kernelName, kName.c_str());
-
-    callCount = 0;
-    time      = 0;
-  }
-
-  ~KernelPerformanceInfo() { free(kernelName); }
+      : kernelName(std::move(kName)), kType(kernelType) {}
 
   KernelExecutionType getKernelType() const { return kType; }
 
@@ -95,7 +68,7 @@ class KernelPerformanceInfo {
 
   double getTimeSq() { return timeSq; }
 
-  char* getName() const { return kernelName; }
+  const std::string& getName() const { return kernelName; }
 
   void addCallCount(const uint64_t newCalls) { callCount += newCalls; }
 
@@ -112,15 +85,9 @@ class KernelPerformanceInfo {
     copy((char*)&kernelNameLength, &entry[nextIndex], sizeof(kernelNameLength));
     nextIndex += sizeof(kernelNameLength);
 
-    if (strlen(kernelName) > 0) {
-      free(kernelName);
-    }
+    this->kernelName = std::string(&entry[nextIndex], kernelNameLength);
 
-    kernelName = (char*)malloc(sizeof(char) * (kernelNameLength + 1));
-    copy(kernelName, &entry[nextIndex], kernelNameLength);
-    kernelName[kernelNameLength] = '\0';
-
-    kernelName = demangleName(kernelName);
+    kernelName = demangleNameKokkos(kernelName);
 
     nextIndex += kernelNameLength;
 
@@ -152,7 +119,7 @@ class KernelPerformanceInfo {
   }
 
   void writeToBinaryFile(FILE* output) {
-    const uint32_t kernelNameLen = (uint32_t)strlen(kernelName);
+    const uint32_t kernelNameLen = kernelName.size();
     const uint32_t recordLen = sizeof(uint32_t) + sizeof(char) * kernelNameLen +
                                sizeof(uint64_t) + sizeof(double) +
                                sizeof(double) + sizeof(uint32_t);
@@ -163,7 +130,7 @@ class KernelPerformanceInfo {
     copy(&entry[nextIndex], (char*)&kernelNameLen, sizeof(kernelNameLen));
     nextIndex += sizeof(kernelNameLen);
 
-    copy(&entry[nextIndex], kernelName, kernelNameLen);
+    copy(&entry[nextIndex], kernelName.c_str(), kernelNameLen);
     nextIndex += kernelNameLen;
 
     copy(&entry[nextIndex], (char*)&callCount, sizeof(callCount));
@@ -191,7 +158,7 @@ class KernelPerformanceInfo {
     snprintf(indentBuffer, 256, "%s    ", indent);
 
     fprintf(output, "%s\"kernel-name\"    : \"%s\",\n", indentBuffer,
-            kernelName);
+            kernelName.c_str());
     // fprintf(output, "%s\"region\"         : \"%s\",\n", indentBuffer,
     // regionName);
     fprintf(output, "%s\"call-count\"     : %llu,\n", indentBuffer,
@@ -216,12 +183,12 @@ class KernelPerformanceInfo {
     }
   }
 
-  char* kernelName;
+  std::string kernelName;
   // const char* regionName;
-  uint64_t callCount;
-  double time;
-  double timeSq;
-  double startTime;
+  uint64_t callCount = 0;
+  double time        = 0;
+  double timeSq      = 0;
+  double startTime   = 0;
   KernelExecutionType kType;
 };
 
