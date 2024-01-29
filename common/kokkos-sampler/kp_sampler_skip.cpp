@@ -51,8 +51,10 @@ uint32_t getDeviceID(uint32_t devid_in) {
 }
 
 void invoke_ktools_fence(uint32_t devID) {
-  if (tpi_funcs.fence != nullptr) {
-    if (tool_verbosity > 1) {
+   
+    (void)(*(tpi_funcs.fence)); 	
+    if (tpi_funcs.fence != nullptr ) {
+      if (tool_verbosity > 1) {
       printf(
           "KokkosP: Sampler attempting to invoke"
           " tool-induced fence on device %d.\n",
@@ -69,7 +71,8 @@ void invoke_ktools_fence(uint32_t devID) {
     printf(
         "KokkosP: FATAL: Kokkos Tools Programming Interface's tool-invoked "
         "Fence is NULL!\n");
-    exit(-1);
+         // exit(-1); 
+         tpi_funcs.fence(devID);
   }
 }
 
