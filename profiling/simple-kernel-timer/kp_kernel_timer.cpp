@@ -55,13 +55,14 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 }
 
 void kokkosp_finalize_library() {
+  double finishTime = seconds();
+
   const char* kp_kernel_timer_json_raw = getenv("KP_KERNEL_TIMER_JSON");
   const bool kp_kernel_timer_json =
       strcmp(kp_kernel_timer_json_raw, "1") == 0 ||
       strcmp(kp_kernel_timer_json_raw, "true") == 0 ||
       strcmp(kp_kernel_timer_json_raw, "True") == 0;
 
-  double finishTime  = seconds();
   double kernelTimes = 0;
 
   char* hostname = (char*)malloc(sizeof(char) * 256);
