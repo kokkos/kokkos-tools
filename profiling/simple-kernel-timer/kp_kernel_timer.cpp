@@ -64,14 +64,11 @@ void kokkosp_finalize_library() {
   double finishTime  = seconds();
   double kernelTimes = 0;
 
-  char* mpi_rank = getenv("OMPI_COMM_WORLD_RANK");
-
   char* hostname = (char*)malloc(sizeof(char) * 256);
   gethostname(hostname, 256);
 
   char* fileOutput = (char*)malloc(sizeof(char) * 256);
-  snprintf(fileOutput, 256, "%s-%d-%s.%s", hostname, (int)getpid(),
-           (NULL == mpi_rank) ? "0" : mpi_rank,
+  snprintf(fileOutput, 256, "%s-%d.%s", hostname, (int)getpid(),
            kp_kernel_timer_json ? "json" : "dat");
 
   free(hostname);
@@ -98,8 +95,6 @@ void kokkosp_finalize_library() {
               compareKernelPerformanceInfo);
 
     fprintf(output_data, "{\n\"kokkos-kernel-data\" : {\n");
-    fprintf(output_data, "    \"mpi-rank\"               : %s,\n",
-            (NULL == mpi_rank) ? "0" : mpi_rank);
     fprintf(output_data, "    \"total-app-time\"         : %10.3f,\n",
             totalExecuteTime);
     fprintf(output_data, "    \"total-kernel-times\"     : %10.3f,\n",
