@@ -30,7 +30,6 @@
 
 #ifndef WIN32
 KOKKOSTOOLS_EXTERN_EVENT_SET(KernelTimer)
-KOKKOSTOOLS_EXTERN_EVENT_SET(KernelTimerJSON)
 KOKKOSTOOLS_EXTERN_EVENT_SET(MemoryEvents)
 KOKKOSTOOLS_EXTERN_EVENT_SET(MemoryUsage)
 KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMark)
@@ -70,7 +69,6 @@ EventSet get_event_set(const char* profiler, const char* config_str) {
   std::map<std::string, EventSet> handlers;
 #ifndef WIN32
   handlers["kernel-timer"]      = KernelTimer::get_event_set();
-  handlers["kernel-timer-json"] = KernelTimerJSON::get_event_set();
   handlers["memory-events"]     = MemoryEvents::get_event_set();
   handlers["memory-usage"]      = MemoryUsage::get_event_set();
 #if USE_MPI
