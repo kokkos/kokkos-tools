@@ -57,11 +57,11 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 void kokkosp_finalize_library() {
   double finishTime = seconds();
 
-  const char* kp_kernel_timer_json_raw = getenv("KP_KERNEL_TIMER_JSON");
-  const bool kp_kernel_timer_json =
-      strcmp(kp_kernel_timer_json_raw, "1") == 0 ||
-      strcmp(kp_kernel_timer_json_raw, "true") == 0 ||
-      strcmp(kp_kernel_timer_json_raw, "True") == 0;
+  const char* kokkos_tools_timer_json_raw = getenv("KOKKOS_TOOLS_TIMER_JSON");
+  const bool kokkos_tools_timer_json =
+      strcmp(kokkos_tools_timer_json_raw, "1") == 0 ||
+      strcmp(kokkos_tools_timer_json_raw, "true") == 0 ||
+      strcmp(kokkos_tools_timer_json_raw, "True") == 0;
 
   double kernelTimes = 0;
 
@@ -70,7 +70,7 @@ void kokkosp_finalize_library() {
 
   char* fileOutput = (char*)malloc(sizeof(char) * 256);
   snprintf(fileOutput, 256, "%s-%d.%s", hostname, (int)getpid(),
-           kp_kernel_timer_json ? "json" : "dat");
+           kokkos_tools_timer_json ? "json" : "dat");
 
   free(hostname);
   FILE* output_data = fopen(fileOutput, "wb");
@@ -78,7 +78,7 @@ void kokkosp_finalize_library() {
   std::vector<KernelPerformanceInfo*> kernelList;
 
   const double totalExecuteTime = (finishTime - initTime);
-  if (!kp_kernel_timer_json) {
+  if (!kokkos_tools_timer_json) {
     fwrite(&totalExecuteTime, sizeof(totalExecuteTime), 1, output_data);
 
     for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
