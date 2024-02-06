@@ -68,9 +68,9 @@ namespace KokkosTools {
 EventSet get_event_set(const char* profiler, const char* config_str) {
   std::map<std::string, EventSet> handlers;
 #ifndef WIN32
-  handlers["kernel-timer"]      = KernelTimer::get_event_set();
-  handlers["memory-events"]     = MemoryEvents::get_event_set();
-  handlers["memory-usage"]      = MemoryUsage::get_event_set();
+  handlers["kernel-timer"]  = KernelTimer::get_event_set();
+  handlers["memory-events"] = MemoryEvents::get_event_set();
+  handlers["memory-usage"]  = MemoryUsage::get_event_set();
 #if USE_MPI
   handlers["highwater-mark-mpi"] = HighwaterMarkMPI::get_event_set();
 #endif
