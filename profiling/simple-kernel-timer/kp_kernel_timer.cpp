@@ -59,9 +59,11 @@ void kokkosp_finalize_library() {
 
   const char* kokkos_tools_timer_json_raw = getenv("KOKKOS_TOOLS_TIMER_JSON");
   const bool kokkos_tools_timer_json =
-      strcmp(kokkos_tools_timer_json_raw, "1") == 0 ||
-      strcmp(kokkos_tools_timer_json_raw, "true") == 0 ||
-      strcmp(kokkos_tools_timer_json_raw, "True") == 0;
+      kokkos_tools_timer_json_raw == NULL
+          ? false
+          : strcmp(kokkos_tools_timer_json_raw, "1") == 0 ||
+                strcmp(kokkos_tools_timer_json_raw, "true") == 0 ||
+                strcmp(kokkos_tools_timer_json_raw, "True") == 0;
 
   double kernelTimes = 0;
 
