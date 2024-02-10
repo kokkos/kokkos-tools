@@ -77,8 +77,6 @@ void kokkosp_finalize_library() {
   free(hostname);
   FILE* output_data = fopen(fileOutput, "wb");
 
-  std::vector<KernelPerformanceInfo*> kernelList;
-
   const double totalExecuteTime = (finishTime - initTime);
   if (!kokkos_tools_timer_json) {
     fwrite(&totalExecuteTime, sizeof(totalExecuteTime), 1, output_data);
@@ -88,6 +86,8 @@ void kokkosp_finalize_library() {
       kernel_itr->second->writeToBinaryFile(output_data);
     }
   } else {
+    std::vector<KernelPerformanceInfo*> kernelList;
+
     for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
          kernel_itr++) {
       kernelList.push_back(kernel_itr->second);
