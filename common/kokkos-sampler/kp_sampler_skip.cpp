@@ -51,7 +51,7 @@ uint32_t getDeviceID(uint32_t devid_in) {
 }
 
 void invoke_ktools_fence(uint32_t devID) {
-   if (tpi_funcs.fence != nullptr)) {
+   if (tpi_funcs.fence != nullptr) {
     if (tool_verbosity > 1) {
       printf(
           "KokkosP: Sampler attempting to invoke"
