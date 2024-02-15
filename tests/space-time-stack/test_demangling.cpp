@@ -1,10 +1,10 @@
 #include <iostream>
-#include <regex>
 #include <sstream>
 
-#include "Kokkos_Core.hpp"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
-#include "utils/demangle.hpp"
+#include "Kokkos_Core.hpp"
 
 struct Tester {
   struct TagNamed {};
@@ -49,9 +49,13 @@ static const std::vector<std::string> matchers{
     "[0-9.e]+ sec [0-9.]+% 100.0% 0.0% ------ 1 Tester/Tester::TagUnnamed "
     "\\[for\\]"};
 
-int main(int argc, char* argv[]) {
+/**
+ * @test This test checks that the tool effectively uses
+ *       the demangling helpers.
+ */
+TEST(SpaceTimeStackTest, demangling) {
   //! Initialize @c Kokkos.
-  Kokkos::initialize(argc, argv);
+  Kokkos::initialize();
 
   //! Redirect output for later analysis.
   std::cout.flush();
@@ -71,10 +75,6 @@ int main(int argc, char* argv[]) {
 
   //! Analyze test output.
   for (const auto& matcher : matchers) {
-    if (!std::regex_search(output.str(), std::regex(matcher)))
-      throw std::runtime_error("Couln't find " + matcher + " in output\n" +
-                               output.str());
+    EXPECT_THAT(output.str(), ::testing::ContainsRegex(matcher));
   }
-
-  return EXIT_SUCCESS;
 }
