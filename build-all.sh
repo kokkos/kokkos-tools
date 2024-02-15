@@ -12,7 +12,6 @@ make -f $ROOT_DIR/profiling/memory-usage/Makefile
 make -f $ROOT_DIR/profiling/nvtx-connector/Makefile
 make -f $ROOT_DIR/profiling/nvtx-focused-connector/Makefile
 make -f $ROOT_DIR/profiling/papi-connector/Makefile
-make -f $ROOT_DIR/profiling/simple-kernel-timer-json/Makefile
 make -f $ROOT_DIR/profiling/simple-kernel-timer/Makefile
 make -f $ROOT_DIR/profiling/space-time-stack/Makefile
 make -f $ROOT_DIR/profiling/systemtap-connector/Makefile

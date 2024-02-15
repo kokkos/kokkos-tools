@@ -21,7 +21,6 @@ endmacro()
 #       and exported output in expected format, fail the test otherwise.
 if(NOT WIN32)
   add_kp_test(kernel_timer "kernel-timer")
-  add_kp_test(kernel_timer_json "kernel-timer-json")
   add_kp_test(memory_events "memory-events")
   add_kp_test(memory_usage "memory-usage")
   add_kp_test(chrome_tracing "chrome-tracing")
