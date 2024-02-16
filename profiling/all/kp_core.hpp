@@ -55,7 +55,7 @@ using Kokkos::Tools::SpaceHandle;
 #define EXPOSE_PROVIDE_TOOL_PROGRAMMING_INTERFACE(FUNC_NAME)             \
   __attribute__((weak)) void kokkosp_provide_tool_programming_interface( \
       const uint32_t num_actions,                                        \
-      Kokkos_Tools_ToolProgrammingInterface ptpi) {                     \
+      Kokkos_Tools_ToolProgrammingInterface ptpi) {                      \
     FUNC_NAME(num_actions, ptpi);                                        \
   }
 
