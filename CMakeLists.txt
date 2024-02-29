@@ -272,6 +272,7 @@ endif()
 # Tests
 if(KokkosTools_ENABLE_TESTS)
   enable_testing()
+  include(cmake/BuildGTest.cmake)
   add_subdirectory(tests)
 endif()
 
