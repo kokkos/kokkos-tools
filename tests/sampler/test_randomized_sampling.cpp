@@ -26,8 +26,7 @@ struct Tester {
   };
 
   static const std::vector<std::string> matchers{
-  "> (.*)\| KokkosP: sample 101 calling child-begin function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\| KokkosP: sample 101 finished with child-begin function.\nKokkosP: sample 101 calling child-end function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\|"
-" 
+  "> (.*)\| KokkosP: sample 101 calling child-begin function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\| KokkosP: sample 101 finished with child-begin function.\nKokkosP: sample 101 calling child-end function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\|" 
 };
 
   /**
