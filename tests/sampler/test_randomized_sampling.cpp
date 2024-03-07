@@ -9,8 +9,8 @@
 struct Tester {
   template <typename execution_space>
   explicit Tester(const execution_space& space) {
-    //! Explicitly launch a kernel with a name, and run it 4 times with kernel
-    //! logger. Use a periodic sampling with skip rate 2. This should print out
+    //! Explicitly launch a kernel with a name, and run it 150 times with kernel
+    //! logger. Use a periodic sampling with skip rate 101. This should print out
     //! 1 invocation In the test, we match the invocations output from the
     //! second invocation and make sure the first
     // and third are not printed out, and the second and fourth are sequenced
@@ -26,7 +26,7 @@ struct Tester {
   };
 
   static const std::vector<std::string> matchers{
-  "> (.*)\| KokkosP: sample 101 calling child-begin function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\| KokkosP: sample 101 finished with child-begin function.\nKokkosP: sample 101 calling child-end function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\|" 
+  "> (.*)\| KokkosP: sample 100 calling child-begin function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\| KokkosP: sample 100 finished with child-begin function.\nKokkosP: sample 100 calling child-end function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\|" 
 };
 
   /**
