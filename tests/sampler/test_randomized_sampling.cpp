@@ -27,11 +27,11 @@ struct Tester {
 };
 
   /**
-   * @test This test checks that the tool effectively samples randomly.
+   * @test This test checks that the tool effectively samples.
    *
 
    */
-  TEST(SamplerTest, randomized) {
+  TEST(SamplerTest, ktoEnvVarDefault) {
     //! Initialize @c Kokkos.
     Kokkos::initialize();
 
