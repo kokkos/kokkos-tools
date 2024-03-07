@@ -16,7 +16,7 @@ struct Tester {
     // and third are not printed out, and the second and fourth are sequenced
     // correctly in the print.
 
-    for (int iter = 0; iter < 4; iter++) {
+    for (int iter = 0; iter < 150; iter++) {
       Kokkos::parallel_for("named kernel",
                            Kokkos::RangePolicy<execution_space>(space, 0, 1),
                            *this);
@@ -26,7 +26,8 @@ struct Tester {
   };
 
   static const std::vector<std::string> matchers{
-      "[0-9,a-z]+ KokkosP: sample 2 [0-9]+ KokkosP: sample 4 [0-9,a-z]+"};
+  "> (.*)\| KokkosP: sample 101 calling child-begin function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\| KokkosP: sample 101 finished with child-begin function.\nKokkosP: sample 101 calling child-end function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\|" };
+"};
 
   /**
    * @test This test checks that the tool effectively samples randomly.
