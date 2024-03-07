@@ -59,3 +59,4 @@ target_sources(
 target_link_libraries(test_common PUBLIC GTest::gtest GTest::gmock Kokkos::kokkos)
 
 add_subdirectory(space-time-stack)
+add_subdirectory(sampler)
