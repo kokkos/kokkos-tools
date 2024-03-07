@@ -11,10 +11,7 @@ struct Tester {
   explicit Tester(const execution_space& space) {
     //! Explicitly launch a kernel with a name, and run it 150 times with kernel
     //! logger. Use a periodic sampling with skip rate 101. This should print out
-    //! 1 invocation In the test, we match the invocations output from the
-    //! second invocation and make sure the first
-    // and third are not printed out, and the second and fourth are sequenced
-    // correctly in the print.
+    //! 1 invocation, and there is a single matcher with a regular expression to check this.
 
     for (int iter = 0; iter < 150; iter++) {
       Kokkos::parallel_for("named kernel",
