@@ -19,6 +19,7 @@
 
 #include <cinttypes>
 #include <cstddef>
+#include <climits>
 
 #include <cstdlib>
 
@@ -45,6 +46,7 @@ enum struct DeviceType {
   HPX,
   Threads,
   SYCL,
+  OpenACC,
   Unknown
 };
 
@@ -53,6 +55,12 @@ struct ExecutionSpaceIdentifier {
   uint32_t device_id;
   uint32_t instance_id;
 };
+
+constexpr const uint32_t num_type_bits     = 8;
+constexpr const uint32_t num_device_bits   = 7;
+constexpr const uint32_t num_instance_bits = 17;
+constexpr const uint32_t num_avail_bits    = sizeof(uint32_t) * CHAR_BIT;
+
 inline DeviceType devicetype_from_uint32t(const uint32_t in) {
   switch (in) {
     case 0: return DeviceType::Serial;
@@ -63,37 +71,35 @@ inline DeviceType devicetype_from_uint32t(const uint32_t in) {
     case 5: return DeviceType::HPX;
     case 6: return DeviceType::Threads;
     case 7: return DeviceType::SYCL;
+    case 8: return DeviceType::OpenACC;
     default: return DeviceType::Unknown;  // TODO: error out?
   }
 }
 
 inline ExecutionSpaceIdentifier identifier_from_devid(const uint32_t in) {
-  // ExecutionSpaceIdentifier out;
-  // out.type = in >> 24;
-  // out.device_id = in >> 17;
-  // out.instance_id = ((uint32_t(-1)) << 17 ) & in;
-  return {devicetype_from_uint32t(in >> 24),
-          (~((uint32_t(-1)) << 24)) & (in >> 17),
-          (~((uint32_t(-1)) << 17)) & in};
+  constexpr const uint32_t shift = num_avail_bits - num_type_bits;
+
+  return {devicetype_from_uint32t(in >> shift), /*First 8 bits*/
+          (~((uint32_t(-1)) << num_device_bits)) &
+              (in >> num_instance_bits),                  /*Next 7 bits */
+          (~((uint32_t(-1)) << num_instance_bits)) & in}; /*Last 17 bits*/
 }
 
 template <typename ExecutionSpace>
 struct DeviceTypeTraits;
 
-constexpr const size_t device_type_bits = 8;
-constexpr const size_t instance_bits    = 24;
 template <typename ExecutionSpace>
 constexpr uint32_t device_id_root() {
-  /** uncomment when C++14 is enabled
   constexpr auto device_id =
       static_cast<uint32_t>(DeviceTypeTraits<ExecutionSpace>::id);
-  return (device_id << instance_bits);
-  */
-  return 0;
+  return (device_id << (num_instance_bits + num_device_bits));
 }
 template <typename ExecutionSpace>
 inline uint32_t device_id(ExecutionSpace const& space) noexcept {
-  return device_id_root<ExecutionSpace>() + space.impl_instance_id();
+  return device_id_root<ExecutionSpace>() +
+         (DeviceTypeTraits<ExecutionSpace>::device_id(space)
+          << num_instance_bits) +
+         space.impl_instance_id();
 }
 }  // namespace Experimental
 }  // namespace Tools
@@ -115,6 +121,13 @@ using SpaceHandle = Kokkos_Profiling_SpaceHandle;
 }  // namespace Tools
 
 namespace Tools {
+
+using KernelStaticInfo = Kokkos_Profiling_Kernel_Static_Info;
+
+static_assert(sizeof(KernelStaticInfo) ==
+                  KOKKOS_PROFILING_KERNEL_STATIC_INFO_SIZE,
+              "Internal kokkos developer error. Please report this error, and "
+              "provide information about your compiler and target platform.");
 
 namespace Experimental {
 using EventSet = Kokkos_Profiling_EventSet;
@@ -162,6 +175,8 @@ using endFenceFunction        = Kokkos_Profiling_endFenceFunction;
 using dualViewSyncFunction    = Kokkos_Profiling_dualViewSyncFunction;
 using dualViewModifyFunction  = Kokkos_Profiling_dualViewModifyFunction;
 using declareMetadataFunction = Kokkos_Profiling_declareMetadataFunction;
+using markKernelStaticInfoFunction =
+    Kokkos_Profiling_markKernelStaticInfoFunction;
 
 }  // namespace Tools
 

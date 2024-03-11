@@ -49,6 +49,7 @@ using Kokkos::Tools::SpaceHandle;
 #define EXPOSE_BEGIN_FENCE(FUNC_NAME)
 #define EXPOSE_END_FENCE(FUNC_NAME)
 #define EXPOSE_PROVIDE_TOOL_PROGRAMMING_INTERFACE(FUNC_NAME)
+#define EXPOSE_MARK_KERNEL_STATIC_INFO(FUNC_NAME)
 
 #else
 
@@ -197,5 +198,13 @@ using Kokkos::Tools::SpaceHandle;
       const char* name, const void* const ptr, bool is_device) { \
     FUNC_NAME(name, ptr, is_device);                             \
   }
+
+#define EXPOSE_MARK_KERNEL_STATIC_INFO(FUNC_NAME)             \
+  __attribute__((weak)) void kokkosp_mark_kernel_static_info( \
+      const uint64_t kernelID,                                \
+      const Kokkos_Profiling_Kernel_Static_Info* info) {      \
+    FUNC_NAME(kernelID, info);                                \
+  }
+
 #endif
 #endif  // KOKKOSTOOLS_KOKKOSINTERFACE_HPP

@@ -1,0 +1,1 @@
+kp_add_library(kp_functor_size kp_functor_size.cpp)

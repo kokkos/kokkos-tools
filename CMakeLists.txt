@@ -147,6 +147,7 @@ add_subdirectory(debugging/kernel-logger)
 
 # Profilers
 if(NOT WIN32)
+  add_subdirectory(profiling/functor-size)
   add_subdirectory(profiling/simple-kernel-timer)
   add_subdirectory(profiling/memory-hwm)
   if(KokkosTools_ENABLE_MPI)

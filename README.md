@@ -60,6 +60,10 @@ The following provides an overview of the tools available in the set of Kokkos T
 
     Prints Kokkos Kernel and Region events during runtime.
 
++ [**Functor Size**](https://github.com/kokkos/kokkos-tools/wiki/FunctorSize)
+
+    Prints information about the size of the functor objects passed to Kokkos parallel regions.
+
 ### 3rd Party Profiling Tool Hooks
 + [**VTuneConnector:**](https://github.com/kokkos/kokkos-tools/wiki/VTuneConnector)
     
