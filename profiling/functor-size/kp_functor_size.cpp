@@ -14,9 +14,11 @@
 //
 //@HEADER
 
+#include <fstream>
 #include <iostream>
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "kp_core.hpp"
@@ -31,6 +33,8 @@ bool show_warnings = true;
       std::cerr << "KokkosP: Functor Size: WARNING: " << x << std::endl; \
     }                                                                    \
   }
+#define ERROR(x) \
+  { std::cerr << "KokkosP: Functor Size: ERROR: " << x << std::endl; }
 
 std::unordered_map<uint64_t, uint64_t> anonCount;  // [size] = count
 std::unordered_map<std::string, std::unordered_map<uint64_t, uint64_t>>
@@ -45,25 +49,37 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
             << loadSeq << ", interface version: " << interfaceVer << std::endl;
 }
 
+void dump_csv(std::ostream& os, const std::string_view delim = ",") {
+  os << "size" << delim << "count" << delim << "name" << std::endl;
+
+  for (const auto& [name, counts] : nameCounts) {
+    for (const auto& [size, count] : counts) {
+      os << size << delim << count << delim << name << std::endl;
+    }
+  }
+  for (const auto& [size, count] : anonCount) {
+    os << size << delim << count << delim
+       << "KOKKOSP_FUNCTOR_SIZE_ANONYMOUS_FUNCTION" << std::endl;
+  }
+}
+
 void kokkosp_finalize_library() {
   std::cout << std::endl
             << "KokkosP: Finalization Functor Size profiling library."
             << std::endl;
 
-  // since the name could be anything, output it last so people can grep / sed /
-  // cut around more easily
-  for (const auto& [name, counts] : nameCounts) {
-    for (const auto& [size, count] : counts) {
-      std::cout << "size " << size << " count " << count << " name " << name
-                << std::endl;
+  const char* output_csv_path =
+      std::getenv("KOKKOSP_FUNCTOR_SIZE_OUTPUT_CSV_PATH");
+
+  if (output_csv_path && std::string_view(output_csv_path) != "") {
+    std::ofstream os(output_csv_path);
+    if (os) {
+      dump_csv(os);
+    } else {
+      ERROR(output_csv_path << " counldn't be opened");
     }
   }
-  for (const auto& [size, count] : anonCount) {
-    std::cout << "size " << size << " count " << count
-              << " name KOKKOSP_FUNCTOR_SIZE_ANONYMOUS_FUNCTION" << std::endl;
-  }
-
-  std::cout << std::endl;
+  dump_csv(std::cout, ",");
 }
 
 void begin_parallel(const char* name, uint64_t* kID) {
