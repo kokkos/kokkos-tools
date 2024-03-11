@@ -202,7 +202,7 @@ using Kokkos::Tools::SpaceHandle;
 #define EXPOSE_MARK_KERNEL_STATIC_INFO(FUNC_NAME)             \
   __attribute__((weak)) void kokkosp_mark_kernel_static_info( \
       const uint64_t kernelID,                                \
-      const Kokkos_Profiling_Kernel_Static_Info *info) {      \
+      const Kokkos_Profiling_Kernel_Static_Info* info) {      \
     FUNC_NAME(kernelID, info);                                \
   }
 
