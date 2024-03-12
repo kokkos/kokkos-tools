@@ -31,9 +31,10 @@
             "name"        : "ROCm",
             "inherits"    : "default",
             "cacheVariables" : {
-                "Kokkos_ENABLE_HIP"   : "ON",
-                "Kokkos_ARCH_VEGA906" : "ON",
-                "CMAKE_CXX_COMPILER"  : "hipcc"
+                "Kokkos_ENABLE_HIP"       : "ON",
+                "Kokkos_ENABLE_ROCTHRUST" : "OFF",
+                "Kokkos_ARCH_VEGA906"     : "ON",
+                "CMAKE_CXX_COMPILER"      : "hipcc"
             }
         }
     ],
