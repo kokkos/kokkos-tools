@@ -54,7 +54,7 @@ function(kp_add_executable_and_test)
 		TEST ${kaeat_args_TARGET_NAME}
 		APPEND
 		PROPERTY
-		ENVIRONMENT "KOKKOS_TOOLS_SAMPLER_VERBOSE=$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_SAMPLER_VERBOSE}>"
+		ENVIRONMENT "KOKKOS_TOOLS_SAMPLER_VERBOSE=${kaeat_args_KOKKOS_TOOLS_SAMPLER_VERBOSE}"
 	       )
      endif()
 
@@ -63,7 +63,7 @@ function(kp_add_executable_and_test)
 		TEST ${kaeat_args_TARGET_NAME}
 		APPEND
 		PROPERTY
-		ENVIRONMENT "KOKKOS_TOOLS_GLOBALFENCES=$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_GLOBALFENCES}>"
+		ENVIRONMENT "KOKKOS_TOOLS_GLOBALFENCES=${kaeat_args_KOKKOS_TOOLS_GLOBALFENCES}"
                )
       endif()
 
