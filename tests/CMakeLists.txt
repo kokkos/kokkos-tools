@@ -49,7 +49,7 @@ function(kp_add_executable_and_test)
         )
       else() 
         set_property(
-		TEST
+		TEST ${kaeat_args_TARGET_NAME}
 	        APPEND
 		PROPERTY
                ENVIRONMENT "KOKKOS_TOOLS_LIBS=$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS}>;"        
