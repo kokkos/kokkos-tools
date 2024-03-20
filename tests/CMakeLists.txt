@@ -45,7 +45,7 @@ function(kp_add_executable_and_test)
             TEST ${kaeat_args_TARGET_NAME}
             APPEND
             PROPERTY
-	    ENVIRONMENT "KOKKOS_TOOLS_LIBS=$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS}>;$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS2}>"
+	    ENVIRONMENT "KOKKOS_TOOLS_LIBS=$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS}>\;$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS2}>"
         )
       else() 
         set_property(
@@ -74,6 +74,16 @@ function(kp_add_executable_and_test)
 		ENVIRONMENT "KOKKOS_TOOLS_GLOBALFENCES=${kaeat_args_KOKKOS_TOOLS_GLOBALFENCES}"
                )
       endif()
+     
+     if (DEFINED kaeat_args_KOKKOS_TOOLS_SAMPLER_SKIP)
+	     set_property(
+		     TEST ${kaeat_args_TARGET_NAME}
+		     APPEND 
+		     PROPERTY
+		     ENVIRONMENT "KOKKOS_TOOLS_SAMPLER_SKIP=${kaeat_args_KOKKOS_TOOLS_SAMPLER_SKIP}"
+	     )
+
+     endif()
 
 endfunction(kp_add_executable_and_test)
 
