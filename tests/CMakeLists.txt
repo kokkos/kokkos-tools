@@ -54,7 +54,7 @@ function(kp_add_executable_and_test)
 		PROPERTY
                ENVIRONMENT "KOKKOS_TOOLS_LIBS=$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS}>;"        
 	)
-
+     endif()
     endif()
     
     if(DEFINED kaeat_args_KOKKOS_TOOLS_SAMPLER_VERBOSE)
