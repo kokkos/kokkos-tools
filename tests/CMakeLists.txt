@@ -11,8 +11,7 @@
 #   KOKKOS_TOOLS_GLOBALFENCES : test environment receives the variable 'KOKKOS_TOOLS_GLOBALFENCES' that is set as the value of 1 to turn the tool's auto-fencing on. 
 
 function(kp_add_executable_and_test)
-
-	cmake_parse_arguments(kaeat_args "" "TARGET_NAME;SOURCE_FILE;KOKKOS_TOOLS_LIBS;KOKKOS_TOOLS_SAMPLER_VERBOSE;KOKKOS_TOOLS_GLOBALFENCES" "" ${ARGN})
+	cmake_parse_arguments(kaeat_args "" "TARGET_NAME;SOURCE_FILE;KOKKOS_TOOLS_LIBS;KOKKOS_TOOLS_LIBS2;KOKKOS_TOOLS_SAMPLER_VERBOSE;KOKKOS_TOOLS_GLOBALFENCES" "" ${ARGN})
 
     if(NOT DEFINED kaeat_args_TARGET_NAME)
         message(FATAL_ERROR "'TARGET_NAME' is a required argument.")
@@ -40,12 +39,12 @@ function(kp_add_executable_and_test)
         COMMAND $<TARGET_FILE:${kaeat_args_TARGET_NAME}>
     )
 
-    if(DEFINED kaeat_args_KOKKOS_TOOLS_LIBS)
+    if(DEFINED kaeat_args_KOKKOS_TOOLS_LIBS AND DEFINED kaeat_args_KOKKOS_TOOLS_LIBS2)
         set_property(
             TEST ${kaeat_args_TARGET_NAME}
             APPEND
             PROPERTY
-                ENVIRONMENT "KOKKOS_TOOLS_LIBS=$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS}>"
+	    ENVIRONMENT "KOKKOS_TOOLS_LIBS=$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS}>;$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS2}>"
         )
     endif()
     
