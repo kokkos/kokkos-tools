@@ -10,8 +10,9 @@ struct Tester {
   template <typename execution_space>
   explicit Tester(const execution_space& space) {
     //! Explicitly launch a kernel with a name, and run it 150 times with kernel
-    //! logger. Use a periodic sampling with skip rate 101. This should print out
-    //! 1 invocation, and there is a single matcher with a regular expression to check this.
+    //! logger. Use a periodic sampling with skip rate 101. This should print
+    //! out 1 invocation, and there is a single matcher with a regular
+    //! expression to check this.
 
     for (int iter = 0; iter < 150; iter++) {
       Kokkos::parallel_for("named kernel",
@@ -23,8 +24,13 @@ struct Tester {
   };
 
   static const std::vector<std::string> matchers{
-  "> (.*)\| KokkosP: sample 100 calling child-begin function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\| KokkosP: sample 100 finished with child-begin function.\nKokkosP: sample 100 calling child-end function...\nKokkosP: Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\|" 
-};
+      "> (.*)\| KokkosP: sample 100 calling child-begin function...\nKokkosP: "
+      "Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: "
+      "Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\| "
+      "KokkosP: sample 100 finished with child-begin function.\nKokkosP: "
+      "sample 100 calling child-end function...\nKokkosP: Sampler attempting "
+      "to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully "
+      "invoked tool-induced fence on device 0\n > (.*)\|"};
 
   /**
    * @test This test checks that the tool effectively samples.
