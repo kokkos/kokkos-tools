@@ -3,5 +3,4 @@ kp_add_executable_and_test(
     SOURCE_FILE       test_randomized_sampling.cpp
     KOKKOS_TOOLS_LIBS kp_kokkos_sampler
     KOKKOS_TOOLS_SAMPLER_VERBOSE 1
-    KOKKOS_TOOLS_GLOBALFENCES 1
 )

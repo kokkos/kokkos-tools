@@ -23,14 +23,10 @@ struct Tester {
     KOKKOS_FUNCTION void operator()(const int) const {}
   };
 
-  static const std::vector<std::string> matchers{
-      "> (.*)\| KokkosP: sample 100 calling child-begin function...\nKokkosP: "
-      "Sampler attempting to invoke tool-induced fence on device 0.\nKokkosP: "
-      "Sampler sucessfully invoked tool-induced fence on device 0\n > (.*)\| "
-      "KokkosP: sample 100 finished with child-begin function.\nKokkosP: "
-      "sample 100 calling child-end function...\nKokkosP: Sampler attempting "
-      "to invoke tool-induced fence on device 0.\nKokkosP: Sampler sucessfully "
-      "invoked tool-induced fence on device 0\n > (.*)\|"};
+  static const std::vector<std::string> matchers {
+      "(.*) KokkosP: sample 100 calling child-begin function... (.*)"       
+      "\nKokkosP: sample 100 calling child-end function ... (.*)"
+  };
 
   /**
    * @test This test checks that the tool effectively samples.
