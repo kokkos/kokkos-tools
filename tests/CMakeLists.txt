@@ -39,13 +39,22 @@ function(kp_add_executable_and_test)
         COMMAND $<TARGET_FILE:${kaeat_args_TARGET_NAME}>
     )
 
-    if(DEFINED kaeat_args_KOKKOS_TOOLS_LIBS AND DEFINED kaeat_args_KOKKOS_TOOLS_LIBS2)
+    if(DEFINED kaeat_args_KOKKOS_TOOLS_LIBS)
+     if(DEFINED kaeat_args_KOKKOS_TOOLS_LIBS2)
         set_property(
             TEST ${kaeat_args_TARGET_NAME}
             APPEND
             PROPERTY
 	    ENVIRONMENT "KOKKOS_TOOLS_LIBS=$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS}>;$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS2}>"
         )
+      else() 
+        set_property(
+		TEST
+	        APPEND
+		PROPERTY
+               ENVIRONMENT "KOKKOS_TOOLS_LIBS=$<TARGET_FILE:${kaeat_args_KOKKOS_TOOLS_LIBS}>;"        
+	)
+
     endif()
     
     if(DEFINED kaeat_args_KOKKOS_TOOLS_SAMPLER_VERBOSE)
