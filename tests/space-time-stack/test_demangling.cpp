@@ -6,6 +6,9 @@
 
 #include "Kokkos_Core.hpp"
 
+#include "kp_all.hpp"
+#include "../../profiling/space-time-stack/kp_space_time_stack.hpp"
+
 struct Tester {
   struct TagNamed {};
   struct TagUnnamed {};
@@ -49,14 +52,35 @@ static const std::vector<std::string> matchers{
     "[0-9.e]+ sec [0-9.]+% 100.0% 0.0% ------ 1 Tester/Tester::TagUnnamed "
     "\\[for\\]"};
 
+//! Test setup for the 'space-time-stack' tool.
+class SpaceTimeStackTest : public ::testing::Test {
+ public:
+  //! At the beginning of the test suite, try to add the related callbacks.
+  static void SetUpTestSuite() {
+    Kokkos::Tools::Experimental::set_callbacks(
+        KokkosTools::get_event_set("space-time-stack", nullptr));
+    Kokkos::initialize();
+  }
+
+  static void TearDownTestSuite() { Kokkos::finalize(); }
+
+  /**
+   * At test setup, finalize first and then initialize to cleanse
+   * @ref KokkosTools::SpaceTimeStack::State::global_state.
+   */
+  void SetUp() override {
+    KokkosTools::SpaceTimeStack::State::finalize();
+    KokkosTools::SpaceTimeStack::State::initialize();
+  }
+
+  void TearDown() override { KokkosTools::SpaceTimeStack::State::finalize(); }
+};
+
 /**
  * @test This test checks that the tool effectively uses
  *       the demangling helpers.
  */
-TEST(SpaceTimeStackTest, demangling) {
-  //! Initialize @c Kokkos.
-  Kokkos::initialize();
-
+TEST_F(SpaceTimeStackTest, demangling) {
   //! Redirect output for later analysis.
   std::cout.flush();
   std::ostringstream output;
@@ -65,8 +89,9 @@ TEST(SpaceTimeStackTest, demangling) {
   //! Run tests. @todo Replace this with Google Test.
   Tester tester(Kokkos::DefaultExecutionSpace{});
 
-  //! Finalize @c Kokkos.
-  Kokkos::finalize();
+  /// Finalizing will call @ref KokkosTools::SpaceTimeStack::State::~State
+  /// that outputs in @c std::cout.
+  KokkosTools::SpaceTimeStack::State::finalize();
 
   //! Restore output buffer.
   std::cout.flush();
