@@ -25,8 +25,7 @@ struct Tester {
 };
 
 static const std::vector<std::string> matchers{
-    "(.*) KokkosP: sample 100 calling child-begin function... (.*)"
-    "\nKokkosP: sample 100 calling child-end function ... (.*)"};
+    "(.*) KokkosP: Execution of kernel 101 is completed (.*)"};
 
 /**
  * @test This test checks that the tool effectively samples.
