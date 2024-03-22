@@ -191,8 +191,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
   if (NULL != tool_sample) {
     kernelSampleSkip = atoi(tool_sample) + 1;
-  } else
-    kernelSampleSkip = 101;
+  }
 
   if (tool_verbosity > 0) {
     printf("KokkosP: Sampling rate set to: %s\n", tool_sample);
