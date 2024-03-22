@@ -62,7 +62,7 @@ void invoke_ktools_fence(uint32_t devID) {
     if (tool_verbosity > 1) {
       printf(
           "KokkosP: Sampler sucessfully invoked"
-          " tool-induced fence on device %d\n",
+          " tool-induced fence on device %d.\n",
           getDeviceID(devID));
     }
   } else {
