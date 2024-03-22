@@ -27,7 +27,7 @@ char* outputDelimiter;
 int current_region_level = 0;
 KernelPerformanceInfo* regions[512];
 
-void increment_counter(const char* name, KernelExecutionType kType) {
+void increment_counter(const char* name, FrameType kType) {
   std::string nameStr(name);
 
   if (count_map.find(name) == count_map.end()) {
@@ -43,7 +43,7 @@ void increment_counter(const char* name, KernelExecutionType kType) {
   currentEntry->startTimer();
 }
 
-void increment_counter_region(const char* name, KernelExecutionType kType) {
+void increment_counter_region(const char* name, FrameType kType) {
   std::string nameStr(name);
 
   if (count_map.find(name) == count_map.end()) {

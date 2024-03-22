@@ -74,7 +74,7 @@ void kokkosp_init_library(
 }  // end kokkosp_init_library
 
 KernelNVTXFocusedConnectorInfo* getFocusedConnectorInfo(
-    const char* name, KernelExecutionType kType) {
+    const char* name, FrameType kType) {
   std::string nameStr(name);
   auto kDomain  = domain_map.find(nameStr);
   currentKernel = NULL;
