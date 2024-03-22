@@ -29,6 +29,10 @@ int main(int argc, char *argv[]) {
   int ret_code = run_calculation(100000);
   std::cout << std::endl;
 
+  std::cout << std::endl;
+  int ret_code = run_calculation_with_deepcopy(100000);
+  std::cout << std::endl;
+
   Kokkos::finalize();
 #if USE_MPI
   MPI_Finalize();
