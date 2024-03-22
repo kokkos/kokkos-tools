@@ -88,7 +88,6 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   const char* tool_verbose_str   = getenv("KOKKOS_TOOLS_SAMPLER_VERBOSE");
   const char* tool_globFence_str = getenv("KOKKOS_TOOLS_GLOBALFENCES");
   const char* tool_seed_str      = getenv("KOKKOS_TOOLS_RANDOM_SEED");
-  printf("tool_verbose_str: %s\n", tool_verbose_str);
   if (NULL != tool_verbose_str) {
     tool_verbosity = atoi(tool_verbose_str);
   } else {
