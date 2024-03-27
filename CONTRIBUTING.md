@@ -31,15 +31,15 @@ Given this mix of in-house and external contributions, a set of guidelines for c
 
 Before starting with contributing a change to the Kokkos Tools repo, one must ask the following questions. 
 
-Let's say you have a fix for bug of an off-by-one error in the kp_kernel_logger printing which indices of an array a particular thread is running.  
+Let's say you have a fix for bug of an off-by-one error in the kp_kernel_logger that results in it printing the wrong kernel ID.  
 
 Before starting with contributing a change to the kokkos-tools repo, one must ask the following questions: 
 
 1. Is the problem defined in the github issue? Is there a github issue on the repo (seen in the Issues tab on the webpage https://github.com/kokkos/kokkos-tools, or by going directly to https://github.com/kokkos/kokkos-tools/issues) which identifies a problem/bug/enhanchment/feature to kokkos-tools, associated with this fix? 
  
-2. Is that off-by-one error well-defined and discussed by at least one member of the key POCs of kokkos-tools and Kokkos PI listed in the README? For the problem that your proposed fix is solving, is that problem well-defined and discussed on the Kokkos github issue? 
+2. Is that error well-defined and discussed by at least one member of the key POCs of kokkos-tools and Kokkos PI listed in the README? For the problem that your proposed fix is solving, is that problem well-defined and discussed on the Kokkos github issue? 
 
-3. Is your fix only making a change to an off-by-one error? Or, do you also improve the printing and display, e.g., use a tab instead of space, between the start and end index of an array that a thread executes? Generally: Is your fix associated with just one github issue on kokkos tools? 
+3. Is your fix only making a change to an off-by-one error? Or, do you also improve the printing and display, e.g., use a tab instead of space to when displaying the kernel ID? Generally: Is your fix associated with just one github issue on kokkos tools? 
 
 -----------
 
@@ -83,7 +83,7 @@ As mentioned in Step 0, note that:
 
 ### Step 3: Make the changes and test them 
 
-* Open up a vi editor, and make changes to `<yourfilename>`. 
+* The preferred editor for Kokkos Tools development is vi. Open up a vi editor, and make changes to `<yourfilename>`. 
     - The editor `vi` is suggested to use as it is readily available on nearly any platform, and Kokkos development happens across different platforms.
 
 
