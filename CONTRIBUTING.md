@@ -1,19 +1,41 @@
 # Developer's Guide to Contributing to Kokkos Tools
 
+## Summary 
 
+The success of Kokkos Tools, a subproject of the Kokkos project, relies on open-source software development. Kokkos Tools sub-project has a mix of in-house contributors (those on the Kokkos team) and external contributors (those not on the Kokkos team). 
+
+The purpose of this document is to educate those on the Kokkos team as well as contributors external to Kokkos team on how
+to make code contributions to the Kokkos Tools repository. 
+
+## Introduction 
+
+Kokkos Tools is comprised of two categories of software components: 
+(1) a Kokkos Tools infrastructure that hooks into the Kokkos core library; and
+(2) a set of tool libraries, i.e., connectors (to the Kokkos Tools infrastructure 
+
+Software component (1) above has been and continues to be developed in-house
+This component includes CMakeLists.txt and README.md at the top-level directory, along with `Kokkos_Profiling.cpp` 
+in Kokkos core. 
+
+The open-source development, i.e., external contributions, of Kokkos Tools is expected to be primarily in (2). 
+
+Within (2), about half of the connectors are from contributors outside of the Kokkos project. Such a balance of in-house versus open-source development 
+is expected to be sustained throughout the life of the Kokkos Tools sub-project of the Kokkos project.
+
+Given this mix of in-house and external contributions, a set of guidelines for contributing customized for Kokkos Tools is needed. 
 
 ## Contributing a simple change to kokkos-tools 
 
 ------------
 ### Step 0: Confirm that this fix is established as needed
 
-Before starting with contributing a change to the kokkos-tools repo, one must ask the following questions. 
+Before starting with contributing a change to the Kokkos Tools repo, one must ask the following questions. 
 
 Let's say you have a fix for bug of an off-by-one error in the kp_kernel_logger printing which indices of an array a particular thread is running.  
 
 Before starting with contributing a change to the kokkos-tools repo, one must ask the following questions: 
 
-1. Is the off-by-one error in an actual github issue? Is there a github issue on the repo ( seen in the Issues tab on the page https://github.com/kokkos/kokkos-tools) which identifies a problem/bug/enhanchment/feature to kokkos-tools, associated with this fix? 
+1. Is the problem defined in the github issue? Is there a github issue on the repo (seen in the Issues tab on the webpage https://github.com/kokkos/kokkos-tools, or by going directly to https://github.com/kokkos/kokkos-tools/issues) which identifies a problem/bug/enhanchment/feature to kokkos-tools, associated with this fix? 
  
 2. Is that off-by-one error well-defined and discussed by at least one member of the key POCs of kokkos-tools and Kokkos PI listed in the README? For the problem that your proposed fix is solving, is that problem well-defined and discussed on the Kokkos github issue? 
 
