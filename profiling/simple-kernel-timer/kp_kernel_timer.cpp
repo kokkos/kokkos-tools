@@ -15,6 +15,7 @@
 //@HEADER
 
 #include <vector>
+#include <algorithm>
 #include <string>
 #include <iostream>
 #include <unistd.h>
@@ -24,6 +25,10 @@
 
 namespace KokkosTools {
 namespace KernelTimer {
+
+bool is_region(KernelPerformanceInfo const& kp) {
+  return kp.getKernelType() == REGION;
+}
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t /*devInfoCount*/,
@@ -52,23 +57,90 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 void kokkosp_finalize_library() {
   double finishTime = seconds();
 
+  const char* kokkos_tools_timer_json_raw = getenv("KOKKOS_TOOLS_TIMER_JSON");
+  const bool kokkos_tools_timer_json =
+      kokkos_tools_timer_json_raw == NULL
+          ? false
+          : strcmp(kokkos_tools_timer_json_raw, "1") == 0 ||
+                strcmp(kokkos_tools_timer_json_raw, "true") == 0 ||
+                strcmp(kokkos_tools_timer_json_raw, "True") == 0;
+
+  double kernelTimes = 0;
+
   char* hostname = (char*)malloc(sizeof(char) * 256);
   gethostname(hostname, 256);
 
   char* fileOutput = (char*)malloc(sizeof(char) * 256);
-  snprintf(fileOutput, 256, "%s-%d.dat", hostname, (int)getpid());
+  snprintf(fileOutput, 256, "%s-%d.%s", hostname, (int)getpid(),
+           kokkos_tools_timer_json ? "json" : "dat");
 
   free(hostname);
   FILE* output_data = fopen(fileOutput, "wb");
 
   const double totalExecuteTime = (finishTime - initTime);
-  fwrite(&totalExecuteTime, sizeof(totalExecuteTime), 1, output_data);
+  if (!kokkos_tools_timer_json) {
+    fwrite(&totalExecuteTime, sizeof(totalExecuteTime), 1, output_data);
 
-  std::vector<KernelPerformanceInfo*> kernelList;
+    for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
+         kernel_itr++) {
+      kernel_itr->second->writeToBinaryFile(output_data);
+    }
+  } else {
+    std::vector<KernelPerformanceInfo*> kernelList;
 
-  for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
-       kernel_itr++) {
-    kernel_itr->second->writeToBinaryFile(output_data);
+    for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
+         kernel_itr++) {
+      kernelList.push_back(kernel_itr->second);
+      kernelTimes += kernel_itr->second->getTime();
+    }
+
+    std::sort(kernelList.begin(), kernelList.end(),
+              compareKernelPerformanceInfo);
+
+    fprintf(output_data, "{\n\"kokkos-kernel-data\" : {\n");
+    fprintf(output_data, "    \"total-app-time\"         : %10.3f,\n",
+            totalExecuteTime);
+    fprintf(output_data, "    \"total-kernel-times\"     : %10.3f,\n",
+            kernelTimes);
+    fprintf(output_data, "    \"total-non-kernel-times\" : %10.3f,\n",
+            (totalExecuteTime - kernelTimes));
+
+    const double percentKokkos = (kernelTimes / totalExecuteTime) * 100.0;
+    fprintf(output_data, "    \"percent-in-kernels\"     : %6.2f,\n",
+            percentKokkos);
+    fprintf(output_data, "    \"unique-kernel-calls\"    : %22llu,\n",
+            (unsigned long long)count_map.size());
+    fprintf(output_data, "\n");
+
+    fprintf(output_data, "    \"region-perf-info\"       : [\n");
+
+#define KERNEL_INFO_INDENT "       "
+
+    bool print_comma = false;
+    for (auto const& kernel : count_map) {
+      if (!is_region(*std::get<1>(kernel))) continue;
+      if (print_comma) fprintf(output_data, ",\n");
+      kernel.second->writeToJSONFile(output_data, KERNEL_INFO_INDENT);
+      print_comma = true;
+    }
+
+    fprintf(output_data, "\n");
+    fprintf(output_data, "    ],\n");
+
+    fprintf(output_data, "    \"kernel-perf-info\"       : [\n");
+
+    print_comma = false;
+    for (auto const& kernel : count_map) {
+      if (is_region(*std::get<1>(kernel))) continue;
+      if (print_comma) fprintf(output_data, ",\n");
+      kernel.second->writeToJSONFile(output_data, KERNEL_INFO_INDENT);
+      print_comma = true;
+    }
+
+    fprintf(output_data, "\n");
+    fprintf(output_data, "    ]\n");
+
+    fprintf(output_data, "}\n}");
   }
 
   fclose(output_data);

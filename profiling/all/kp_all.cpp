@@ -30,7 +30,6 @@
 
 #ifndef WIN32
 KOKKOSTOOLS_EXTERN_EVENT_SET(KernelTimer)
-KOKKOSTOOLS_EXTERN_EVENT_SET(KernelTimerJSON)
 KOKKOSTOOLS_EXTERN_EVENT_SET(MemoryEvents)
 KOKKOSTOOLS_EXTERN_EVENT_SET(MemoryUsage)
 KOKKOSTOOLS_EXTERN_EVENT_SET(HighwaterMark)
@@ -52,6 +51,9 @@ KOKKOSTOOLS_EXTERN_EVENT_SET(VariorumConnector)
 KOKKOSTOOLS_EXTERN_EVENT_SET(NVTXConnector)
 KOKKOSTOOLS_EXTERN_EVENT_SET(NVTXFocusedConnector)
 #endif
+#ifdef KOKKOSTOOLS_HAS_ROCTX
+KOKKOSTOOLS_EXTERN_EVENT_SET(ROCTXConnector)
+#endif
 #ifdef KOKKOSTOOLS_HAS_CALIPER
 namespace cali {
 extern Kokkos::Tools::Experimental::EventSet get_kokkos_event_set(
@@ -66,10 +68,9 @@ namespace KokkosTools {
 EventSet get_event_set(const char* profiler, const char* config_str) {
   std::map<std::string, EventSet> handlers;
 #ifndef WIN32
-  handlers["kernel-timer"]      = KernelTimer::get_event_set();
-  handlers["kernel-timer-json"] = KernelTimerJSON::get_event_set();
-  handlers["memory-events"]     = MemoryEvents::get_event_set();
-  handlers["memory-usage"]      = MemoryUsage::get_event_set();
+  handlers["kernel-timer"]  = KernelTimer::get_event_set();
+  handlers["memory-events"] = MemoryEvents::get_event_set();
+  handlers["memory-usage"]  = MemoryUsage::get_event_set();
 #if USE_MPI
   handlers["highwater-mark-mpi"] = HighwaterMarkMPI::get_event_set();
 #endif
@@ -93,6 +94,9 @@ EventSet get_event_set(const char* profiler, const char* config_str) {
 #ifdef KOKKOSTOOLS_HAS_NVTX
   handlers["nvtx-connector"]         = NVTXConnector::get_event_set();
   handlers["nvtx-focused-connector"] = NVTXFocusedConnector::get_event_set();
+#endif
+#ifdef KOKKOSTOOLS_HAS_ROCTX
+  handlers["roctx-connector"] = ROCTXConnector::get_event_set();
 #endif
   auto e = handlers.find(profiler);
   if (e != handlers.end()) return e->second;

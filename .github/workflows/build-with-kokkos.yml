@@ -71,12 +71,14 @@ jobs:
                   exit -1
           esac
 
-      - name: Install CMake, OpenMPI and dtrace
+      - name: Install git, CMake, OpenMPI, PAPI and dtrace
         run: |
           apt --yes --no-install-recommends install \
+            git ca-certificates \
             cmake make \
             libopenmpi-dev \
-            systemtap-sdt-dev
+            systemtap-sdt-dev \
+            libpapi-dev
       - name: Compile and install Kokkos
         working-directory: kokkos
         run: |

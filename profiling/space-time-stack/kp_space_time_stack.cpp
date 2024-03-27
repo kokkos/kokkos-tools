@@ -31,6 +31,8 @@
 #include <algorithm>
 #include <cstring>
 
+#include "utils/demangle.hpp"
+
 #include "kp_core.hpp"
 
 #if USE_MPI
@@ -741,7 +743,7 @@ struct State {
   }
 
   void begin_frame(const char* name, StackKind kind) {
-    std::string name_str(name);
+    std::string name_str(demangleNameKokkos(name));
     stack_frame = stack_frame->get_child(std::move(name_str), kind);
     stack_frame->begin();
   }
