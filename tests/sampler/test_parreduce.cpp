@@ -18,7 +18,7 @@ using ::testing::Not;
  *
  */
 
-TEST(SamplerSkipTest, parfor) {
+TEST(SamplerSkipTest, parreduce) {
   //! Initialize @c Kokkos.
   Kokkos::initialize();
 
