@@ -17,6 +17,7 @@ using ::testing::Not;
  * @test This test checks that the sampling utility properly samples.
  *
  */
+
 TEST(SamplerSkipTest, parfor) {
   //! Initialize @c Kokkos.
   Kokkos::initialize();

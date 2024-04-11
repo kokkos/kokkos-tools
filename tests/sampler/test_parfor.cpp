@@ -1,4 +1,3 @@
-
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -21,6 +20,7 @@ using ::testing::Not;
  */
 
 TEST(SamplerSkipTest, parfor) {
+
   //! Initialize @c Kokkos.
   Kokkos::initialize();
 
