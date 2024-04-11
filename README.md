@@ -33,10 +33,13 @@ void foo() {
 The following provides an overview of the tools available in the set of Kokkos Tools. Click on each Kokkos Tools name to see more details about the tool via the Kokkos Tools Wiki. 
 
 ### Utilities
-
 + [**KernelFilter:**](https://github.com/kokkos/kokkos-tools/wiki/KernelFilter) 
 
     A tool which is used in conjunction with analysis tools, to restrict them to a subset of the application.
+
++ [**KernelSampler:**](https://github.com/kokkos/kokkos-tools/wiki/KernelSampler)
+
+   A tool to be used in conjunction with analysis tools to restrict the tooling to samples of Kokkos kernel invocations.
 
 ### Memory Analysis
 + [**MemoryHighWater:**](https://github.com/kokkos/kokkos-tools/wiki/MemoryHighWater)

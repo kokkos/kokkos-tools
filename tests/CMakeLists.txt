@@ -10,8 +10,11 @@
 #   KOKKOS_TOOLS_SAMPLER_VERBOSE : the test environment will receive the variable 'KOKKOS_TOOLS_SAMPLER_VERBOSE' that is set as the value of 1 for printing the sample has been taken 
 #   KOKKOS_TOOLS_GLOBALFENCES : test environment receives the variable 'KOKKOS_TOOLS_GLOBALFENCES' that is set as the value of 1 to turn the tool's auto-fencing on. 
 
+#   KOKKOS_TOOLS_SAMPLER_SKIP : test environment receives the variable 'KOKKOS_TOOLS_SAMPLER_SKIP' that is set as the value of the number of Kokkos kernel invocations to skip before a tooling activity is invoked. 
+
 function(kp_add_executable_and_test)
-    cmake_parse_arguments(kaeat_args "" "TARGET_NAME;SOURCE_FILE;KOKKOS_TOOLS_SAMPLER_VERBOSE;KOKKOS_TOOLS_GLOBALFENCES;KOKKOS_TOOLS_SAMPLER_SKIP" "KOKKOS_TOOLS_LIBS" ${ARGN})
+	cmake_parse_arguments(kaeat_args "" "TARGET_NAME;SOURCE_FILE;KOKKOS_TOOLS_SAMPLER_VERBOSE;KOKKOS_TOOLS_GLOBALFENCES;KOKKOS_TOOLS_SAMPLER_SKIP;KOKKOS_TOOLS_SAMPLER_PROB;KOKKOS_TOOLS_RANDOM_SEED" "KOKKOS_TOOLS_LIBS" ${ARGN})
+
 
     if(NOT DEFINED kaeat_args_TARGET_NAME)
         message(FATAL_ERROR "'TARGET_NAME' is a required argument.")
@@ -77,6 +80,24 @@ function(kp_add_executable_and_test)
              PROPERTY
              ENVIRONMENT "KOKKOS_TOOLS_SAMPLER_SKIP=${kaeat_args_KOKKOS_TOOLS_SAMPLER_SKIP}"
          )
+ endif()
+
+      if (DEFINED kaeat_args_KOKKOS_TOOLS_SAMPLER_PROB)
+	      set_property(
+		      TEST ${kaeat_args_TARGET_NAME}
+		      APPEND
+		      PROPERTY
+		      ENVIRONMENT "KOKKOS_TOOLS_SAMPLER_PROB=${kaeat_args_KOKKOS_TOOLS_SAMPLER_PROB}"
+	      )
+     endif()
+
+     if (DEFINED kaeat_args_KOKKOS_TOOLS_RANDOM_SEED)
+	     set_property(
+		     TEST ${kaeat_args_TARGET_NAME}
+		     APPEND
+		     PROPERTY
+		     ENVIRONMENT "KOKKOS_TOOLS_RANDOM_SEED=${kaeat_args_KOKKOS_TOOLS_RANDOM_SEED}"
+	     )
 
      endif()
 

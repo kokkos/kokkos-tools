@@ -1,3 +1,4 @@
+
 #include <cstdio>
 #include <cstdint>
 #include <cstdlib>
@@ -248,6 +249,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
         << tool_prob_num
         << " percent. The skip rate for sampler will not be used.\n";
   }
+
   kernelSampleSkip = 1;
 }
 
@@ -294,6 +296,10 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
         invoke_ktools_fence(0);
       }
       (*endForCallee)(retrievedNestedkID);
+      if (tool_verbosity > 0) {
+        std::cout << "KokkosP: sample " << kID
+                  << " finished with child-end function.\n";
+      }
       infokIDSample.erase(kID);
     }
   }
@@ -338,6 +344,10 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
         invoke_ktools_fence(0);
       }
       (*endScanCallee)(retrievedNestedkID);
+      if (tool_verbosity > 0) {
+        std::cout << "KokkosP: sample " << kID
+                  << " finished with child-end function.\n";
+      }
       infokIDSample.erase(kID);
     }
   }
@@ -381,8 +391,11 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
       if (tool_globFence) {
         invoke_ktools_fence(0);
       }
-
       (*endReduceCallee)(retrievedNestedkID);
+      if (tool_verbosity > 0) {
+        std::cout << "KokkosP: sample " << kID
+                  << " finished with child-end function.\n";
+      }
       infokIDSample.erase(kID);
     }
   }

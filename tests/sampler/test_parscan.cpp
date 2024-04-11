@@ -1,4 +1,3 @@
-
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -8,19 +7,18 @@
 
 #include "Kokkos_Core.hpp"
 
-using ::testing::Contains;
 using ::testing::HasSubstr;
 using ::testing::Not;
 
-#include "parfor.hpp"
+#include "parscan.hpp"
 #include "matchersSkip.hpp"
 
 /**
  * @test This test checks that the tool effectively samples.
  *
- */
 
-TEST(SamplerSkipTest, parfor) {
+ */
+TEST(SamplerSkipTest, parscan) {
   //! Initialize @c Kokkos.
   Kokkos::initialize();
 
@@ -67,6 +65,7 @@ TEST(SamplerSkipTest, parfor) {
     ++occurrences;
     pos += target.length();
   }
+
   EXPECT_EQ(occurrences, 2);
 
   EXPECT_THAT(output.str(), Not(HasSubstr("KokkosP: FATAL: No child library of "
