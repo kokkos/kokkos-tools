@@ -20,7 +20,6 @@ using ::testing::Not;
  */
 
 TEST(SamplerSkipTest, parfor) {
-
   //! Initialize @c Kokkos.
   Kokkos::initialize();
 
