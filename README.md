@@ -1,19 +1,45 @@
 # Kokkos Tools
 
-Kokkos Tools provide a set of light-weight of profiling and debugging utilities, which interface with instrumentation hooks built directly into the Kokkos runtime. Compared to 3rd party tools these tools can provide much cleaner, context-specific information: in particular, they allow kernel-centric analysis and they use labels provided to Kokkos constructs (kernel launches and views).
+Kokkos Tools provide a set of light-weight of profiling and debugging utilities, which interface with instrumentation hooks built directly into the Kokkos runtime. Compared to 3rd party tools, these tools can provide much cleaner, context-specific information: in particular, they allow kernel-centric analysis and they use labels provided to Kokkos constructs (kernel launches and views).
 
 Under most circumstances, the profiling hooks are compiled into Kokkos executables by default assuming that the profiling hooks' version is compatible with the tools' version. No recompilation or changes to your build procedures are required.
 
 Note: `Kokkos` must be configured with `Kokkos_ENABLE_LIBDL=ON` to load profiling hooks dynamically. This is the default for most cases anyway.
 
-## General Usage
+# Using Kokkos Tools
 
-To use one of the tools you have to compile it, which will generate a dynamic library. Before executing the Kokkos application you then have to set the environment variable `KOKKOS_TOOLS_LIBS` to point to the dynamic library e.g. in the `bash` shell:
-```
-export KOKKOS_TOOLS_LIBS=${HOME}/kokkos-tools/src/tools/memory-events/kp_memory_event.so
-```
+To use one of the tools you have to compile it, which will generate a dynamic library. Before executing the Kokkos application you then have to set the environment variable `KOKKOS_TOOLS_LIBS` to point to the dynamic library. Many of the tools will produce an output file that uses the hostname as well as the process id as part of the filename.
 
-Many of the tools will produce an output file that uses the hostname as well as the process id as part of the filename. 
+Use the route of either CMake or Makefile to build and run Kokkos Tools. The following provides instructions on both routes. 
+
+## Using cmake 
+
+### Build
+
+1. create a build directory in Kokkos Tools, e.g., type `mkdir myBuild; cd myBuild` 
+2. To configure the Type `ccmake .. -DCMAKE_INSTALL_PREFIX=`  for any options you would like to enable/disable. 
+3. To compile, type `make`
+4. To install, type `make install`
+
+### Run 
+
+Given your installed tool shared library `lib<name_of_tool_shared_lib>.so` and an application executable called yourApplication.exe, type: 
+
+`export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_INSTALL_DIR}/lib<name_of_tool_shared_lib>.so; ./yourApplication.exe`  
+
+
+## Using make
+
+### Build 
+
+To build some library `<name_of_tool_shared_lib>` with make, simply type `make` within that library's subdirectory `${YOUR_KOKKOS_TOOLS_LIB_SRC_DIR}` of Kokkos Tools. This generate the shared library within that subdirectory. 
+
+### Run 
+
+Given your installed tool shared library `<name_of_tool_shared_lib>.so` and an application executable called yourApplication.exe, type: 
+
+`export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_LIB_SRC_DIR}/<name_of_tool_shared_lib>.so; ./yourApplication.exe`  
+
 
 ## Explicit Instrumentation
 
@@ -87,30 +113,6 @@ The following provides an overview of the tools available in the set of Kokkos T
     Defining a timemory component will enable your plug-in to output to stdout, text, and JSON, 
     accumulate statistics, and utilize various portable function calls for common needs w.r.t. timers,
     resource usage, etc. 
-
-# Building Kokkos Tools
-
-Use either CMake or Makefile to build Kokkos Tools. 
-
-## Using cmake
-
-1. create a build directory in Kokkos Tools, e.g., type `mkdir myBuild; cd myBuild` 
-2. To configure the Type `ccmake ..`  for any options you would like to enable/disable. 
-3. To compile, type `make`
-4. To install, type `make install`
-
-## Using make
-
-To build with make, simply type `make` within each subdirectory of Kokkos Tools. 
-
-
-Building using `make` is currently recommended. Eventually, the preferred method of building will be `cmake`.  
-
-# Running a Kokkos-based Application with a tool
-
-Given your tool shared library `<name_of_tool_shared_library>.so` (which contains kokkos profiling callback functions) and an application executable called yourApplication.exe, type: 
-
-`export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_DIR}/<name_of_tool_shared_lib>; ./yourApplication.exe`  
 
 # Tutorial
 
