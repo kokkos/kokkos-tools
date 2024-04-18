@@ -8,7 +8,7 @@ Note: `Kokkos` must be configured with `Kokkos_ENABLE_LIBDL=ON` to load profilin
 
 ## General Usage
 
-To use one of the tools you have to compile it, which will generate a dynamic library. Before executing the Kokkos application you then have to set the environment variable `KOKKOS_TOOLS_LIBS` to point to the dynamic library. Many of the tools will produce an output file that uses the hostname as well as the process id as part of the filename.
+To use one of the tools you have to compile it, which will generate a dynamic library. Before executing the Kokkos application you then have to set the environment variable `KOKKOS_TOOLS_LIBS` to point to the dynamic library.
 
 CMake and Makefiles are supported for building Kokkos Tools. The following provides instructions for both.
 
