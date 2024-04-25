@@ -17,7 +17,7 @@ CMake and Makefiles are supported for building Kokkos Tools. The following provi
 ### Build
 
 1. Create a build directory in Kokkos Tools, e.g., type `mkdir myBuild; cd myBuild`
-2. To configure, type `ccmake .. -DCMAKE_INSTALL_PREFIX=${YOUR_KOKKOS_TOOLS_INSTALL_DIR}` for any options you would like to enable/disable. 
+2. To configure, type `cmake .. -DCMAKE_INSTALL_PREFIX=${YOUR_KOKKOS_TOOLS_INSTALL_DIR}`. There are more options but in most cases the defaults are sufficient.
 3. To compile, type `make`
 4. To install, type `make install`
 
