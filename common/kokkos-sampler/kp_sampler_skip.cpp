@@ -58,7 +58,7 @@ void invoke_ktools_fence(uint32_t devID) {
                    "on device "
                 << getDeviceID(devID) << '\n';
     }
-    (*(tpi_funcs.fence))(devID);
+    (tpi_funcs.fence)(devID);
     if (tool_verbosity > 1) {
       std::cout << "KokkosP: Sampler sucessfully invoked tool-induced fence on "
                    "device "
