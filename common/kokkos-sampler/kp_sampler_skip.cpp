@@ -102,7 +102,8 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                  "deprecated variable. Please use KOKKOS_TOOLS_LIBS\n";
     profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
     if (NULL == profileLibrary) {
-      std::cout << "KokkosP: FATAL: No library to call in " << profileLibrary << "!\n";
+      std::cout << "KokkosP: FATAL: No library to call in " << profileLibrary
+                << "!\n";
       exit(-1);
     }
   }
@@ -119,8 +120,8 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   nextLibrary = strtok(NULL, ";");
 
   if (NULL == nextLibrary) {
-    std::cout << "KokkosP: FATAL: No child library to call in " << profileLibrary
-              << "!\n";
+    std::cout << "KokkosP: FATAL: No child library to call in "
+              << profileLibrary << "!\n";
     exit(-1);
   } else {
     if (tool_verbosity > 0) {
@@ -264,10 +265,10 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
         std::cout << "KokkosP: sample " << *kID
                   << " calling child-begin function...\n";
       }
-        if (tool_globFence) {
-          invoke_ktools_fence(0);
-        }
-       if (NULL != beginForCallee) {
+      if (tool_globFence) {
+        invoke_ktools_fence(0);
+      }
+      if (NULL != beginForCallee) {
         uint64_t nestedkID = 0;
         (*beginForCallee)(name, devID, &nestedkID);
         if (tool_verbosity > 0) {
@@ -288,7 +289,7 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
         std::cout << "KokkosP: sample " << kID
                   << " calling child-end function...\n";
       }
-      
+
       if (tool_globFence) {
         invoke_ktools_fence(0);
       }
