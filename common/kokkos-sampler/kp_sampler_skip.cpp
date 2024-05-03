@@ -199,9 +199,9 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   const char* tool_probability = getenv("KOKKOS_TOOLS_SAMPLER_PROB");
 
   if (NULL != tool_probability) {
-    //  read sampling probability as a float between 0 and 100, representing
+    //  Read sampling probability as a float between 0 and 100, representing
     //  a percentage that data should be gathered.
-    //  Connector reasons about probability as a double between 0.0 and 1.0.
+    //  Utility reasons about probability as a double between 0.0 and 1.0.
     tool_prob_num = atof(tool_probability);
     if (tool_prob_num > 100.0) {
       std::cout << "KokkosP: The sampling probability value is set to be "
@@ -218,7 +218,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     }
     if (tool_verbosity > 0) {
       std::cout << "KokkosP: Probability for the sampler set to: "
-                << tool_prob_num << '\n';
+                << tool_prob_num << "\n";
     }
     kernelSampleSkip = 1;
     return;
