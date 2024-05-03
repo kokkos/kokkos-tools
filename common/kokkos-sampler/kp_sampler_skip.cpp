@@ -225,7 +225,10 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   }
 
   const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
-  if (NULL != tool_sample && tool_prob_num == -1.0) {
+  if ((NULL != tool_sample) && (tool_prob_num == -1.0)) {
+    // If the user touched the sample skip rate variable
+    // and the tool probability is set to -1 (no probability sampling
+    // desired), then use only sampler skip rate. 
     tool_prob_num    = 100.0;
     kernelSampleSkip = atoi(tool_sample) + 1;
     if (tool_verbosity > 0) {
@@ -233,7 +236,11 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     }
     return;
   }
-
+  
+  // If the tool probability is set to -1 (no probability sampling
+  // desired) and the user also didn't set 
+  // skip rate, then use a default with a probability sampling of 10%.
+  
   if (tool_verbosity > 0) {
     std::cout << "KokkosP: Neither the probability nor the skip rate for "
                  "sampling were set...\n";
@@ -245,10 +252,10 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
         << "KokkosP: The probability for the sampler is set to the default of "
         << tool_prob_num
         << " percent. The skip rate for sampler will not be used.\n";
-  }
+   }
+  
+} // end kokkosp_init_library
 
-  kernelSampleSkip = 1;
-}
 
 void kokkosp_finalize_library() {
   if (NULL != finalizeProfileLibrary) (*finalizeProfileLibrary)();
