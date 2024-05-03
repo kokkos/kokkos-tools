@@ -38,7 +38,7 @@ static endFunction endReduceCallee             = NULL;
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
-  settings->requires_global_fencing = 0;
+  settings->requires_global_fencing = false;
 }
 
 // set of functions from Kokkos ToolProgrammingInterface (includes fence)
@@ -102,7 +102,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                  "deprecated variable. Please use KOKKOS_TOOLS_LIBS\n";
     profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
     if (NULL == profileLibrary) {
-      std::cout << "KokkosP: No library to call in " << profileLibrary << '\n';
+      std::cout << "KokkosP: FATAL: No library to call in " << profileLibrary << "!\n";
       exit(-1);
     }
   }
@@ -119,20 +119,20 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   nextLibrary = strtok(NULL, ";");
 
   if (NULL == nextLibrary) {
-    std::cout << "KokkosP: No child library to call in " << profileLibrary
-              << '\n';
+    std::cout << "KokkosP: FATAL: No child library to call in " << profileLibrary
+              << "!\n";
     exit(-1);
   } else {
     if (tool_verbosity > 0) {
-      std::cout << "KokkosP: Next library to call: " << nextLibrary << '\n';
-      std::cout << "KokkosP: Loading child library ..\n";
+      std::cout << "KokkosP: Next library to call: " << nextLibrary << "\n";
+      std::cout << "KokkosP: Loading child library of sampler..\n";
     }
 
     void* childLibrary = dlopen(nextLibrary, RTLD_NOW | RTLD_GLOBAL);
 
     if (NULL == childLibrary) {
-      std::cerr << "KokkosP: Error: Unable to load: " << nextLibrary
-                << " (Error=" << dlerror() << ")\n";
+      fprintf(stderr, "KokkosP: Error: Unable to load: %s (Error=%s)\n",
+              nextLibrary, dlerror());
       exit(-1);
     } else {
       beginForCallee =
@@ -162,17 +162,17 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       if (tool_verbosity > 0) {
         std::cout << "KokkosP: Function Status:\n";
         std::cout << "KokkosP: begin-parallel-for:      "
-                  << ((beginForCallee == NULL) ? "no" : "yes") << '\n';
+                  << ((beginForCallee == NULL) ? "no" : "yes") << "\n";
         std::cout << "KokkosP: begin-parallel-scan:     "
-                  << ((beginScanCallee == NULL) ? "no" : "yes") << '\n';
+                  << ((beginScanCallee == NULL) ? "no" : "yes") << "\n";
         std::cout << "KokkosP: begin-parallel-reduce:   "
-                  << ((beginReduceCallee == NULL) ? "no" : "yes") << '\n';
+                  << ((beginReduceCallee == NULL) ? "no" : "yes") << "\n";
         std::cout << "KokkosP: end-parallel-for:        "
-                  << ((endForCallee == NULL) ? "no" : "yes") << '\n';
+                  << ((endForCallee == NULL) ? "no" : "yes") << "\n";
         std::cout << "KokkosP: end-parallel-scan:       "
-                  << ((endScanCallee == NULL) ? "no" : "yes") << '\n';
+                  << ((endScanCallee == NULL) ? "no" : "yes") << "\n";
         std::cout << "KokkosP: end-parallel-reduce:     "
-                  << ((endReduceCallee == NULL) ? "no" : "yes") << '\n';
+                  << ((endReduceCallee == NULL) ? "no" : "yes") << "\n";
       }
     }
   }
@@ -228,7 +228,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     tool_prob_num    = 100.0;
     kernelSampleSkip = atoi(tool_sample) + 1;
     if (tool_verbosity > 0) {
-      std::cout << "KokkosP: Sampling rate set to: " << tool_sample << '\n';
+      std::cout << "KokkosP: Sampling rate set to: " << tool_sample << "\n";
     }
     return;
   }
@@ -264,10 +264,10 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
         std::cout << "KokkosP: sample " << *kID
                   << " calling child-begin function...\n";
       }
-      if (NULL != beginForCallee) {
         if (tool_globFence) {
           invoke_ktools_fence(0);
         }
+       if (NULL != beginForCallee) {
         uint64_t nestedkID = 0;
         (*beginForCallee)(name, devID, &nestedkID);
         if (tool_verbosity > 0) {
@@ -288,6 +288,7 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
         std::cout << "KokkosP: sample " << kID
                   << " calling child-end function...\n";
       }
+      
       if (tool_globFence) {
         invoke_ktools_fence(0);
       }
