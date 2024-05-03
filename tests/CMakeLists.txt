@@ -11,7 +11,7 @@
 #   KOKKOS_TOOLS_GLOBALFENCES : test environment receives the variable 'KOKKOS_TOOLS_GLOBALFENCES' that is set as the value of 1 to turn the tool's auto-fencing on. 
 #   KOKKOS_TOOLS_RANDOM_SEED : test environment receives the variable 'KOKKOS_TOOLS_RANDOM_SEED' that is set as the value for a seed of the random number generator (used for testing repeatability). 
 #   KOKKOS_TOOLS_SAMPLER_SKIP : test environment receives the variable 'KOKKOS_TOOLS_SAMPLER_SKIP' that is set as the value of the number of Kokkos kernel invocations to skip before a tooling activity is invoked. 
-#   KOKKOS_TOOLS_SAMPLER_PROB : test environment receives the variable 'KOKKOS_TOOLS_SAMPLER_SKIP' that is set as the probability that a Kokkos kernel invocation has a tooling activity invoked for it.
+#   KOKKOS_TOOLS_SAMPLER_PROB : test environment receives the variable 'KOKKOS_TOOLS_SAMPLER_PROB' that is set as the probability that a Kokkos kernel invocation has a tooling activity invoked for it.
 
 
 function(kp_add_executable_and_test)
