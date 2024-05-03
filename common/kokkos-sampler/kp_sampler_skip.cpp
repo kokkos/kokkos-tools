@@ -225,7 +225,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   }
 
   const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
-  if (NULL != tool_sample) {
+  if (NULL != tool_sample && tool_prob_num == -1.0) {
     tool_prob_num    = 100.0;
     kernelSampleSkip = atoi(tool_sample) + 1;
     if (tool_verbosity > 0) {
