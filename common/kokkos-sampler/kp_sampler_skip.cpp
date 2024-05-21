@@ -200,7 +200,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
       std::cout << "KokkosP: sample " << *kID
                 << " calling child-begin function...\n";
     }
-    
+
     if (NULL != beginForCallee) {
       if (tool_globFence) {
         invoke_ktools_fence(0);
