@@ -19,7 +19,6 @@ static int tool_verbosity        = 0;
 static int tool_globFence        = 0;
 static int tool_seed             = -1;
 
-
 // a hash table mapping kID to nestedkID
 static std::unordered_map<uint64_t, uint64_t> infokIDSample;
 
