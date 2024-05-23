@@ -221,7 +221,6 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                 << tool_prob_num << "\n";
     }
     kernelSampleSkip = 1;
-    return;
   }
 
   const char* tool_sample = getenv("KOKKOS_TOOLS_SAMPLER_SKIP");
@@ -234,7 +233,6 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     if (tool_verbosity > 0) {
       std::cout << "KokkosP: Sampling rate set to: " << tool_sample << "\n";
     }
-    return;
   }
 
   if (tool_prob_num == -1.0) {
