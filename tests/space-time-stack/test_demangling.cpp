@@ -6,6 +6,11 @@
 
 #include "Kokkos_Core.hpp"
 
+#include "kp_all.hpp"
+#include "../../profiling/space-time-stack/kp_space_time_stack.hpp"
+
+#include "SpaceTimeStackTestSetup.hpp"
+
 struct Tester {
   struct TagNamed {};
   struct TagUnnamed {};
@@ -53,10 +58,7 @@ static const std::vector<std::string> matchers{
  * @test This test checks that the tool effectively uses
  *       the demangling helpers.
  */
-TEST(SpaceTimeStackTest, demangling) {
-  //! Initialize @c Kokkos.
-  Kokkos::initialize();
-
+TEST_F(SpaceTimeStackTest, demangling) {
   //! Redirect output for later analysis.
   std::cout.flush();
   std::ostringstream output;
@@ -65,8 +67,9 @@ TEST(SpaceTimeStackTest, demangling) {
   //! Run tests. @todo Replace this with Google Test.
   Tester tester(Kokkos::DefaultExecutionSpace{});
 
-  //! Finalize @c Kokkos.
-  Kokkos::finalize();
+  /// Finalizing will call @ref KokkosTools::SpaceTimeStack::State::~State
+  /// that outputs in @c std::cout.
+  KokkosTools::SpaceTimeStack::State::finalize();
 
   //! Restore output buffer.
   std::cout.flush();
