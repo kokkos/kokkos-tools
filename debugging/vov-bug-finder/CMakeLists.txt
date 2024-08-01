@@ -1,0 +1,1 @@
+kp_add_library(kp_view_of_views_bug_finder kp_view_of_views_bug_finder.cpp)

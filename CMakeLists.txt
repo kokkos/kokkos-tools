@@ -144,6 +144,7 @@ if(NOT WIN32)
   add_subdirectory(common/kokkos-sampler)
 endif()
 add_subdirectory(debugging/kernel-logger)
+add_subdirectory(debugging/vov-bug-finder)
 
 # Profilers
 if(NOT WIN32)
