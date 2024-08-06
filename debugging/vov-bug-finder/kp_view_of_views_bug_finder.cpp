@@ -58,6 +58,12 @@ bool ignore_fence(std::string_view s) {
          (s == "Kokkos::ThreadsInternal::fence: Unnamed Instance Fence");
 }
 
+bool ignore_alloc(std::string_view s) {
+  // TODO replace poor man's starts_with and ends_with when C++20 is available
+  return (s.find("Kokkos::") == 0 &&
+          s.rfind("::scratch_mem") == s.length() - 13);
+}
+
 std::optional<std::string> get_substr(std::string const &str,
                                       std::string_view prefix,
                                       std::string_view suffix) {
@@ -137,7 +143,7 @@ extern "C" void kokkosp_end_fence(uint64_t fenceID) {
 extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char *name,
                                       void *ptr, uint64_t size) {
   std::lock_guard lock(current.mutex);
-  if (!current.is_empty()) {
+  if (!current.is_empty() && !ignore_alloc(name)) {
     std::cerr << "allocating \"" << name << "\" within parallel region \""
               << current.top() << "\"\n";
     if (abort_on_error) {
@@ -154,7 +160,7 @@ extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char *name,
 extern "C" void kokkosp_deallocate_data(SpaceHandle handle, const char *name,
                                         void *ptr, uint64_t size) {
   std::lock_guard lock(current.mutex);
-  if (!current.is_empty()) {
+  if (!current.is_empty() && !ignore_alloc(name)) {
     std::cerr << "deallocating \"" << name << "\" within parallel region \""
               << current.top() << "\"\n";
     if (abort_on_error) {

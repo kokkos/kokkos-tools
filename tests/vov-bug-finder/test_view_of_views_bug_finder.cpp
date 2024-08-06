@@ -54,7 +54,23 @@ void test_death_allocation_in_parallel_for() {
       "allocating \"b\" within parallel region \"AllocatesInParallel]For\"");
 }
 
-// TODO intialize in main and split unit tests
+void test_no_throw_team_scratch_pad_parallel_for() {
+  ASSERT_NO_THROW(({
+    Kokkos::parallel_for(
+        "L0",
+        Kokkos::TeamPolicy<>(1, Kokkos::AUTO)
+            .set_scratch_size(0, Kokkos::PerTeam(1000)),
+        KOKKOS_LAMBDA(Kokkos::TeamPolicy<>::member_type const &){});
+
+    Kokkos::parallel_for(
+        "L1",
+        Kokkos::TeamPolicy<>(1, Kokkos::AUTO)
+            .set_scratch_size(1, Kokkos::PerTeam(1000)),
+        KOKKOS_LAMBDA(Kokkos::TeamPolicy<>::member_type const &){});
+  }));
+}
+
+// TODO initialize in main and split unit tests
 TEST(ViewOfViews, find_bugs) {
   Kokkos::initialize();
   {
@@ -104,6 +120,8 @@ TEST(ViewOfViews, find_bugs) {
     test_no_throw_placement_new_in_parallel_for();
 
     test_death_allocation_in_parallel_for();
+
+    test_no_throw_team_scratch_pad_parallel_for();
   }
   Kokkos::finalize();
 }
