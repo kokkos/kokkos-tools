@@ -99,4 +99,3 @@ TEST(ViewOfViews, find_bugs) {
   }
   Kokkos::finalize();
 }
-
