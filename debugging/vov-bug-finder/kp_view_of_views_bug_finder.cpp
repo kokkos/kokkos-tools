@@ -112,7 +112,7 @@ void vov_bug_finder_begin_fence(char const *fenceName, uint32_t /*deviceID*/,
   }
 }
 
-void vov_bug_finder_allocate_data(SpaceHandle handle, char const *name,
+void vov_bug_finder_allocate_data(SpaceHandle /*handle*/, char const *name,
                                   void const * /*ptr*/, uint64_t /*size*/) {
   std::lock_guard lock(current.mutex);
   if (!current.is_empty() && !ignore_alloc(name)) {
@@ -124,7 +124,7 @@ void vov_bug_finder_allocate_data(SpaceHandle handle, char const *name,
   }
 }
 
-void vov_bug_finder_deallocate_data(SpaceHandle handle, char const *name,
+void vov_bug_finder_deallocate_data(SpaceHandle /*handle*/, char const *name,
                                     void const * /*ptr*/, uint64_t /*size*/) {
   std::lock_guard lock(current.mutex);
   if (!current.is_empty() && !ignore_alloc(name)) {
