@@ -74,16 +74,14 @@ std::optional<std::string> get_substr(std::string const &str,
   return std::nullopt;
 }
 
-}  // namespace
-
-extern "C" void kokkosp_request_tool_settings(
-    const uint32_t, Kokkos_Tools_ToolSettings *settings) {
+void vov_bug_finder_request_tool_settings(const uint32_t,
+                                          Kokkos_Tools_ToolSettings *settings) {
   settings->requires_global_fencing = false;
 }
 
-extern "C" void kokkosp_begin_parallel_for(char const *kernelName,
-                                           uint32_t /*deviceID*/,
-                                           uint64_t *kernelID) {
+void vov_bug_finder_begin_parallel_for(char const *kernelName,
+                                       uint32_t /*deviceID*/,
+                                       uint64_t *kernelID) {
   std::lock_guard lock(current.mutex);
   if (!current.is_empty()) {
     if (auto lbl =
@@ -98,14 +96,13 @@ extern "C" void kokkosp_begin_parallel_for(char const *kernelName,
   *kernelID = current.push(kernelName);
 }
 
-extern "C" void kokkosp_end_parallel_for(uint64_t kernelID) {
+void vov_bug_finder_end_parallel_for(uint64_t kernelID) {
   std::lock_guard lock(current.mutex);
   current.pop(kernelID);
 }
 
-extern "C" void kokkosp_begin_fence(char const *fenceName,
-                                    uint32_t /*deviceID*/,
-                                    uint64_t * /*fenceID*/) {
+void vov_bug_finder_begin_fence(char const *fenceName, uint32_t /*deviceID*/,
+                                uint64_t * /*fenceID*/) {
   std::lock_guard lock(current.mutex);
   if (!current.is_empty() && !ignore_fence(fenceName)) {
     if (auto lbl =
@@ -120,8 +117,8 @@ extern "C" void kokkosp_begin_fence(char const *fenceName,
   }
 }
 
-extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char *name,
-                                      void * /*ptr*/, uint64_t /*size*/) {
+void vov_bug_finder_allocate_data(SpaceHandle handle, char const *name,
+                                  void const * /*ptr*/, uint64_t /*size*/) {
   std::lock_guard lock(current.mutex);
   if (!current.is_empty() && !ignore_alloc(name)) {
     std::cerr << "allocating \"" << name << "\" within parallel region \""
@@ -132,8 +129,8 @@ extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char *name,
   }
 }
 
-extern "C" void kokkosp_deallocate_data(SpaceHandle handle, const char *name,
-                                        void * /*ptr*/, uint64_t /*size*/) {
+void vov_bug_finder_deallocate_data(SpaceHandle handle, char const *name,
+                                    void const * /*ptr*/, uint64_t /*size*/) {
   std::lock_guard lock(current.mutex);
   if (!current.is_empty() && !ignore_alloc(name)) {
     std::cerr << "deallocating \"" << name << "\" within parallel region \""
@@ -142,4 +139,15 @@ extern "C" void kokkosp_deallocate_data(SpaceHandle handle, const char *name,
       std::abort();
     }
   }
+}
+
+}  // namespace
+
+extern "C" {
+EXPOSE_TOOL_SETTINGS(vov_bug_finder_request_tool_settings)
+EXPOSE_BEGIN_PARALLEL_FOR(vov_bug_finder_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(vov_bug_finder_end_parallel_for)
+EXPOSE_BEGIN_FENCE(vov_bug_finder_begin_fence)
+EXPOSE_ALLOCATE(vov_bug_finder_allocate_data)
+EXPOSE_DEALLOCATE(vov_bug_finder_deallocate_data)
 }
