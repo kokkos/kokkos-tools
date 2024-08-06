@@ -57,12 +57,7 @@ bool ignore_fence(std::string_view s) {
          (s == "Kokkos::ThreadsInternal::fence: Unnamed Instance Fence");
 }
 
-bool ignore_alloc(std::string_view s) {
-  // TODO replace poor man's starts_with and ends_with when C++20 is available
-  return (s.find("Kokkos::") == 0 &&
-          s.rfind("::scratch_mem") == s.length() - 13) ||
-         (s == "Kokkos::thread_scratch");
-}
+bool ignore_alloc(std::string_view s) { return (s.find("Kokkos::") == 0); }
 
 std::optional<std::string> get_substr(std::string const &str,
                                       std::string_view prefix,
