@@ -17,7 +17,44 @@
 #include "Kokkos_Core.hpp"
 #include "gtest/gtest.h"
 
-// TODO intialixe in main and split unit tests
+void test_no_throw_placement_new_in_parallel_for() {
+  ASSERT_NO_THROW(({
+    using V = Kokkos::View<int *>;
+    Kokkos::View<V **, Kokkos::HostSpace> vov(
+        Kokkos::view_alloc("vov", Kokkos::WithoutInitializing), 2, 3);
+    V a("a", 4);
+    V b("b", 5);
+    Kokkos::parallel_for(
+        "Fine", Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, 1),
+        KOKKOS_LAMBDA(int) {
+          new (&vov(0, 0)) V(a);
+          new (&vov(0, 1)) V(a);
+          new (&vov(1, 0)) V(b);
+        });
+  }));
+}
+
+void test_death_allocation_in_parallel_for() {
+  ASSERT_DEATH(
+      ({
+        using V = Kokkos::View<int *>;
+        Kokkos::View<V **, Kokkos::HostSpace> vov(
+            Kokkos::view_alloc("vov", Kokkos::WithoutInitializing), 2, 3);
+        V a("a", 4);
+        new (&vov(0, 0)) V(a);
+        new (&vov(0, 1)) V(a);
+        Kokkos::parallel_for(
+            "AllocatesInParallel]For",
+            Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, 1),
+            KOKKOS_LAMBDA(int) {
+              V b("b", 5);
+              new (&vov(1, 0)) V(b);
+            });
+      }),
+      "allocating \"b\" within parallel region \"AllocatesInParallel]For\"");
+}
+
+// TODO intialize in main and split unit tests
 TEST(ViewOfViews, find_bugs) {
   Kokkos::initialize();
   {
@@ -64,38 +101,9 @@ TEST(ViewOfViews, find_bugs) {
                  }),
                  "view of views \"vo]v\" not properly cleared");
 
-    ASSERT_NO_THROW(({
-      using V = Kokkos::View<int *>;
-      Kokkos::View<V **, Kokkos::HostSpace> vov(
-          Kokkos::view_alloc("vov", Kokkos::WithoutInitializing), 2, 3);
-      V a("a", 4);
-      V b("b", 5);
-      Kokkos::parallel_for(
-          "Fine", Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, 1),
-          KOKKOS_LAMBDA(int) {
-            new (&vov(0, 0)) V(a);
-            new (&vov(0, 1)) V(a);
-            new (&vov(1, 0)) V(b);
-          });
-    }));
+    test_no_throw_placement_new_in_parallel_for();
 
-    ASSERT_DEATH(
-        ({
-          using V = Kokkos::View<int *>;
-          Kokkos::View<V **, Kokkos::HostSpace> vov(
-              Kokkos::view_alloc("vov", Kokkos::WithoutInitializing), 2, 3);
-          V a("a", 4);
-          new (&vov(0, 0)) V(a);
-          new (&vov(0, 1)) V(a);
-          Kokkos::parallel_for(
-              "AllocatesInParallel]For",
-              Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, 1),
-              KOKKOS_LAMBDA(int) {
-                V b("b", 5);
-                new (&vov(1, 0)) V(b);
-              });
-        }),
-        "allocating \"b\" within parallel region \"AllocatesInParallel]For\"");
+    test_death_allocation_in_parallel_for();
   }
   Kokkos::finalize();
 }
