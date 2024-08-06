@@ -27,7 +27,6 @@
 
 namespace {
 
-bool verbose        = false;
 bool abort_on_error = true;
 
 class {
@@ -83,7 +82,7 @@ extern "C" void kokkosp_request_tool_settings(
 }
 
 extern "C" void kokkosp_begin_parallel_for(char const *kernelName,
-                                           uint32_t deviceID,
+                                           uint32_t /*deviceID*/,
                                            uint64_t *kernelID) {
   std::lock_guard lock(current.mutex);
   if (!current.is_empty()) {
@@ -97,24 +96,16 @@ extern "C" void kokkosp_begin_parallel_for(char const *kernelName,
     }
   }
   *kernelID = current.push(kernelName);
-
-  if (verbose) {
-    std::cout << "begin kernel " << *kernelID << " " << kernelName
-              << " on device " << deviceID << '\n';
-  }
 }
 
 extern "C" void kokkosp_end_parallel_for(uint64_t kernelID) {
   std::lock_guard lock(current.mutex);
   current.pop(kernelID);
-
-  if (verbose) {
-    std::cout << "end kernel " << kernelID << '\n';
-  }
 }
 
-extern "C" void kokkosp_begin_fence(char const *fenceName, uint32_t deviceID,
-                                    uint64_t *fenceID) {
+extern "C" void kokkosp_begin_fence(char const *fenceName,
+                                    uint32_t /*deviceID*/,
+                                    uint64_t * /*fenceID*/) {
   std::lock_guard lock(current.mutex);
   if (!current.is_empty() && !ignore_fence(fenceName)) {
     if (auto lbl =
@@ -127,22 +118,10 @@ extern "C" void kokkosp_begin_fence(char const *fenceName, uint32_t deviceID,
       }
     }
   }
-  *fenceID = -1;
-
-  if (verbose) {
-    std::cout << "begin fence " << *fenceID << " " << fenceName << " on device "
-              << deviceID << '\n';
-  }
-}
-
-extern "C" void kokkosp_end_fence(uint64_t fenceID) {
-  if (verbose) {
-    std::cout << "end fence " << fenceID << '\n';
-  }
 }
 
 extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char *name,
-                                      void *ptr, uint64_t size) {
+                                      void * /*ptr*/, uint64_t /*size*/) {
   std::lock_guard lock(current.mutex);
   if (!current.is_empty() && !ignore_alloc(name)) {
     std::cerr << "allocating \"" << name << "\" within parallel region \""
@@ -151,15 +130,10 @@ extern "C" void kokkosp_allocate_data(SpaceHandle handle, const char *name,
       std::abort();
     }
   }
-
-  if (verbose) {
-    std::cout << "alloc (" << handle.name << ") " << name << " pointer " << ptr
-              << "size " << size << '\n';
-  }
 }
 
 extern "C" void kokkosp_deallocate_data(SpaceHandle handle, const char *name,
-                                        void *ptr, uint64_t size) {
+                                        void * /*ptr*/, uint64_t /*size*/) {
   std::lock_guard lock(current.mutex);
   if (!current.is_empty() && !ignore_alloc(name)) {
     std::cerr << "deallocating \"" << name << "\" within parallel region \""
@@ -167,10 +141,5 @@ extern "C" void kokkosp_deallocate_data(SpaceHandle handle, const char *name,
     if (abort_on_error) {
       std::abort();
     }
-  }
-
-  if (verbose) {
-    std::cout << "dealloc (" << handle.name << ") " << name << " pointer "
-              << ptr << "size " << size << '\n';
   }
 }
