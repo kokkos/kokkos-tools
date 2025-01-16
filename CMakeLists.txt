@@ -190,9 +190,12 @@ if(KOKKOSTOOLS_HAS_VARIORUM)
 endif()
 
 # GPU profilers
-if(Kokkos_ENABLE_CUDA)
+if(KOKKOSTOOLS_HAS_NVTX)
   add_subdirectory(profiling/nvtx-connector)
   add_subdirectory(profiling/nvtx-focused-connector)
+else()
+  message(STATUS "Skipping nvtx-connector:         NVTX is not enabled (maybe Kokkos was not found, or not configured with the CUDA backend)")
+  message(STATUS "Skipping nvtx-focused-connector: NVTX is not enabled (maybe Kokkos was not found, or not configured with the CUDA backend)")
 endif()
 if(Kokkos_ENABLE_HIP)
   add_subdirectory(profiling/roctx-connector)
