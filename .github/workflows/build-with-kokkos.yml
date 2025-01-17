@@ -29,6 +29,7 @@ jobs:
       image: ${{ matrix.image }}
     env:
       Kokkos_ROOT: /opt/kokkos
+      VARIORUM_ROOT: /opt/variorum
     steps:
       - name: Checkout Kokkos Tools
         uses: actions/checkout@v4
@@ -38,22 +39,29 @@ jobs:
           repository: kokkos/kokkos
           path: kokkos
           ref: develop
+      - name: Checkout Varioum
+        uses: actions/checkout@v4
+        with:
+          repository: LLNL/variorum
+          path: variorum
+          ref: 249a39bf41972afe2213d3dc904e47647364f466
       - name: Install compilers
         run : |
           apt update
 
           if [ ${{ matrix.compiler }} != 'default' ];then
-              apt --yes --no-install-recommends install ${{ matrix.compiler.c }} ${{ matrix.compiler.cpp }}
+              apt --yes --no-install-recommends install ${{ matrix.compiler.c }} ${{ matrix.compiler.cpp }} gfortran
               export CC=${{ matrix.compiler.c }}
               export CXX=${{ matrix.compiler.cpp }}
           else
-              apt --yes --no-install-recommends install gcc g++
+              apt --yes --no-install-recommends install gcc g++ gfortran
               export CC=gcc
               export CXX=g++
           fi
 
           echo "CC=$CC"   >> $GITHUB_ENV
           echo "CXX=$CXX" >> $GITHUB_ENV
+          echo "FC=gfortran" >> $GITHUB_ENV
 
           case ${{ matrix.preset }} in
               *OpenMP* )
@@ -71,14 +79,22 @@ jobs:
                   exit -1
           esac
 
-      - name: Install git, CMake, OpenMPI, PAPI and dtrace
+      - name: Install git, CMake, Jansson, OpenMPI, PAPI and dtrace
         run: |
           apt --yes --no-install-recommends install \
             git ca-certificates \
             cmake make \
             libopenmpi-dev \
             systemtap-sdt-dev \
+            libjansson-dev \
             libpapi-dev
+      - name: Compile and install Variorum
+        working-directory: variorum
+        run: |
+          cp ${GITHUB_WORKSPACE}/kokkos.presets.json CMakePresets.json
+          cmake -S src -B build -DCMAKE_INSTALL_PREFIX=${VARIORUM_ROOT}
+          cd build
+          make install
       - name: Compile and install Kokkos
         working-directory: kokkos
         run: |
@@ -92,7 +108,8 @@ jobs:
           cmake --build --preset=${{ matrix.preset }}
           cmake --install build-with-${{ matrix.preset }} --prefix=/opt/kokkos-tools
       # For now, GitHub runners are used. These runner don't have GPUs. Therefore, testing can only be done for OpenMP.
+      # Skip variorum test since the architecture detected by variorum is not supported
       - name: Run tests
         if: ${{ matrix.preset == 'OpenMP' }}
         run: |
-          ctest --preset=${{ matrix.preset }}
+          ctest -E "test_kokkos_tools_variorum" --preset=${{ matrix.preset }}
