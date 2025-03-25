@@ -6,7 +6,7 @@ if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
 if(CMAKE_CXX_STANDARD LESS 17)
-  message(FATAL_ERROR "KokkosTools requires C++17")
+  message(FATAL_ERROR "KokkosTools requires C++17 or higher")
 endif()
 
 
@@ -19,13 +19,14 @@ cmake_policy(SET CMP0111 NEW) # error if library not found
 
 # Disable in-source builds to prevent source tree corruption.
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
-  message(FATAL_ERROR "FATAL: In-source builds are not allowed. You should create a separate directory for build files.")
+  message(FATAL_ERROR "FATAL: In-source builds are not allowed. You should create a separate directory for build files. \
+  This can be done with the invocation cmake -B build -S . to create a build directory called build")
 endif()
 
 list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/cmake)
 
 message(STATUS)
-message(STATUS Configuring Kokkos-Tools)
+message(STATUS "Configuring Kokkos-Tools")
 message(STATUS)
 
 # Common settings
@@ -36,10 +37,7 @@ if(WIN32)
 endif()
 
 # Tools settings
-option(KokkosTools_ENABLE_SINGLE  "Build single library interfacing all profilers and dispatching at runtime" OFF)
-if(WIN32)
-  set(KokkosTools_ENABLE_SINGLE ON)
-endif()
+option(KokkosTools_ENABLE_SINGLE  "Build single library interfacing all profilers and dispatching at runtime" ${WIN32})
 
 option(KokkosTools_ENABLE_PAPI    "Enable PAPI support"             OFF)
 option(KokkosTools_ENABLE_MPI     "Enable MPI support"              OFF)
@@ -120,9 +118,6 @@ endif()
 # make Kokkos profiling interface available for native profilers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiling/all)
 
-set(COMMON_HEADERS_PATH ${CMAKE_CURRENT_BINARY_DIR}/common)
-include_directories(${COMMON_HEADERS_PATH})
-
 # Allow all tools to include any file.
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/common)
 
@@ -140,7 +135,7 @@ if(WIN32)
 endif()
 
 if(APPLE)
-  message(STATUS "Apple OSX target detected.")
+  message(STATUS "Apple OSX target detected - skipping Unix-only tools.")
 endif()
 
 # Utilities
