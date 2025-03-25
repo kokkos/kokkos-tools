@@ -14,32 +14,9 @@ CMake and Makefiles are supported for building Kokkos Tools. The following provi
 
 ## Using cmake
 
-### Build
+### Building
 
-1. Create a build directory in Kokkos Tools, e.g., type `mkdir myBuild; cd myBuild`
-2. To configure, type `cmake .. -DCMAKE_INSTALL_PREFIX=${YOUR_KOKKOS_TOOLS_INSTALL_DIR}`. There are more options but in most cases the defaults are sufficient.
-3. To compile, type `make`
-4. To install, type `make install`
-
-### Run
-
-Given your installed tool shared library `lib<name_of_tool_shared_lib>.so` and an application executable called yourApplication.exe, type:
-
-`export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_INSTALL_DIR}/lib<name_of_tool_shared_lib>.so; ./yourApplication.exe`
-
-
-## Using make
-
-### Build
-
-To build some library `<name_of_tool_shared_lib>` with make, simply type `make` within that library's subdirectory `${YOUR_KOKKOS_TOOLS_LIB_SRC_DIR}` of Kokkos Tools. This generates the shared library within that subdirectory.
-
-### Run
-
-Given your installed tool shared library `<name_of_tool_shared_lib>.so` and an application executable called `yourApplication.exe`, type:
-
-`export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_LIB_SRC_DIR}/<name_of_tool_shared_lib>.so; ./yourApplication.exe`
-
+For detailed building instructions see [building instructions](./Build.md)
 
 ## Explicit Instrumentation
 
