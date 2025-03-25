@@ -31,7 +31,8 @@ message(STATUS)
 # Common settings
 set(BUILD_SHARED_LIBS "Build shared libraries" ON)
 if(WIN32)
-  set(BUILD_SHARED_LIBS OFF) # We need to add __declspec(dllexport/dllimport) for Windows DLLs
+  set(BUILD_SHARED_LIBS OFF) 
+  message(STATUS  "We need to add __declspec(dllexport/dllimport) for Windows DLLs, until then windows building is not supported")
 endif()
 
 # Tools settings
