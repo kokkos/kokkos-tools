@@ -323,9 +323,14 @@ struct StackNode {
   void print_recursive(std::ostream& os, std::string my_indent,
                        std::string const& child_indent,
                        double tree_time) const {
+    int comm_size = 1;
+#if USE_MPI
+    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+#endif
+    auto threshold_percent = ((max_runtime * comm_size) / tree_time) * 100.0;
     auto percent = (total_runtime / tree_time) * 100.0;
 
-    if (percent < output_threshold) return;
+    if (threshold_percent < output_threshold) return;
     if (!name.empty()) {
       os << my_indent;
       auto imbalance = (max_runtime / avg_runtime - 1.0) * 100.0;
