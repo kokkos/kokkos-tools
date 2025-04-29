@@ -8,3 +8,9 @@ check_cxx_compiler_flag("-Wrestrict" HAVE_RESTRICT_WARNING)
 if(HAVE_RESTRICT_WARNING)
 target_compile_options(test_space_time_stack_demangling PRIVATE "-Wno-restrict")
 endif()
+
+kp_add_executable_and_test(
+    TARGET_NAME       test_space_time_stack_deep_copy
+    SOURCE_FILE       test_deep_copy.cpp
+    KOKKOS_TOOLS_LIBS kp_space_time_stack
+)
