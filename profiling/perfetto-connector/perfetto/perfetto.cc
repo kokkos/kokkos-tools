@@ -72861,8 +72861,8 @@ void ProducerIPCClientImpl::OnConnect() {
                                  std::move(on_cmd));
 
   // If there are pending Sync() requests, send them now.
-  for (const auto& pending_sync : pending_sync_reqs_)
-    Sync(pending_sync);
+  for (auto& pending_sync : pending_sync_reqs_)
+    Sync(std::move(pending_sync));
   pending_sync_reqs_.clear();
 }
 
