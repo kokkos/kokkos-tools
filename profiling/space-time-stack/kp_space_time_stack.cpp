@@ -328,7 +328,7 @@ struct StackNode {
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 #endif
     auto threshold_percent = ((max_runtime * comm_size) / tree_time) * 100.0;
-    auto percent = (total_runtime / tree_time) * 100.0;
+    auto percent           = (total_runtime / tree_time) * 100.0;
 
     if (threshold_percent < output_threshold) return;
     if (!name.empty()) {
