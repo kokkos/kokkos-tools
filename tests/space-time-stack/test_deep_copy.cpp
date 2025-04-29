@@ -12,8 +12,8 @@ struct Tester {
 
   template <typename execution_space>
   explicit Tester(const execution_space& space) {
-    Kokkos::View<double *, execution_space> a("view_a", 10);
-    Kokkos::View<double *, execution_space> b("view_b", 10);
+    Kokkos::View<double*, execution_space> a("view_a", 10);
+    Kokkos::View<double*, execution_space> b("view_b", 10);
 
     Kokkos::deep_copy(a, 1.5);
     Kokkos::deep_copy(space, b, 2.0);
@@ -23,11 +23,15 @@ struct Tester {
 
 static const std::vector<std::string> matchers{
     // copy of scalar into view_a
-    "[0-9.e]+ sec [0-9.]+% [0-9.]+% 0.0% ------ 1 \"view_a\"=\"Scalar\" \\([A-Z]+->[A-Z]+\\) \\[copy\\]",
-    // copy of scalar into view_b, execution space overload which apparently reports (none) for the source instead of Scalar
-    "[0-9.e]+ sec [0-9.]+% [0-9.]+% 0.0% ------ 1 \"view_b\"=\".*\" \\([A-Z]+->[A-Z]+\\) \\[copy\\]",
+    "[0-9.e]+ sec [0-9.]+% [0-9.]+% 0.0% ------ 1 \"view_a\"=\"Scalar\" "
+    "\\([A-Z]+->[A-Z]+\\) \\[copy\\]",
+    // copy of scalar into view_b, execution space overload which apparently
+    // reports (none) for the source instead of Scalar
+    "[0-9.e]+ sec [0-9.]+% [0-9.]+% 0.0% ------ 1 \"view_b\"=\".*\" "
+    "\\([A-Z]+->[A-Z]+\\) \\[copy\\]",
     // copy of view_a into view_b
-    "[0-9.e]+ sec [0-9.]+% [0-9.]+% 0.0% ------ 1 \"view_b\"=\"view_a\" \\([A-Z]+->[A-Z]+\\) \\[copy\\]",
+    "[0-9.e]+ sec [0-9.]+% [0-9.]+% 0.0% ------ 1 \"view_b\"=\"view_a\" "
+    "\\([A-Z]+->[A-Z]+\\) \\[copy\\]",
 };
 
 /**
