@@ -72862,7 +72862,7 @@ void ProducerIPCClientImpl::OnConnect() {
 
   // If there are pending Sync() requests, send them now.
   for (const auto& pending_sync : pending_sync_reqs_)
-    Sync(std::move(pending_sync));
+    Sync(pending_sync);
   pending_sync_reqs_.clear();
 }
 
