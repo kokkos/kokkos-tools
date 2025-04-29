@@ -21,8 +21,10 @@
 #include <algorithm>
 #include <map>
 
+#include "../../common/FrameType.hpp"
 #include "kp_shared.h"
 
+using namespace KokkosTools;
 using namespace KokkosTools::KernelTimer;
 
 int main(int argc, char* argv[]) {
@@ -62,7 +64,7 @@ int main(int argc, char* argv[]) {
 
     while (!feof(the_file)) {
       KernelPerformanceInfo* new_kernel =
-          new KernelPerformanceInfo("", PARALLEL_FOR);
+          new KernelPerformanceInfo("", FrameType::PARALLEL_FOR);
       if (new_kernel->readFromFile(the_file)) {
         if (!new_kernel->getName().empty()) {
           int kernelIndex = find_index(kernelInfo, new_kernel->getName());
@@ -105,7 +107,7 @@ int main(int argc, char* argv[]) {
     if (fixed_width)
       printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
              kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
+             (kernelInfo[i]->getKernelType() == FrameType::PARALLEL_FOR)
                  ? (" (ParFor)  ")
                  : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
                         ? (" (ParRed)  ")
@@ -120,7 +122,7 @@ int main(int argc, char* argv[]) {
     else
       printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
              kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
+             (kernelInfo[i]->getKernelType() == FrameType::PARALLEL_FOR)
                  ? (" (ParFor)  ")
                  : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
                         ? (" (ParRed)  ")
@@ -147,7 +149,7 @@ int main(int argc, char* argv[]) {
     if (fixed_width)
       printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
              kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
+             (kernelInfo[i]->getKernelType() == FrameType::PARALLEL_FOR)
                  ? (" (ParFor)  ")
                  : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
                         ? (" (ParRed)  ")
@@ -162,7 +164,7 @@ int main(int argc, char* argv[]) {
     else
       printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
              kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
+             (kernelInfo[i]->getKernelType() == FrameType::PARALLEL_FOR)
                  ? (" (ParFor)  ")
                  : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
                         ? (" (ParRed)  ")

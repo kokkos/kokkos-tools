@@ -21,21 +21,17 @@
 #include <sys/time.h>
 #include <cstring>
 
+#include "../../common/FrameType.hpp"
+
 #include "nvToolsExt.h"
 
 namespace KokkosTools {
 namespace NVTXFocusedConnector {
 
-enum KernelExecutionType {
-  PARALLEL_FOR    = 0,
-  PARALLEL_REDUCE = 1,
-  PARALLEL_SCAN   = 2
-};
-
 class KernelNVTXFocusedConnectorInfo {
  public:
   KernelNVTXFocusedConnectorInfo(std::string kName,
-                                 KernelExecutionType kernelType) {
+                                 FrameType kernelType) {
     domainNameHandle = kName;
     char* domainName = (char*)malloc(sizeof(char*) * (32 + kName.size()));
 

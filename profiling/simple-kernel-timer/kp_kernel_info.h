@@ -18,34 +18,22 @@
 #define _H_KOKKOSP_KERNEL_INFO
 
 #include <stdio.h>
-#include <sys/time.h>
 #include <string>
 #include <cstring>
 
 #include "utils/demangle.hpp"
 
+#include "../../common/FrameType.hpp"
+#include "../../common/utils_time.hpp"
+
 namespace KokkosTools::KernelTimer {
-
-inline double seconds() {
-  struct timeval now;
-  gettimeofday(&now, NULL);
-
-  return (double)(now.tv_sec + (now.tv_usec * 1.0e-6));
-}
-
-enum KernelExecutionType {
-  PARALLEL_FOR    = 0,
-  PARALLEL_REDUCE = 1,
-  PARALLEL_SCAN   = 2,
-  REGION          = 3
-};
 
 class KernelPerformanceInfo {
  public:
-  KernelPerformanceInfo(std::string kName, KernelExecutionType kernelType)
+  KernelPerformanceInfo(std::string kName, FrameType kernelType)
       : kernelName(std::move(kName)), kType(kernelType) {}
 
-  KernelExecutionType getKernelType() const { return kType; }
+  auto getKernelType() const { return kType; }
 
   void incrementCount() { callCount++; }
 
@@ -55,12 +43,12 @@ class KernelPerformanceInfo {
   }
 
   void addFromTimer() {
-    addTime(seconds() - startTime);
+    addTime(KokkosTools::seconds() - startTime);
 
     incrementCount();
   }
 
-  void startTimer() { startTime = seconds(); }
+  void startTimer() { startTime = KokkosTools::seconds(); }
 
   uint64_t getCallCount() const { return callCount; }
 
@@ -189,7 +177,7 @@ class KernelPerformanceInfo {
   double time        = 0;
   double timeSq      = 0;
   double startTime   = 0;
-  KernelExecutionType kType;
+  FrameType kType;
 };
 
 }  // namespace KokkosTools::KernelTimer

@@ -21,11 +21,12 @@
 #include <limits>
 #include <cstring>
 
+#include "../../common/SpaceHandle.hpp"
+
 std::vector<std::string> regions;
 static uint64_t uniqID;
-struct SpaceHandle {
-  char name[64];
-};
+
+using SpaceHandle = KokkosTools::SpaceHandle;
 
 void kokkosp_print_region_stack_indent(const int level) {
   printf("KokkosP: ");

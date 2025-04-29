@@ -33,8 +33,8 @@ extern char* outputDelimiter;
 extern int current_region_level;
 extern KernelPerformanceInfo* regions[512];
 
-void increment_counter(const char* name, KernelExecutionType kType);
-void increment_counter_region(const char* name, KernelExecutionType kType);
+void increment_counter(const char* name, FrameType kType);
+void increment_counter_region(const char* name, FrameType kType);
 
 inline bool compareKernelPerformanceInfo(KernelPerformanceInfo* left,
                                          KernelPerformanceInfo* right) {

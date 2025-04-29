@@ -1,0 +1,1 @@
+// Goal here: declare structures used in the .cpp file, so that we can directly look at them in tests.

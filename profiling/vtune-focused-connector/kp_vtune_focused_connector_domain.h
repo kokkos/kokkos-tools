@@ -20,21 +20,17 @@
 #include <stdio.h>
 #include <cstring>
 
+#include "../../common/KernelExecutionType.hpp"
+
 #include "ittnotify.h"
 
 namespace KokkosTools {
 namespace VTuneFocusedConnector {
 
-enum KernelExecutionType {
-  PARALLEL_FOR    = 0,
-  PARALLEL_REDUCE = 1,
-  PARALLEL_SCAN   = 2
-};
-
 class KernelVTuneFocusedConnectorInfo {
  public:
   KernelVTuneFocusedConnectorInfo(std::string kName,
-                                  KernelExecutionType kernelType) {
+                                  FrameType kernelType) {
     char* domainName = (char*)malloc(sizeof(char*) * (32 + kName.size()));
 
     if (kernelType == PARALLEL_FOR) {
