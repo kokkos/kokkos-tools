@@ -240,9 +240,9 @@ struct StackNode {
   }
   void print_recursive_json(std::ostream& os, StackNode const* parent,
                             double tree_time) const {
-    static bool add_comma = false;
+    static bool add_comma  = false;
     auto threshold_percent = ((max_runtime * comm_size) / tree_time) * 100.0;
-    auto percent          = (total_runtime / tree_time) * 100.0;
+    auto percent           = (total_runtime / tree_time) * 100.0;
 
     if (threshold_percent < output_threshold) return;
     if (!name.empty()) {
@@ -407,7 +407,7 @@ struct StackNode {
       while (!q.empty()) {
         auto node = q.front();
         q.pop();
-        node->comm_size = comm_size;
+        node->comm_size   = comm_size;
         node->max_runtime = node->total_runtime;
         node->avg_runtime = node->total_runtime;
         MPI_Allreduce(MPI_IN_PLACE, &(node->total_runtime), 1, MPI_DOUBLE,
