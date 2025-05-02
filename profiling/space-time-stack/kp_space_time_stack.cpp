@@ -141,6 +141,7 @@ struct StackNode {
   double total_kokkos_runtime;
   double max_runtime;
   double avg_runtime;
+  int comm_size = 1;
   std::int64_t number_of_calls;
   std::int64_t total_number_of_kernel_calls;  // Counts all kernel calls (but
                                               // not region calls) this node and
@@ -240,9 +241,10 @@ struct StackNode {
   void print_recursive_json(std::ostream& os, StackNode const* parent,
                             double tree_time) const {
     static bool add_comma = false;
+    auto threshold_percent = ((max_runtime * comm_size) / tree_time) * 100.0;
     auto percent          = (total_runtime / tree_time) * 100.0;
 
-    if (percent < output_threshold) return;
+    if (threshold_percent < output_threshold) return;
     if (!name.empty()) {
       if (add_comma) os << ",\n";
       add_comma = true;
@@ -323,7 +325,6 @@ struct StackNode {
   void print_recursive(std::ostream& os, std::string my_indent,
                        std::string const& child_indent,
                        double tree_time) const {
-    const double comm_size = total_runtime / avg_runtime;
     auto threshold_percent = ((max_runtime * comm_size) / tree_time) * 100.0;
     auto percent           = (total_runtime / tree_time) * 100.0;
 
@@ -397,7 +398,7 @@ struct StackNode {
   void reduce_over_mpi(bool mpi_usable) {
 #if USE_MPI
     if (mpi_usable) {
-      int rank, comm_size;
+      int rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
       MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
       std::queue<StackNode*> q;
@@ -406,6 +407,7 @@ struct StackNode {
       while (!q.empty()) {
         auto node = q.front();
         q.pop();
+        node->comm_size = comm_size;
         node->max_runtime = node->total_runtime;
         node->avg_runtime = node->total_runtime;
         MPI_Allreduce(MPI_IN_PLACE, &(node->total_runtime), 1, MPI_DOUBLE,
