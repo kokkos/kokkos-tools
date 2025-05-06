@@ -17,4 +17,8 @@ if(KokkosTools_ENABLE_MPI)
       RANKS             2
   )
   target_link_libraries(test_threshold_with_imbalance PRIVATE MPI::MPI_CXX)
+  set_property(
+    TEST test_threshold_with_imbalance
+    APPEND PROPERTY ENVIRONMENT "OMPI_ALLOW_RUN_AS_ROOT=1;OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1"
+  ) 
 endif()
