@@ -30,10 +30,6 @@ function(kp_add_executable_and_test)
         return()
     endif()
 
-    if(DEFINED kaeat_args_RANKS)
-        message(WARNING "Test ${kaeat_args_TARGET_NAME} will run on ${kaeat_args_RANKS} MPI ranks.")
-    endif()
-
     add_executable(${kaeat_args_TARGET_NAME})
 
     target_sources(
