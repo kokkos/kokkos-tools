@@ -48,7 +48,7 @@ option(KokkosTools_ENABLE_EXAMPLES "Build examples"                 OFF)
 option(KokkosTools_ENABLE_TESTS    "Build tests"                    OFF)
 
 # Advanced settings
-option(KokkosTools_CHECK_CXX_COMPILER "Check if the CMAKE_CXX_COMPILER equals the compiler used for the installed Kokkos" ON)
+option(KokkosTools_CHECK_CXX_COMPILER "Check if the CMAKE_CXX_COMPILER equals the compiler used for the installed Kokkos" OFF)
 mark_as_advanced(KokkosTools_CHECK_CXX_COMPILER)
 
 # Fetch Kokkos options:
