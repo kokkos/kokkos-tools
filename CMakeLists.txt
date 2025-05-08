@@ -19,8 +19,7 @@ cmake_policy(SET CMP0111 NEW) # error if library not found
 
 # Disable in-source builds to prevent source tree corruption.
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
-  message(FATAL_ERROR "FATAL: In-source builds are not allowed. You should create a separate directory for build files. \
-  This can be done with the invocation cmake -B build -S . to create a build directory called build")
+  message(FATAL_ERROR "FATAL: In-source builds are not allowed. You should create a separate directory for build files.")
 endif()
 
 list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/cmake)
@@ -30,14 +29,15 @@ message(STATUS "Configuring Kokkos-Tools")
 message(STATUS)
 
 # Common settings
-set(BUILD_SHARED_LIBS "Build shared libraries" ON)
-if(WIN32)
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+# We need to add __declspec(dllexport/dllimport) for Windows DLLs
+if(WIN32 AND BUILD_SHARED_LIBS)
   set(BUILD_SHARED_LIBS OFF) 
-  message(STATUS  "We need to add __declspec(dllexport/dllimport) for Windows DLLs, until then windows building is not supported")
+  message(STATUS "Windows building of .dlls is not yet supported") 
 endif()
 
 # Tools settings
-option(KokkosTools_ENABLE_SINGLE  "Build single library interfacing all profilers and dispatching at runtime" ${WIN32})
+option(KokkosTools_ENABLE_SINGLE "Build single library interfacing all profilers and dispatching at runtime" ${WIN32})
 
 option(KokkosTools_ENABLE_PAPI    "Enable PAPI support"             OFF)
 option(KokkosTools_ENABLE_MPI     "Enable MPI support"              OFF)
@@ -120,6 +120,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiling/all)
 
 # Allow all tools to include any file.
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/common)
+set(COMMON_HEADERS_PATH ${CMAKE_CURRENT_BINARY_DIR}/common) # Used in profilers/all
 
 set(SINGLELIB_PROFILERS "" CACHE STRING "" FORCE)
 
@@ -135,7 +136,7 @@ if(WIN32)
 endif()
 
 if(APPLE)
-  message(STATUS "Apple OSX target detected - skipping Unix-only tools.")
+  message(STATUS "Apple OSX target detected - skipping Linux-only tools.")
 endif()
 
 # Utilities
