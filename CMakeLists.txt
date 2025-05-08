@@ -48,8 +48,8 @@ option(KokkosTools_ENABLE_EXAMPLES "Build examples"                 OFF)
 option(KokkosTools_ENABLE_TESTS    "Build tests"                    OFF)
 
 # Advanced settings
-option(KokkosTools_REUSE_KOKKOS_COMPILER "Set the compiler and flags based on installed Kokkos settings" OFF)
-mark_as_advanced(KokkosTools_REUSE_KOKKOS_COMPILER)
+option(KokkosTools_CHECK_CXX_COMPILER "Check if the CMAKE_CXX_COMPILER equals the compiler used for the installed Kokkos" ON)
+mark_as_advanced(KokkosTools_CHECK_CXX_COMPILER)
 
 # Fetch Kokkos options:
 acquire_kokkos_config()
@@ -62,15 +62,14 @@ if(DEFINED Kokkos_FOUND_MSG)
     "\t\tCMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}\n"
     "\t\tOptions: ${Kokkos_OPTIONS}")
   # Synchronize compiler and flags (only when explicitly requested)
-  if(KokkosTools_REUSE_KOKKOS_COMPILER)
+  if(KokkosTools_CHECK_CXX_COMPILER)
     if(NOT ${CMAKE_CXX_COMPILER} STREQUAL "${Kokkos_CXX_COMPILER}")
-      message(FATAL_ERROR "The set CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} is not the same as the Kokkos_CXX_COMPILER=${Kokkos_CXX_COMPILER} but KokkosTools_REUSE_KOKKOS_COMPILER=ON was requested.")
+      message(FATAL_ERROR "The CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} is not the same as the Kokkos_CXX_COMPILER=${Kokkos_CXX_COMPILER} this can lead to incompatible libraries. To skip this check set KokkosTools_CHECK_CXX_COMPILER=OFF.")
     endif()
   endif()
 else()
-  if(KokkosTools_REUSE_KOKKOS_COMPILER)
-    message(FATAL_ERROR "Kokkos not found: can't reuse Kokkos compiler (which was explicitly"
-                        "requested with KokkosTools_REUSE_KOKKOS_COMPILER=ON)")
+  if(KokkosTools_CHECK_CXX_COMPILER)
+    message(FATAL_ERROR "Kokkos not found: can't determine the compiler used for compiling Kokkos. To disable this check set KokkosTools_CHECK_CXX_COMPILER=OFF.")
   endif()
   message(STATUS "Kokkos NOT found")
 endif()
