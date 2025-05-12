@@ -16,7 +16,7 @@ jobs:
           - image: nvidia/cuda:12.1.0-devel-ubuntu22.04
             preset: Cuda
             compiler: default
-          - image: nvidia/cuda:12.2.0-devel-ubuntu22.04
+          - image: nvidia/cuda:12.9.0-devel-ubuntu22.04
             preset: Cuda
             compiler: {cpp: g++-12, c: gcc-12}
           - image: rocm/dev-ubuntu-22.04:5.4
