@@ -21,7 +21,7 @@
 #include <sys/time.h>
 #include <cstring>
 
-#include "nvToolsExt.h"
+#include "nvtx3/nvToolsExt.h"
 
 namespace KokkosTools {
 namespace NVTXFocusedConnector {

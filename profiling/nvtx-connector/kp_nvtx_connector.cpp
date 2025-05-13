@@ -22,7 +22,7 @@
 
 #include <pthread.h>
 
-#include "nvToolsExt.h"
+#include "nvtx3/nvToolsExt.h"
 
 #include "kp_core.hpp"
 
