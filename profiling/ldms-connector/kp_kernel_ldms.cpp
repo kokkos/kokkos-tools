@@ -139,8 +139,8 @@ extern "C" void kokkosp_init_library(const int loadSeq,
 
   slurm_job_id = slurm_job_id_str == NULL ? 0 : atoi(slurm_job_id_str);
   slurm_rank   = openmpi_job_str == NULL
-                     ? slurm_rank_str == NULL ? 0 : atoi(slurm_rank_str)
-                     : atoi(openmpi_job_str);
+                   ? slurm_rank_str == NULL ? 0 : atoi(slurm_rank_str)
+                   : atoi(openmpi_job_str);
 
   gethostname(hostname_kp, HOST_NAME_MAX);
 
