@@ -19,8 +19,7 @@
 #include <ldms/ldmsd_stream.h>
 #include <ovis_util/util.h>
 
-using namespace KokkosTools;
-
+static bool tool_globfences;
 
 namespace KokkosTools {
 namespace LDMSConnector { 
@@ -40,6 +39,7 @@ static int slurm_rank;
 static int slurm_job_id;
 static int tool_verbosity;
 static char hostname_kp[HOST_NAME_MAX];
+
 
 void increment_counter(const char* name, KernelExecutionType kType) {
   std::string nameStr(name);
@@ -103,7 +103,7 @@ static void event_cb(ldms_t x, ldms_xprt_event_t e, void* cb_arg) {
 
       fprintf(
           stderr,
-          "KokkosP: LDMS has disconncted from its connection for rank %d, will "
+          "KokkosP: LDMS has disconnected from its connection for rank %d, will "
           "abort attempts to publish events. Slurm_ID = %d, Hostname = %s\n",
           slurm_rank, slurm_job_id, hostname_kp);
 
@@ -120,6 +120,17 @@ static void event_cb(ldms_t x, ldms_xprt_event_t e, void* cb_arg) {
     case LDMS_XPRT_EVENT_RECV: int server_rc = ldmsd_stream_response(e); break;
   }
   sem_post(&x->sem);
+}
+
+
+void kokkosp_request_tool_settings(const uint32_t,
+                                   Kokkos_Tools_ToolSettings* settings) {
+  settings->requires_global_fencing = true;
+  if (tool_globfences) {
+    settings->requires_global_fencing = true;
+  } else {
+    settings->requires_global_fencing = false;
+  }
 }
 
 void kokkosp_init_library(const int loadSeq,
@@ -146,6 +157,12 @@ void kokkosp_init_library(const int loadSeq,
                    ? slurm_rank_str == NULL ? 0 : atoi(slurm_rank_str)
                    : atoi(openmpi_job_str);
 
+  const char* tool_global_fences = getenv("KOKKOS_TOOLS_GLOBALFENCES");
+  if (NULL != tool_global_fences) {
+    tool_globfences = (atoi(tool_global_fences) != 0);
+    nvtxMarkA("Kokkos::Initialization Complete");
+  }
+  
   gethostname(hostname_kp, HOST_NAME_MAX);
 
   const char* ldms_port = (env_ldms_port == NULL) ? "10411" : env_ldms_port;
@@ -295,12 +312,6 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
   my_event_set.end_parallel_for       = kokkosp_end_parallel_for;
   my_event_set.end_parallel_reduce    = kokkosp_end_parallel_reduce;
   my_event_set.end_parallel_scan      = kokkosp_end_parallel_scan;
-  my_event_set.create_profile_section = kokkosp_create_profile_section;
-  my_event_set.start_profile_section  = kokkosp_start_profile_section;
-  my_event_set.stop_profile_section   = kokkosp_stop_profile_section;
-  my_event_set.profile_event          = kokkosp_profile_event;
-  my_event_set.begin_fence            = kokkosp_begin_fence;
-  my_event_set.end_fence              = kokkosp_end_fence;
   return my_event_set;
 }
 
@@ -308,9 +319,7 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
 }  // namespace KokkosTools
 
 extern "C" {
-
 namespace impl = KokkosTools::LDMSConnector;
-
 EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
 EXPOSE_INIT(impl::kokkosp_init_library)
 EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
@@ -322,10 +331,4 @@ EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
 EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
-EXPOSE_CREATE_PROFILE_SECTION(impl::kokkosp_create_profile_section)
-EXPOSE_START_PROFILE_SECTION(impl::kokkosp_start_profile_section)
-EXPOSE_STOP_PROFILE_SECTION(impl::kokkosp_stop_profile_section)
-EXPOSE_PROFILE_EVENT(impl::kokkosp_profile_event);
-EXPOSE_BEGIN_FENCE(impl::kokkosp_begin_fence);
-EXPOSE_END_FENCE(impl::kokkosp_end_fence);
 }  // extern "C"
