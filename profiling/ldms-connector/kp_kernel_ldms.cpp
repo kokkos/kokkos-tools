@@ -21,6 +21,10 @@
 
 using namespace KokkosTools;
 
+
+namespace KokkosTools {
+namespace LDMSConnector { 
+
 static uint64_t uniqID = 0;
 static KernelPerformanceInfo* currentEntry;
 static std::map<std::string, KernelPerformanceInfo*> count_map;
@@ -118,7 +122,7 @@ static void event_cb(ldms_t x, ldms_xprt_event_t e, void* cb_arg) {
   sem_post(&x->sem);
 }
 
-extern "C" void kokkosp_init_library(const int loadSeq,
+void kokkosp_init_library(const int loadSeq,
                                      const uint64_t interfaceVer,
                                      const uint32_t devInfoCount,
                                      void* deviceInfo) {
@@ -196,9 +200,9 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   initTimeEpochMS = getEpochMS();
 }
 
-extern "C" void kokkosp_finalize_library() {}
+void kokkosp_finalize_library() {}
 
-extern "C" void kokkosp_begin_parallel_for(const char* name,
+void kokkosp_begin_parallel_for(const char* name,
                                            const uint32_t devID,
                                            uint64_t* kID) {
   if ((NULL == name) || (strcmp("", name) == 0)) {
@@ -208,11 +212,11 @@ extern "C" void kokkosp_begin_parallel_for(const char* name,
   increment_counter(name, PARALLEL_FOR);
 }
 
-extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
+void kokkosp_end_parallel_for(const uint64_t kID) {
   currentEntry->addFromTimer();
 }
 
-extern "C" void kokkosp_begin_parallel_scan(const char* name,
+void kokkosp_begin_parallel_scan(const char* name,
                                             const uint32_t devID,
                                             uint64_t* kID) {
   if ((NULL == name) || (strcmp("", name) == 0)) {
@@ -222,11 +226,11 @@ extern "C" void kokkosp_begin_parallel_scan(const char* name,
   increment_counter(name, PARALLEL_SCAN);
 }
 
-extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
+void kokkosp_end_parallel_scan(const uint64_t kID) {
   currentEntry->addFromTimer();
 }
 
-extern "C" void kokkosp_begin_parallel_reduce(const char* name,
+void kokkosp_begin_parallel_reduce(const char* name,
                                               const uint32_t devID,
                                               uint64_t* kID) {
   if ((NULL == name) || (strcmp("", name) == 0)) {
@@ -236,15 +240,15 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
   increment_counter(name, PARALLEL_REDUCE);
 }
 
-extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
+void kokkosp_end_parallel_reduce(const uint64_t kID) {
   currentEntry->addFromTimer();
 }
 
-extern "C" void kokkosp_push_profile_region(char* regionName) {
+void kokkosp_push_profile_region(char* regionName) {
   increment_counter_region(regionName, REGION);
 }
 
-extern "C" void kokkosp_pop_profile_region() {
+void kokkosp_pop_profile_region() {
   current_region_level--;
 
   // current_region_level is out of bounds, inform the user they
@@ -273,3 +277,55 @@ extern "C" void kokkosp_pop_profile_region() {
     regions[current_region_level]->addFromTimer();
   }
 }
+
+
+
+Kokkos::Tools::Experimental::EventSet get_event_set() {
+  Kokkos::Tools::Experimental::EventSet my_event_set;
+  memset(&my_event_set, 0,
+         sizeof(my_event_set));  // zero any pointers not set here
+  my_event_set.request_tool_settings  = kokkosp_request_tool_settings;
+  my_event_set.init                   = kokkosp_init_library;
+  my_event_set.finalize               = kokkosp_finalize_library;
+  my_event_set.push_region            = kokkosp_push_profile_region;
+  my_event_set.pop_region             = kokkosp_pop_profile_region;
+  my_event_set.begin_parallel_for     = kokkosp_begin_parallel_for;
+  my_event_set.begin_parallel_reduce  = kokkosp_begin_parallel_reduce;
+  my_event_set.begin_parallel_scan    = kokkosp_begin_parallel_scan;
+  my_event_set.end_parallel_for       = kokkosp_end_parallel_for;
+  my_event_set.end_parallel_reduce    = kokkosp_end_parallel_reduce;
+  my_event_set.end_parallel_scan      = kokkosp_end_parallel_scan;
+  my_event_set.create_profile_section = kokkosp_create_profile_section;
+  my_event_set.start_profile_section  = kokkosp_start_profile_section;
+  my_event_set.stop_profile_section   = kokkosp_stop_profile_section;
+  my_event_set.profile_event          = kokkosp_profile_event;
+  my_event_set.begin_fence            = kokkosp_begin_fence;
+  my_event_set.end_fence              = kokkosp_end_fence;
+  return my_event_set;
+}
+
+}  // namespace LDMSConnector
+}  // namespace KokkosTools
+
+extern "C" {
+
+namespace impl = KokkosTools::LDMSConnector;
+
+EXPOSE_TOOL_SETTINGS(impl::kokkosp_request_tool_settings)
+EXPOSE_INIT(impl::kokkosp_init_library)
+EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
+EXPOSE_POP_REGION(impl::kokkosp_pop_profile_region)
+EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
+EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
+EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
+EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+EXPOSE_CREATE_PROFILE_SECTION(impl::kokkosp_create_profile_section)
+EXPOSE_START_PROFILE_SECTION(impl::kokkosp_start_profile_section)
+EXPOSE_STOP_PROFILE_SECTION(impl::kokkosp_stop_profile_section)
+EXPOSE_PROFILE_EVENT(impl::kokkosp_profile_event);
+EXPOSE_BEGIN_FENCE(impl::kokkosp_begin_fence);
+EXPOSE_END_FENCE(impl::kokkosp_end_fence);
+}  // extern "C"
