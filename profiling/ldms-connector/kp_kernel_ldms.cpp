@@ -22,7 +22,7 @@
 static bool tool_globfences;
 
 namespace KokkosTools {
-namespace LDMSConnector { 
+namespace LDMSConnector {
 
 static uint64_t uniqID = 0;
 static KernelPerformanceInfo* currentEntry;
@@ -39,7 +39,6 @@ static int slurm_rank;
 static int slurm_job_id;
 static int tool_verbosity;
 static char hostname_kp[HOST_NAME_MAX];
-
 
 void increment_counter(const char* name, KernelExecutionType kType) {
   std::string nameStr(name);
@@ -103,7 +102,8 @@ static void event_cb(ldms_t x, ldms_xprt_event_t e, void* cb_arg) {
 
       fprintf(
           stderr,
-          "KokkosP: LDMS has disconnected from its connection for rank %d, will "
+          "KokkosP: LDMS has disconnected from its connection for rank %d, "
+          "will "
           "abort attempts to publish events. Slurm_ID = %d, Hostname = %s\n",
           slurm_rank, slurm_job_id, hostname_kp);
 
@@ -122,7 +122,6 @@ static void event_cb(ldms_t x, ldms_xprt_event_t e, void* cb_arg) {
   sem_post(&x->sem);
 }
 
-
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
   settings->requires_global_fencing = true;
@@ -133,10 +132,8 @@ void kokkosp_request_tool_settings(const uint32_t,
   }
 }
 
-void kokkosp_init_library(const int loadSeq,
-                                     const uint64_t interfaceVer,
-                                     const uint32_t devInfoCount,
-                                     void* deviceInfo) {
+void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
+                          const uint32_t devInfoCount, void* deviceInfo) {
   ldms_publish = false;
 
   // initialize regions to 0s so we know if there is an object there
@@ -162,7 +159,7 @@ void kokkosp_init_library(const int loadSeq,
     tool_globfences = (atoi(tool_global_fences) != 0);
     nvtxMarkA("Kokkos::Initialization Complete");
   }
-  
+
   gethostname(hostname_kp, HOST_NAME_MAX);
 
   const char* ldms_port = (env_ldms_port == NULL) ? "10411" : env_ldms_port;
@@ -219,9 +216,8 @@ void kokkosp_init_library(const int loadSeq,
 
 void kokkosp_finalize_library() {}
 
-void kokkosp_begin_parallel_for(const char* name,
-                                           const uint32_t devID,
-                                           uint64_t* kID) {
+void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
+                                uint64_t* kID) {
   if ((NULL == name) || (strcmp("", name) == 0)) {
     fprintf(stderr, "Error: kernel is empty\n");
     exit(-1);
@@ -233,9 +229,8 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
   currentEntry->addFromTimer();
 }
 
-void kokkosp_begin_parallel_scan(const char* name,
-                                            const uint32_t devID,
-                                            uint64_t* kID) {
+void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
+                                 uint64_t* kID) {
   if ((NULL == name) || (strcmp("", name) == 0)) {
     fprintf(stderr, "Error: kernel is empty\n");
     exit(-1);
@@ -247,9 +242,8 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
   currentEntry->addFromTimer();
 }
 
-void kokkosp_begin_parallel_reduce(const char* name,
-                                              const uint32_t devID,
-                                              uint64_t* kID) {
+void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
+                                   uint64_t* kID) {
   if ((NULL == name) || (strcmp("", name) == 0)) {
     fprintf(stderr, "Error: kernel is empty\n");
     exit(-1);
@@ -295,23 +289,21 @@ void kokkosp_pop_profile_region() {
   }
 }
 
-
-
 Kokkos::Tools::Experimental::EventSet get_event_set() {
   Kokkos::Tools::Experimental::EventSet my_event_set;
   memset(&my_event_set, 0,
          sizeof(my_event_set));  // zero any pointers not set here
-  my_event_set.request_tool_settings  = kokkosp_request_tool_settings;
-  my_event_set.init                   = kokkosp_init_library;
-  my_event_set.finalize               = kokkosp_finalize_library;
-  my_event_set.push_region            = kokkosp_push_profile_region;
-  my_event_set.pop_region             = kokkosp_pop_profile_region;
-  my_event_set.begin_parallel_for     = kokkosp_begin_parallel_for;
-  my_event_set.begin_parallel_reduce  = kokkosp_begin_parallel_reduce;
-  my_event_set.begin_parallel_scan    = kokkosp_begin_parallel_scan;
-  my_event_set.end_parallel_for       = kokkosp_end_parallel_for;
-  my_event_set.end_parallel_reduce    = kokkosp_end_parallel_reduce;
-  my_event_set.end_parallel_scan      = kokkosp_end_parallel_scan;
+  my_event_set.request_tool_settings = kokkosp_request_tool_settings;
+  my_event_set.init                  = kokkosp_init_library;
+  my_event_set.finalize              = kokkosp_finalize_library;
+  my_event_set.push_region           = kokkosp_push_profile_region;
+  my_event_set.pop_region            = kokkosp_pop_profile_region;
+  my_event_set.begin_parallel_for    = kokkosp_begin_parallel_for;
+  my_event_set.begin_parallel_reduce = kokkosp_begin_parallel_reduce;
+  my_event_set.begin_parallel_scan   = kokkosp_begin_parallel_scan;
+  my_event_set.end_parallel_for      = kokkosp_end_parallel_for;
+  my_event_set.end_parallel_reduce   = kokkosp_end_parallel_reduce;
+  my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
   return my_event_set;
 }
 
