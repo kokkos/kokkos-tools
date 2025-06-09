@@ -47,10 +47,6 @@ option(KokkosTools_ENABLE_APEX    "Enable building Apex library"    OFF)
 option(KokkosTools_ENABLE_EXAMPLES "Build examples"                 OFF)
 option(KokkosTools_ENABLE_TESTS    "Build tests"                    OFF)
 
-# Advanced settings
-option(KokkosTools_REUSE_KOKKOS_COMPILER "Set the compiler and flags based on installed Kokkos settings" OFF)
-mark_as_advanced(KokkosTools_REUSE_KOKKOS_COMPILER)
-
 # Fetch Kokkos options:
 acquire_kokkos_config()
 if(DEFINED Kokkos_FOUND_MSG)
@@ -61,16 +57,7 @@ if(DEFINED Kokkos_FOUND_MSG)
     "\t\tCompiler: ${Kokkos_CXX_COMPILER} (${Kokkos_CXX_COMPILER_ID})\n"
     "\t\tCMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}\n"
     "\t\tOptions: ${Kokkos_OPTIONS}")
-  # Synchronize compiler and flags (only when explicitly requested)
-  if(KokkosTools_REUSE_KOKKOS_COMPILER)
-    set(CMAKE_CXX_COMPILER "${Kokkos_CXX_COMPILER}"        CACHE STRING "C++ Compiler")
-    set(CMAKE_CXX_STANDARD "${CMAKE_CXX_STANDARD_DEFAULT}" CACHE STRING "C++ Standard: 98, 11, 14, 17, 20 or 23")
-  endif()
 else()
-  if(KokkosTools_REUSE_KOKKOS_COMPILER)
-    message(FATAL_ERROR "Kokkos not found: can't reuse Kokkos compiler (which was explicitly"
-                        "requested with KokkosTools_REUSE_KOKKOS_COMPILER=ON)")
-  endif()
   message(STATUS "Kokkos NOT found")
 endif()
 
