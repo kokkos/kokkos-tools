@@ -26,8 +26,8 @@ namespace CombinedSimple {
 // --- Kokkos Profiling Hooks ---
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
-                          const uint32_t devInfoCount,
-                          Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+                          const uint32_t /*devInfoCount*/,
+                          Kokkos_Profiling_KokkosPDeviceInfo* /*deviceInfo*/) {
   std::cout
       << "CombinedSimple: Kokkos Profiling Library Initialized (sequence: "
       << loadSeq << ", version: " << interfaceVer << ")\n";
