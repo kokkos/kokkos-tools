@@ -50,9 +50,13 @@ void kokkosp_finalize_library() {
 }
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
-                                uint64_t* kID) {}
+                                uint64_t* kID) {
+  KokkosTools::CombinedDaemon::kokkosp_begin_parallel_for(name, devID, kID); // Explicitly call the daemon tool's begin_parallel_for
+  }
 
-void kokkosp_end_parallel_for(const uint64_t kID) {}
+void kokkosp_end_parallel_for(const uint64_t kID) {
+  KokkosTools::CombinedDaemon::kokkosp_end_parallel_for(kID); // Explicitly call the daemon tool's end_parallel_for
+}
 
 void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
                                  uint64_t* kID) {}

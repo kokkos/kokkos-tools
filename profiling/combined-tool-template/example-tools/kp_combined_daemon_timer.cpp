@@ -84,6 +84,15 @@ void kokkosp_finalize_library() {
   std::cout << "CombinedDaemon: Kokkos Profiling Library Finalized.\n";
 }
 
+void kokkosp_begin_parallel_for(const char* name, const uint32_t /*devID*/,
+                                uint64_t* /*kID*/) {
+  std::cout << "CombinedDaemon: Beginning parallel for: " << name << '\n';
+}
+
+void kokkosp_end_parallel_for(const uint64_t /*kID*/) {
+  std::cout << "CombinedDaemon: Ending parallel for.\n";
+}
+
 // --- Event Set Configuration ---
 
 Kokkos::Tools::Experimental::EventSet get_event_set() {
@@ -92,6 +101,10 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
          sizeof(my_event_set));  // zero any pointers not set here
   my_event_set.init     = kokkosp_init_library;
   my_event_set.finalize = kokkosp_finalize_library;
+    my_event_set.begin_parallel_for =
+        kokkosp_begin_parallel_for;
+    my_event_set.end_parallel_for =
+        kokkosp_end_parallel_for;
   return my_event_set;
 }
 
@@ -104,4 +117,6 @@ namespace impl = KokkosTools::CombinedDaemon;
 
 EXPOSE_INIT(impl::kokkosp_init_library)
 EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
+EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
+EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
 }
