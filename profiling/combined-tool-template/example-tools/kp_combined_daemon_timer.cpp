@@ -99,12 +99,10 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
   Kokkos::Tools::Experimental::EventSet my_event_set;
   memset(&my_event_set, 0,
          sizeof(my_event_set));  // zero any pointers not set here
-  my_event_set.init     = kokkosp_init_library;
-  my_event_set.finalize = kokkosp_finalize_library;
-    my_event_set.begin_parallel_for =
-        kokkosp_begin_parallel_for;
-    my_event_set.end_parallel_for =
-        kokkosp_end_parallel_for;
+  my_event_set.init               = kokkosp_init_library;
+  my_event_set.finalize           = kokkosp_finalize_library;
+  my_event_set.begin_parallel_for = kokkosp_begin_parallel_for;
+  my_event_set.end_parallel_for   = kokkosp_end_parallel_for;
   return my_event_set;
 }
 
