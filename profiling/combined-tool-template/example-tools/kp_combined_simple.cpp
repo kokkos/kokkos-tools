@@ -28,26 +28,27 @@ namespace CombinedSimple {
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t devInfoCount,
                           Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
-    std::cout << "CombinedSimple: Kokkos Profiling Library Initialized (sequence: "
-              << loadSeq << ", version: " << interfaceVer << ")\n";
+  std::cout
+      << "CombinedSimple: Kokkos Profiling Library Initialized (sequence: "
+      << loadSeq << ", version: " << interfaceVer << ")\n";
 }
 
 void kokkosp_finalize_library() {
-    std::cout << "CombinedSimple: Kokkos Profiling Library Finalized.\n";
+  std::cout << "CombinedSimple: Kokkos Profiling Library Finalized.\n";
 }
 
 // --- Event Set Configuration ---
 
 Kokkos::Tools::Experimental::EventSet get_event_set() {
-    Kokkos::Tools::Experimental::EventSet my_event_set;
-    memset(&my_event_set, 0,
-            sizeof(my_event_set));  // zero any pointers not set here
-    my_event_set.init                  = kokkosp_init_library;
-    my_event_set.finalize              = kokkosp_finalize_library;
-    return my_event_set;
+  Kokkos::Tools::Experimental::EventSet my_event_set;
+  memset(&my_event_set, 0,
+         sizeof(my_event_set));  // zero any pointers not set here
+  my_event_set.init     = kokkosp_init_library;
+  my_event_set.finalize = kokkosp_finalize_library;
+  return my_event_set;
 }
 
-}  // namespace CombinedToolTemplate
+}  // namespace CombinedSimple
 }  // namespace KokkosTools
 
 extern "C" {
@@ -56,5 +57,4 @@ namespace impl = KokkosTools::CombinedSimple;
 
 EXPOSE_INIT(impl::kokkosp_init_library)
 EXPOSE_FINALIZE(impl::kokkosp_finalize_library)
-
 }
