@@ -25,6 +25,7 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
+#include <atomic>
 
 #include "kp_core.hpp"
 #include "kp_universal.hpp"
@@ -35,11 +36,12 @@ namespace CombinedDaemon {
 // --- Timer globals ---
 static std::vector<long long> s_timestamps;
 static std::mutex s_mutex;
-static std::jthread s_timer_thread;
+static std::thread s_timer_thread;
+static std::atomic<bool> s_timer_stop_flag{false};
 static constexpr int INTERVAL_MS = 100;
 
-void timer_thread_func(std::stop_token stop_token) {
-    while (!stop_token.stop_requested()) {
+void timer_thread_func() {
+    while (!s_timer_stop_flag.load(std::memory_order_relaxed)) {
         long long now = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
         {
@@ -48,7 +50,7 @@ void timer_thread_func(std::stop_token stop_token) {
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(INTERVAL_MS));
     }
-    std::cout << "Timer thread stopped.\n";
+    // std::cout << "Timer thread stopped.\n";
 }
 
 // --- Kokkos Profiling Hooks ---
@@ -58,12 +60,14 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
     std::cout << "CombinedDaemon: Kokkos Profiling Library Initialized (sequence: "
               << loadSeq << ", version: " << interfaceVer << ")\n";
-    s_timer_thread = std::jthread(timer_thread_func);
+    s_timer_stop_flag = false;
+    s_timer_thread = std::thread(timer_thread_func);
 }
 
 void kokkosp_finalize_library() {
     if (s_timer_thread.joinable()) {
-        s_timer_thread.request_stop();
+        s_timer_stop_flag = true;
+        s_timer_thread.join();
     }
     std::vector<long long> timestamps_copy;
     {
