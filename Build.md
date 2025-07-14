@@ -1,6 +1,6 @@
 # How to Build
 
-# With Cmake
+# With CMake  (recommended)
 
 1. Create your build directory and go to it (in Kokkos Tools e.g. type `mkdir myBuild; cd myBuild`)
 
@@ -8,17 +8,10 @@
 
 3. Type `make`
 
-# With Makefile (recommended)
+# With Makefile
 
 1. Go into the directory of the particular tool, e.g., `cd debugging/kernel_logger`
 
 2. Type `make`
 
 3. This generates the shared library within that subdirectory.
-
-
-### Run
-
-Given your installed tool shared library `lib<name_of_tool_shared_lib>.so` and an application executable called yourApplication.exe, type:
-
-`export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_INSTALL_DIR}/lib<name_of_tool_shared_lib>.so; ./yourApplication.exe`

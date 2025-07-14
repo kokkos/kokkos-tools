@@ -12,9 +12,7 @@ To use one of the tools you have to compile it, which will generate a dynamic li
 
 CMake and Makefiles are supported for building Kokkos Tools. The following provides instructions for both.
 
-## Using cmake
-
-### Building
+## Using CMake / Building
 
 For detailed building instructions see [building instructions](./Build.md)
 
@@ -92,6 +90,10 @@ The following provides an overview of the tools available in the set of Kokkos T
     resource usage, etc.
 
 # Tutorial
+
+Given your installed tool shared library `lib<name_of_tool_shared_lib>.so` and an application executable called yourApplication.exe, type: 
+
+`export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_INSTALL_DIR}/lib<name_of_tool_shared_lib>.so; ./yourApplication.exe`
 
 A tutorial on Kokkos Tools can be found here: https://github.com/kokkos/kokkos-tutorials/blob/main/LectureSeries/KokkosTutorial_07_Tools.pdf
 
