@@ -13,6 +13,11 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
+# Users cannot use Kokkos tools on windows, we want to test things on windows/msvc however
+if(WIN32 AND NOT DEFINED KOKKOS_TOOLS_TEST_WINDOWS)
+  message(FATAL_ERROR "Kokkos tools is not supported on Windows, please attempt to profile on expected hardware")
+endif()
+
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 20)
 endif()

@@ -1,3 +1,5 @@
 *~
 *.so
 /src/tools/simple-kernel-timer/kp_reader
+# Expected build dir
+/build
