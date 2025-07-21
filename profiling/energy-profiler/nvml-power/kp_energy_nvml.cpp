@@ -53,10 +53,12 @@ void kokkosp_finalize_library() {
 
   if (g_data_manager) {
     // Write output files
-    g_data_manager->write_kernel_data("%s-%d-nvml-power-kernels.csv", hostname,
-                                      pid);
-    g_data_manager->write_region_data("%s-%d-nvml-power-regions.csv", hostname,
-                                      pid);
+    auto kernel_filename = std::string(hostname) + "-" + std::to_string(pid) +
+                            "-nvml-energy-kernels.csv";
+    auto region_filename = std::string(hostname) + "-" + std::to_string(pid) +
+                           "-nvml-energy-regions.csv";
+    g_data_manager->write_kernel_data(kernel_filename);
+    g_data_manager->write_region_data(region_filename);
 
     delete g_data_manager;
     g_data_manager = nullptr;
