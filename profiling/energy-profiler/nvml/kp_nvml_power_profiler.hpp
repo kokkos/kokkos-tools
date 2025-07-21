@@ -47,24 +47,24 @@ struct TimingInfo {
 };
 
 class DataManager {
-public:
-    void add_power_data_point(int64_t timestamp, double power);
-    void start_region(const std::string& name, RegionType type);
-    void end_region();
-    void write_power_data(const std::string& filename) const;
-    void write_kernel_data(const std::string& filename) const;
-    void write_region_data(const std::string& filename) const;
+ public:
+  void add_power_data_point(int64_t timestamp, double power);
+  void start_region(const std::string& name, RegionType type);
+  void end_region();
+  void write_power_data(const std::string& filename) const;
+  void write_kernel_data(const std::string& filename) const;
+  void write_region_data(const std::string& filename) const;
 
-private:
-    const char* region_type_to_string(RegionType type) const;
+ private:
+  const char* region_type_to_string(RegionType type) const;
 
-    std::deque<PowerDataPoint> power_data_points;
-    std::deque<TimingInfo> completed_kernels;
-    std::deque<TimingInfo> completed_regions;
-    std::deque<TimingInfo> active_regions;
+  std::deque<PowerDataPoint> power_data_points;
+  std::deque<TimingInfo> completed_kernels;
+  std::deque<TimingInfo> completed_regions;
+  std::deque<TimingInfo> active_regions;
 };
 
-} // namespace NVMLPowerProfiler
-} // namespace KokkosTools
+}  // namespace NVMLPowerProfiler
+}  // namespace KokkosTools
 
-#endif // KP_POWER_PROFILER_HPP
+#endif  // KP_POWER_PROFILER_HPP

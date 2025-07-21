@@ -8,7 +8,7 @@ else()
     return()
 endif()
 
-kp_add_library(kp_energy_nvml kp_nvml_energy_connector.cpp kp_nvml_energy_profiler.cpp)
+kp_add_library(kp_energy_nvml kp_energy_nvml.cpp kp_nvml_energy_profiler.cpp)
 
 target_link_libraries(kp_energy_nvml PRIVATE CUDA::nvml pthread)
 

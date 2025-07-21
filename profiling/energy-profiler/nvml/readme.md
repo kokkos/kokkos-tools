@@ -10,10 +10,12 @@ Requires CUDA toolkit with NVML.
 
 ## Output Files
 
-- `hostname-pid-nvml-power-raw.csv`: Power measurements
-  - Format: `timestamp_epoch_ns,device_id,power_watts`
+- `hostname-pid-nvml-power.csv`: Power measurements
+  - Format: `name,type,start_time_epoch_ns,end_time_epoch_ns,duration_ns`
 - `hostname-pid-nvml-regions.csv`: Region timings
-  - Format: `name,type,start_timestamp_epoch_ns,end_timestamp_epoch_ns,duration_ns`
+  - Format: `name,type,start_time_epoch_ns,end_time_epoch_ns,duration_ns`
+- `hostname-pid-nvml-kernels.csv`: Kernel timings
+  - Format: `name,type,start_time_epoch_ns,end_time_epoch_ns,duration_ns`
 
 ## Usage
 
@@ -21,3 +23,5 @@ Requires CUDA toolkit with NVML.
 export KOKKOS_PROFILE_LIBRARY=/path/to/kp_power_nvml.so
 ./your_kokkos_application
 ```
+
+Interval of sampling power data can be controlled via the `KOKKOS_NVML_POWER_INTERVAL` environment variable, which specifies the interval in microseconds.

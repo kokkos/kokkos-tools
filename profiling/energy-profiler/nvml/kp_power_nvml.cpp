@@ -214,8 +214,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   }
 
   int interval_ms = 20;
-  if (const char* interval_env =
-          std::getenv("KOKKOS_NVML_POWER_INTERVAL")) {
+  if (const char* interval_env = std::getenv("KOKKOS_NVML_POWER_INTERVAL")) {
     try {
       interval_ms = std::stoi(interval_env);
       if (interval_ms <= 0) {
@@ -224,17 +223,18 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       }
       printf("KokkosP NVML Power: Using custom interval: %d ms\n", interval_ms);
     } catch (const std::exception& e) {
-      printf("KokkosP NVML Power: Invalid interval value, using default 20ms\n");
+      printf(
+          "KokkosP NVML Power: Invalid interval value, using default 20ms\n");
     }
   } else {
     printf("KokkosP NVML Power: Using default interval: 20 ms\n");
   }
 
   g_stop_requested.store(false);
-  
-  g_monitoring_thread = std::make_unique<std::thread>(
-      nvml_power_monitoring_thread_func,
-      std::chrono::milliseconds(interval_ms));
+
+  g_monitoring_thread =
+      std::make_unique<std::thread>(nvml_power_monitoring_thread_func,
+                                    std::chrono::milliseconds(interval_ms));
 
   printf("KokkosP NVML Power: Power monitoring started\n");
 }
@@ -314,9 +314,7 @@ void kokkosp_push_profile_region(char const* regionName) {
   g_data_manager.start_region(regionName, RegionType::UserRegion);
 }
 
-void kokkosp_pop_profile_region() {
-  g_data_manager.end_region();
-}
+void kokkosp_pop_profile_region() { g_data_manager.end_region(); }
 
 Kokkos::Tools::Experimental::EventSet get_event_set() {
   Kokkos::Tools::Experimental::EventSet my_event_set;
