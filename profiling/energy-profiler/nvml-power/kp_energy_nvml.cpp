@@ -14,9 +14,27 @@
 //
 //@HEADER
 
-#include "kp_nvml_energy_profiler.hpp"
+#include <iostream>
+#include <deque>
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <memory>
+#include <limits>
+#include <cstring>
+#include <cstdio>
 #include <cstdlib>
+#include <unistd.h>
+#include <condition_variable>
+#include <inttypes.h>
 #include <cinttypes>
+#include <string>
+
+#include <nvml.h>
+
+#include "kp_core.hpp"
+#include "kp_nvml_energy_profiler.hpp"
 
 using namespace KokkosTools::NVMLEnergyProfiler;
 

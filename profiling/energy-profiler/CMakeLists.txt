@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.16)
-
-add_subdirectory(variorum)
+if(KOKKOSTOOLS_HAS_VARIORUM)
+  add_subdirectory(variorum)
+endif()
 add_subdirectory(nvml)
 add_subdirectory(nvml-power)

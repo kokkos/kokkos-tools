@@ -2,9 +2,9 @@ find_package(CUDAToolkit QUIET)
 
 if (CUDAToolkit_FOUND)
     find_package(CUDA::nvml QUIET)
-    message(STATUS "Found CUDA NVML, making NVML power profiler available.")
+    message(STATUS "Found CUDA NVML, making NVML energy profiler available.")
 else()
-    message(STATUS "CUDAToolkit not found, skipping NVML power profiler.")
+    message(STATUS "CUDAToolkit not found, skipping NVML energy profiler.")
     return()
 endif()
 

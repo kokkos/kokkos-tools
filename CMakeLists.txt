@@ -172,9 +172,10 @@ endif()
 
 if(KOKKOSTOOLS_HAS_VARIORUM)
   add_subdirectory(profiling/variorum-connector)
-  add_subdirectory(profiling/energy-profiler)
 endif()
 
+add_subdirectory(profiling/energy-profiler)
+  
 # GPU profilers
 if(Kokkos_ENABLE_CUDA)
   add_subdirectory(profiling/nvtx-connector)
