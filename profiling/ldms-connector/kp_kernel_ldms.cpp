@@ -157,7 +157,6 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   const char* tool_global_fences = getenv("KOKKOS_TOOLS_GLOBALFENCES");
   if (NULL != tool_global_fences) {
     tool_globfences = (atoi(tool_global_fences) != 0);
-    nvtxMarkA("Kokkos::Initialization Complete");
   }
 
   gethostname(hostname_kp, HOST_NAME_MAX);

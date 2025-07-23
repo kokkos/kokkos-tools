@@ -15,13 +15,92 @@ The following information will need to be added to the kokkosConnector's Makefil
 * Path to Ovis needs to be set for OVIS_DIR in the Makefile
 * Path to Kokkos-Tools needs to be set of KTO_DIR in the Makefile
 
+# Building with CMake
+
+For projects using CMake, you can integrate the LDMS connector using the provided `FindLDMS.cmake` module.
+
+1. First, ensure you have the following dependencies:
+   - CMake 3.14 or later
+   - LDMS library and headers installed
+   - Kokkos-Tools source or development package
+
+2. Add the following to your project's `CMakeLists.txt`:
+   ```cmake
+   # Add the directory containing FindLDMS.cmake to the module path
+   list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+   
+   # Find LDMS package
+   find_package(LDMS REQUIRED)
+   
+   # Add the LDMS connector
+   add_subdirectory(path/to/ldms-connector)
+   
+   # Link against the LDMS connector in your target
+   target_link_libraries(your_target PRIVATE kp_ldms_connector)
+   ```
+
+3. Configure with CMake, specifying required paths if needed:
+   ```bash
+   mkdir build && cd build
+   cmake .. -DCMAKE_PREFIX_PATH=/path/to/ldms/install
+   ```
+
+4. Build your project:
+   ```bash
+   make
+   ```
+
+## CMake Options
+- `KokkosTools_ENABLE_LDMS`: Set to `ON` to build the LDMS connector (default: `OFF`)
+
+## Environment Variables for LDMS
+- `LDMS_ROOT`: Path to LDMS installation prefix (if not in default locations)
+- `OVIS_DIR`: Alternative path to OVIS installation (if different from LDMS)
+
+# Building with Spack
+
+If you're using the Kokkos Tools Spack package, you can build the LDMS connector as follows:
+
+1. First, ensure you have Spack installed and configured
+2. Install Kokkos Tools with LDMS support:
+   ```bash
+   spack install kokkos-tools+ldms
+   ```
+   
+   Or, if you need to specify the LDMS installation prefix:
+   ```bash
+   spack install kokkos-tools+ldms ldms_root=/path/to/ldms/install
+   ```
+
+3. Load the kokkos-tools package:
+   ```bash
+   spack load kokkos-tools
+   ```
+
+4. The LDMS connector library (`kp_kernel_ldms.so`) will be installed in the Spack package directory. You can find its location with:
+   ```bash
+   spack location -i kokkos-tools
+   ```
+
+# Environment Variables
+
 When using the KokkosConnector, the following environmental variables are required to be set prior to application execution command:
-  * KOKKOS_LDMS_HOST="localhost"
-  * KOKKOS_LDMS_PORT="412"
-  * KOKKOS_TOOLS_LIBS="[INSERT PATH TO OVIS]/kokkosConnector/kp_kernel_ldms.so"
-  * KOKKOS_LDMS_AUTH="munge"
-  * KOKKOS_LDMS_XPRT="sock"
-  
+
+* `KOKKOS_LDMS_HOST="localhost"` - Hostname where LDMS is running
+* `KOKKOS_LDMS_PORT="412"` - Port number for LDMS connection
+* `KOKKOS_TOOLS_LIBS="[PATH_TO_KOKKOS_TOOLS]/lib/kp_kernel_ldms.so"` - Path to the LDMS connector library
+* `KOKKOS_LDMS_AUTH="munge"` - Authentication method (typically "munge")
+* `KOKKOS_LDMS_XPRT="sock"` - Transport protocol (typically "sock")
+
+If using Spack, you can set these up with:
+```bash
+export KOKKOS_TOOLS_LIBS="$(spack location -i kokkos-tools)/lib/kp_kernel_ldms.so"
+export KOKKOS_LDMS_HOST="localhost"
+export KOKKOS_LDMS_PORT="412"
+export KOKKOS_LDMS_AUTH="munge"
+export KOKKOS_LDMS_XPRT="sock"
+```
+
 # Usage with sampler utility
 
 Because of the large amount of performance data obtained from LDMS via the
