@@ -1,5 +1,2 @@
-if(KOKKOSTOOLS_HAS_VARIORUM)
-  add_subdirectory(variorum)
-endif()
-add_subdirectory(nvml)
-add_subdirectory(nvml-power)
+add_subdirectory(tests)
+add_subdirectory(kokkos)
