@@ -5,6 +5,8 @@
 void KernelTimerTool::init_library(
     const int loadSeq, const uint64_t interfaceVer, const uint32_t devInfoCount,
     Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
+  (void)devInfoCount;
+  (void)deviceInfo;
   std::cout << "Kokkos Power Profiler: Initializing with load sequence "
             << loadSeq << " and interface version " << interfaceVer
             << std::endl;
@@ -43,31 +45,48 @@ void KernelTimerTool::end_region() {
 
 void KernelTimerTool::begin_parallel_for(const char* name, const uint32_t devID,
                                          uint64_t kID) {
+  (void)devID;
   start_region(name, RegionType::ParallelFor, kID);
 }
 
-void KernelTimerTool::end_parallel_for(uint64_t kID) { end_region(); }
+void KernelTimerTool::end_parallel_for(uint64_t kID) { 
+  (void)kID;
+  end_region(); 
+}
 
 void KernelTimerTool::begin_parallel_scan(const char* name,
                                           const uint32_t devID, uint64_t* kID) {
+  (void)devID;
   start_region(name, RegionType::ParallelScan, *kID);
 }
 
-void KernelTimerTool::end_parallel_scan(uint64_t kID) { end_region(); }
+void KernelTimerTool::end_parallel_scan(uint64_t kID) { 
+  (void)kID;
+  end_region(); 
+}
 
 void KernelTimerTool::begin_parallel_reduce(const char* name,
                                             const uint32_t devID,
                                             uint64_t* kID) {
+  (void)devID;
   start_region(name, RegionType::ParallelReduce, *kID);
 }
 
-void KernelTimerTool::end_parallel_reduce(uint64_t kID) { end_region(); }
+void KernelTimerTool::end_parallel_reduce(uint64_t kID) { 
+  (void)kID;
+  end_region(); 
+}
 
 void KernelTimerTool::begin_deep_copy(Kokkos::Tools::SpaceHandle dst_handle,
                                       const char* dst_name, const void* dst_ptr,
                                       Kokkos::Tools::SpaceHandle src_handle,
                                       const char* src_name, const void* src_ptr,
                                       uint64_t size) {
+  (void)dst_handle;
+  (void)src_handle;
+  (void)src_name;
+  (void)src_ptr;
+  (void)size;
   start_region(dst_name, RegionType::DeepCopy,
                reinterpret_cast<uint64_t>(dst_ptr));
 }
