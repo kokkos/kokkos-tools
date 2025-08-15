@@ -54,6 +54,8 @@ void export_deepcopies_csv(const std::deque<TimingInfo>& timings,
                            const std::string& filename);
 
 // Summary printing functions
+void print_timings_summary(const std::deque<TimingInfo>& timings,
+                           const std::string& title);
 void print_kernels_summary(const std::deque<TimingInfo>& kernels);
 void print_regions_summary(const std::deque<TimingInfo>& regions);
 void print_deepcopies_summary(const std::deque<TimingInfo>& deepcopies);
