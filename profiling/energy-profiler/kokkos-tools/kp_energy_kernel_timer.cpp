@@ -33,9 +33,9 @@ namespace KernelTimer {
 EnergyProfiler::KernelTimerTool timer;
 
 #ifdef KOKKOS_TOOLS_ENABLE_VERBOSE_OUTPUT
-constexpr bool VERBOSE = true;
+constexpr bool ENERGY_PROFILER_VERBOSE_OUTPUT = true;
 #else
-constexpr bool VERBOSE = false;
+constexpr bool ENERGY_PROFILER_VERBOSE_OUTPUT = false;
 #endif
 
 std::string KOKKOS_PROFILE_LIBRARY_NAME =
@@ -79,7 +79,7 @@ void kokkosp_finalize_library() {
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
   timer.begin_parallel_for(name, devID, *kID);
-  if (VERBOSE) {
+  if (ENERGY_PROFILER_VERBOSE_OUTPUT) {
     std::cout << "Kokkos Power Profiler: Started parallel_for '" << name
               << "' on device " << devID << " with ID " << *kID << "\n";
   }
@@ -87,7 +87,7 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
 
 void kokkosp_end_parallel_for(const uint64_t kID) {
   timer.end_parallel_for(kID);
-  if (VERBOSE) {
+  if (ENERGY_PROFILER_VERBOSE_OUTPUT) {
     std::cout << "Kokkos Power Profiler: Ended parallel_for with ID " << kID
               << "\n";
   }
@@ -96,7 +96,7 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
 void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
                                  uint64_t* kID) {
   timer.begin_parallel_scan(name, devID, kID);
-  if (VERBOSE) {
+  if (ENERGY_PROFILER_VERBOSE_OUTPUT) {
     std::cout << "Kokkos Power Profiler: Started parallel_scan '" << name
               << "' on device " << devID << " with ID " << *kID << "\n";
   }
@@ -104,7 +104,7 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
 
 void kokkosp_end_parallel_scan(const uint64_t kID) {
   timer.end_parallel_scan(kID);
-  if (VERBOSE) {
+  if (ENERGY_PROFILER_VERBOSE_OUTPUT) {
     std::cout << "Kokkos Power Profiler: Ended parallel_scan with ID " << kID
               << "\n";
   }
@@ -113,7 +113,7 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
 void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
                                    uint64_t* kID) {
   timer.begin_parallel_reduce(name, devID, kID);
-  if (VERBOSE) {
+  if (ENERGY_PROFILER_VERBOSE_OUTPUT) {
     std::cout << "Kokkos Power Profiler: Started parallel_reduce '" << name
               << "' on device " << devID << " with ID " << *kID << "\n";
   }
@@ -121,7 +121,7 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
 
 void kokkosp_end_parallel_reduce(const uint64_t kID) {
   timer.end_parallel_reduce(kID);
-  if (VERBOSE) {
+  if (ENERGY_PROFILER_VERBOSE_OUTPUT) {
     std::cout << "Kokkos Power Profiler: Ended parallel_reduce with ID " << kID
               << "\n";
   }
@@ -129,7 +129,7 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
 
 void kokkosp_push_profile_region(char const* regionName) {
   timer.push_profile_region(regionName);
-  if (VERBOSE) {
+  if (ENERGY_PROFILER_VERBOSE_OUTPUT) {
     std::cout << "Kokkos Power Profiler: Pushed profile region '" << regionName
               << "'\n";
   }
@@ -137,7 +137,7 @@ void kokkosp_push_profile_region(char const* regionName) {
 
 void kokkosp_pop_profile_region() {
   timer.pop_profile_region();
-  if (VERBOSE) {
+  if (ENERGY_PROFILER_VERBOSE_OUTPUT) {
     std::cout << "Kokkos Power Profiler: Popped profile region\n";
   }
 }
@@ -149,7 +149,7 @@ void kokkosp_begin_deep_copy(Kokkos::Tools::SpaceHandle dst_handle,
                              uint64_t size) {
   timer.begin_deep_copy(dst_handle, dst_name, dst_ptr, src_handle, src_name,
                         src_ptr, size);
-  if (VERBOSE) {
+  if (ENERGY_PROFILER_VERBOSE_OUTPUT) {
     std::cout << "Kokkos Power Profiler: Started deep copy from '" << src_name
               << "' to '" << dst_name << "' of size " << size << " bytes\n";
   }
@@ -157,7 +157,7 @@ void kokkosp_begin_deep_copy(Kokkos::Tools::SpaceHandle dst_handle,
 
 void kokkosp_end_deep_copy() {
   timer.end_deep_copy();
-  if (VERBOSE) {
+  if (ENERGY_PROFILER_VERBOSE_OUTPUT) {
     std::cout << "Kokkos Power Profiler: Ended deep copy\n";
   }
 }

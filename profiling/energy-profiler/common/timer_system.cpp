@@ -88,45 +88,6 @@ void export_timings_csv_generic(const std::deque<TimingInfo>& timings,
   }
 }
 
-void print_timings_summary_generic(const std::deque<TimingInfo>& timings,
-                                   const std::string& title,
-                                   bool include_type = false) {
-  std::cout << "\n==== " << title << " ====\n";
-
-  if (include_type) {
-    std::cout << "| Name                                 | Type           | "
-                 "Start(ms)         | End(ms)           | Duration (ms) |\n";
-    std::cout
-        << "|--------------------------------------|----------------|------"
-           "-------------|-------------------|---------------|\n";
-  } else {
-    std::cout << "| Name                                 | Start(ms)         | "
-                 "End(ms)           | Duration (ms) |\n";
-    std::cout
-        << "|--------------------------------------|-------------------|---"
-           "----------------|---------------|\n";
-  }
-
-  for (const auto& info : timings) {
-    auto [start_ms, end_ms] = get_timing_ms(info);
-    auto duration_ms        = get_duration_ms(info);
-
-    if (include_type) {
-      std::string type = region_type_to_string(info.type);
-      std::cout << "| " << format_table_cell(info.name, 38) << "| "
-                << format_table_cell(type, 16) << "| "
-                << format_table_cell(std::to_string(start_ms), 19) << "| "
-                << format_table_cell(std::to_string(end_ms), 19) << "| "
-                << format_table_cell(std::to_string(duration_ms), 13) << "|\n";
-    } else {
-      std::cout << "| " << format_table_cell(info.name, 38) << "| "
-                << format_table_cell(std::to_string(start_ms), 19) << "| "
-                << format_table_cell(std::to_string(end_ms), 19) << "| "
-                << format_table_cell(std::to_string(duration_ms), 13) << "|\n";
-    }
-  }
-}
-
 // === CSV Export Functions ===
 
 void export_kernels_csv(const std::deque<TimingInfo>& timings,
@@ -162,15 +123,59 @@ void export_deepcopies_csv(const std::deque<TimingInfo>& timings,
 // === Summary Printing Functions ===
 
 void print_kernels_summary(const std::deque<TimingInfo>& kernels) {
-  print_timings_summary_generic(kernels, "KERNELS", true);
+  std::cout << "\n==== KERNELS ====\n";
+  std::cout << "| Name                                 | Type           | "
+               "Start(ms)         | End(ms)           | Duration (ms) |\n";
+  std::cout << "|--------------------------------------|----------------|------"
+               "-------------|-------------------|---------------|\n";
+
+  for (const auto& info : kernels) {
+    auto [start_ms, end_ms] = get_timing_ms(info);
+    auto duration_ms        = get_duration_ms(info);
+    std::string type        = region_type_to_string(info.type);
+
+    std::cout << "| " << format_table_cell(info.name, 38) << "| "
+              << format_table_cell(type, 16) << "| "
+              << format_table_cell(std::to_string(start_ms), 19) << "| "
+              << format_table_cell(std::to_string(end_ms), 19) << "| "
+              << format_table_cell(std::to_string(duration_ms), 13) << "|\n";
+  }
 }
 
 void print_regions_summary(const std::deque<TimingInfo>& regions) {
-  print_timings_summary_generic(regions, "REGIONS", false);
+  std::cout << "\n==== REGIONS ====\n";
+  std::cout << "| Name                                 | Start(ms)         | "
+               "End(ms)           | Duration (ms) |\n";
+  std::cout << "|--------------------------------------|-------------------|---"
+               "----------------|---------------|\n";
+
+  for (const auto& info : regions) {
+    auto [start_ms, end_ms] = get_timing_ms(info);
+    auto duration_ms        = get_duration_ms(info);
+
+    std::cout << "| " << format_table_cell(info.name, 38) << "| "
+              << format_table_cell(std::to_string(start_ms), 19) << "| "
+              << format_table_cell(std::to_string(end_ms), 19) << "| "
+              << format_table_cell(std::to_string(duration_ms), 13) << "|\n";
+  }
 }
 
 void print_deepcopies_summary(const std::deque<TimingInfo>& deepcopies) {
-  print_timings_summary_generic(deepcopies, "DEEP COPIES", false);
+  std::cout << "\n==== DEEP COPIES ====\n";
+  std::cout << "| Name                                 | Start(ms)         | "
+               "End(ms)           | Duration (ms) |\n";
+  std::cout << "|--------------------------------------|-------------------|---"
+               "----------------|---------------|\n";
+
+  for (const auto& info : deepcopies) {
+    auto [start_ms, end_ms] = get_timing_ms(info);
+    auto duration_ms        = get_duration_ms(info);
+
+    std::cout << "| " << format_table_cell(info.name, 38) << "| "
+              << format_table_cell(std::to_string(start_ms), 19) << "| "
+              << format_table_cell(std::to_string(end_ms), 19) << "| "
+              << format_table_cell(std::to_string(duration_ms), 13) << "|\n";
+  }
 }
 
 // === KernelTimerTool Implementation ===
