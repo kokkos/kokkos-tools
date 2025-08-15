@@ -21,7 +21,7 @@
 #include <deque>
 #include <string>
 
-#include "tool_interface.hpp"
+#include "kp_core.hpp"
 
 namespace KokkosTools {
 namespace Timer {
@@ -59,38 +59,38 @@ void print_regions_summary(const std::deque<TimingInfo>& regions);
 void print_deepcopies_summary(const std::deque<TimingInfo>& deepcopies);
 
 // Unified Timer Tool Class
-class KernelTimerTool : public ToolInterface {
+class KernelTimerTool {
  public:
-  KernelTimerTool()           = default;
-  ~KernelTimerTool() override = default;
+  KernelTimerTool()  = default;
+  ~KernelTimerTool() = default;
 
-  // ToolInterface implementation
+  // Kokkos profiling interface implementation
   void init_library(const int loadSeq, const uint64_t interfaceVer,
                     const uint32_t devInfoCount,
-                    Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) override;
-  void finalize_library() override;
+                    Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo);
+  void finalize_library();
 
   void begin_parallel_for(const char* name, const uint32_t devID,
-                          uint64_t kID) override;
-  void end_parallel_for(uint64_t kID) override;
+                          uint64_t kID);
+  void end_parallel_for(uint64_t kID);
 
   void begin_parallel_scan(const char* name, const uint32_t devID,
-                           uint64_t* kID) override;
-  void end_parallel_scan(uint64_t kID) override;
+                           uint64_t* kID);
+  void end_parallel_scan(uint64_t kID);
 
   void begin_parallel_reduce(const char* name, const uint32_t devID,
-                             uint64_t* kID) override;
-  void end_parallel_reduce(uint64_t kID) override;
+                             uint64_t* kID);
+  void end_parallel_reduce(uint64_t kID);
 
   void begin_deep_copy(Kokkos::Tools::SpaceHandle dst_handle,
                        const char* dst_name, const void* dst_ptr,
                        Kokkos::Tools::SpaceHandle src_handle,
                        const char* src_name, const void* src_ptr,
-                       uint64_t size) override;
-  void end_deep_copy() override;
+                       uint64_t size);
+  void end_deep_copy();
 
-  void push_profile_region(const char* region_name) override;
-  void pop_profile_region() override;
+  void push_profile_region(const char* region_name);
+  void pop_profile_region();
 
   // Stack-based timing for robust region/kernel tracking
   void start_region(const std::string& name, RegionType type, uint64_t id = 0);
