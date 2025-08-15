@@ -88,13 +88,13 @@ class Logger {
 /**
  * @brief Helper macros for consistent error reporting
  */
-#define ENERGY_PROFILER_LOG_INFO(component, msg) \
+#define KOKKOS_TOOLS_ENERGY_PROFILER_LOG_INFO(component, msg) \
   KokkosTools::EnergyProfiler::Logger::info(component, msg)
 
-#define ENERGY_PROFILER_LOG_WARNING(component, msg) \
+#define KOKKOS_TOOLS_ENERGY_PROFILER_LOG_WARNING(component, msg) \
   KokkosTools::EnergyProfiler::Logger::warning(component, msg)
 
-#define ENERGY_PROFILER_LOG_ERROR(component, msg) \
+#define KOKKOS_TOOLS_ENERGY_PROFILER_LOG_ERROR(component, msg) \
   KokkosTools::EnergyProfiler::Logger::error(component, msg)
 
 }  // namespace EnergyProfiler

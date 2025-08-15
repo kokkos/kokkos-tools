@@ -20,100 +20,20 @@
 #include <iostream>
 
 namespace KokkosTools {
-namespace Timer {
+namespace EnergyProfiler {
 
-// === CSV Export Functions ===
+// === Utility Functions ===
 
-void export_kernels_csv(const std::deque<TimingInfo>& timings,
-                        const std::string& filename) {
-  if (timings.empty()) return;
-
-  FILE* file = fopen(filename.c_str(), "w");
-  if (file) {
-    fprintf(file,
-            "name,type,start_time_epoch_ms,end_time_epoch_ms,duration_ms\n");
-    for (const auto& timing : timings) {
-      auto start_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                          timing.start_time.time_since_epoch())
-                          .count();
-      auto end_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        timing.end_time.time_since_epoch())
-                        .count();
-      auto duration_ms = timing.duration.count() / 1000000;
-
-      std::string type;
-      switch (timing.type) {
-        case RegionType::ParallelFor: type = "parallel_for"; break;
-        case RegionType::ParallelScan: type = "parallel_scan"; break;
-        case RegionType::ParallelReduce: type = "parallel_reduce"; break;
-        default: type = "unknown";
-      }
-
-      fprintf(file, "%s,%s,%ld,%ld,%ld\n", timing.name.c_str(), type.c_str(),
-              start_ms, end_ms, duration_ms);
-    }
-    fclose(file);
-    std::cout << "Timing data exported to " << filename << std::endl;
-  } else {
-    std::cerr << "ERROR: Unable to open file " << filename << " for writing.\n";
+// Helper function to convert region type to string
+std::string region_type_to_string(RegionType type) {
+  switch (type) {
+    case RegionType::ParallelFor: return "parallel_for";
+    case RegionType::ParallelScan: return "parallel_scan";
+    case RegionType::ParallelReduce: return "parallel_reduce";
+    default: return "unknown";
   }
 }
 
-void export_regions_csv(const std::deque<TimingInfo>& timings,
-                        const std::string& filename) {
-  if (timings.empty()) return;
-
-  FILE* file = fopen(filename.c_str(), "w");
-  if (file) {
-    fprintf(file, "name,start_time_epoch_ms,end_time_epoch_ms,duration_ms\n");
-    for (const auto& timing : timings) {
-      auto start_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                          timing.start_time.time_since_epoch())
-                          .count();
-      auto end_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        timing.end_time.time_since_epoch())
-                        .count();
-      auto duration_ms = timing.duration.count() / 1000000;
-
-      fprintf(file, "%s,%ld,%ld,%ld\n", timing.name.c_str(), start_ms, end_ms,
-              duration_ms);
-    }
-    fclose(file);
-    std::cout << "Region data exported to " << filename << std::endl;
-  } else {
-    std::cerr << "ERROR: Unable to open file " << filename << " for writing.\n";
-  }
-}
-
-void export_deepcopies_csv(const std::deque<TimingInfo>& timings,
-                           const std::string& filename) {
-  if (timings.empty()) return;
-
-  FILE* file = fopen(filename.c_str(), "w");
-  if (file) {
-    fprintf(file, "name,start_time_epoch_ms,end_time_epoch_ms,duration_ms\n");
-    for (const auto& timing : timings) {
-      auto start_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                          timing.start_time.time_since_epoch())
-                          .count();
-      auto end_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        timing.end_time.time_since_epoch())
-                        .count();
-      auto duration_ms = timing.duration.count() / 1000000;
-
-      fprintf(file, "%s,%ld,%ld,%ld\n", timing.name.c_str(), start_ms, end_ms,
-              duration_ms);
-    }
-    fclose(file);
-    std::cout << "Deep copy data exported to " << filename << std::endl;
-  } else {
-    std::cerr << "ERROR: Unable to open file " << filename << " for writing.\n";
-  }
-}
-
-// === Summary Printing Functions ===
-
-namespace {
 // Helper function to avoid code duplication in time calculations
 std::pair<long, long> get_timing_ms(const TimingInfo& info) {
   auto start_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -135,69 +55,122 @@ std::string format_table_cell(const std::string& content, size_t width) {
   return content + std::string(width - std::min(content.size(), width), ' ');
 }
 
-}  // anonymous namespace
+void export_timings_csv_generic(const std::deque<TimingInfo>& timings,
+                                const std::string& filename,
+                                const std::string& header,
+                                bool include_type = false) {
+  if (timings.empty()) return;
 
-void print_kernels_summary(const std::deque<TimingInfo>& kernels) {
-  std::cout << "\n==== KERNELS ====\n";
-  std::cout << "| Name                                 | Type           | "
-               "Start(ms)         | End(ms)           | Duration (ms) |\n";
-  std::cout << "|--------------------------------------|----------------|------"
-               "-------------|-------------------|---------------|\n";
+  FILE* file = fopen(filename.c_str(), "w");
+  if (file) {
+    fprintf(file, "%s\n", header.c_str());
+    for (const auto& timing : timings) {
+      auto start_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                          timing.start_time.time_since_epoch())
+                          .count();
+      auto end_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        timing.end_time.time_since_epoch())
+                        .count();
+      auto duration_ms = timing.duration.count() / 1000000;
 
-  for (const auto& info : kernels) {
-    std::string type;
-    switch (info.type) {
-      case RegionType::ParallelFor: type = "parallel_for"; break;
-      case RegionType::ParallelScan: type = "parallel_scan"; break;
-      case RegionType::ParallelReduce: type = "parallel_reduce"; break;
-      default: type = "unknown";
+      if (include_type) {
+        std::string type = region_type_to_string(timing.type);
+        fprintf(file, "%s,%s,%ld,%ld,%ld\n", timing.name.c_str(), type.c_str(),
+                start_ms, end_ms, duration_ms);
+      } else {
+        fprintf(file, "%s,%ld,%ld,%ld\n", timing.name.c_str(), start_ms, end_ms,
+                duration_ms);
+      }
     }
+    fclose(file);
+  } else {
+    std::cerr << "ERROR: Unable to open file " << filename << " for writing.\n";
+  }
+}
 
+void print_timings_summary_generic(const std::deque<TimingInfo>& timings,
+                                   const std::string& title,
+                                   bool include_type = false) {
+  std::cout << "\n==== " << title << " ====\n";
+
+  if (include_type) {
+    std::cout << "| Name                                 | Type           | "
+                 "Start(ms)         | End(ms)           | Duration (ms) |\n";
+    std::cout
+        << "|--------------------------------------|----------------|------"
+           "-------------|-------------------|---------------|\n";
+  } else {
+    std::cout << "| Name                                 | Start(ms)         | "
+                 "End(ms)           | Duration (ms) |\n";
+    std::cout
+        << "|--------------------------------------|-------------------|---"
+           "----------------|---------------|\n";
+  }
+
+  for (const auto& info : timings) {
     auto [start_ms, end_ms] = get_timing_ms(info);
     auto duration_ms        = get_duration_ms(info);
 
-    std::cout << "| " << format_table_cell(info.name, 38) << "| "
-              << format_table_cell(type, 16) << "| "
-              << format_table_cell(std::to_string(start_ms), 19) << "| "
-              << format_table_cell(std::to_string(end_ms), 19) << "| "
-              << format_table_cell(std::to_string(duration_ms), 13) << "|\n";
+    if (include_type) {
+      std::string type = region_type_to_string(info.type);
+      std::cout << "| " << format_table_cell(info.name, 38) << "| "
+                << format_table_cell(type, 16) << "| "
+                << format_table_cell(std::to_string(start_ms), 19) << "| "
+                << format_table_cell(std::to_string(end_ms), 19) << "| "
+                << format_table_cell(std::to_string(duration_ms), 13) << "|\n";
+    } else {
+      std::cout << "| " << format_table_cell(info.name, 38) << "| "
+                << format_table_cell(std::to_string(start_ms), 19) << "| "
+                << format_table_cell(std::to_string(end_ms), 19) << "| "
+                << format_table_cell(std::to_string(duration_ms), 13) << "|\n";
+    }
   }
+}
+
+// === CSV Export Functions ===
+
+void export_kernels_csv(const std::deque<TimingInfo>& timings,
+                        const std::string& filename) {
+  export_timings_csv_generic(
+      timings, filename,
+      "name,type,start_time_epoch_ms,end_time_epoch_ms,duration_ms", true);
+  if (!timings.empty()) {
+    std::cout << "Timing data exported to " << filename << std::endl;
+  }
+}
+
+void export_regions_csv(const std::deque<TimingInfo>& timings,
+                        const std::string& filename) {
+  export_timings_csv_generic(
+      timings, filename,
+      "name,start_time_epoch_ms,end_time_epoch_ms,duration_ms", false);
+  if (!timings.empty()) {
+    std::cout << "Region data exported to " << filename << std::endl;
+  }
+}
+
+void export_deepcopies_csv(const std::deque<TimingInfo>& timings,
+                           const std::string& filename) {
+  export_timings_csv_generic(
+      timings, filename,
+      "name,start_time_epoch_ms,end_time_epoch_ms,duration_ms", false);
+  if (!timings.empty()) {
+    std::cout << "Deep copy data exported to " << filename << std::endl;
+  }
+}
+
+// === Summary Printing Functions ===
+
+void print_kernels_summary(const std::deque<TimingInfo>& kernels) {
+  print_timings_summary_generic(kernels, "KERNELS", true);
 }
 
 void print_regions_summary(const std::deque<TimingInfo>& regions) {
-  std::cout << "\n==== REGIONS ====\n";
-  std::cout << "| Name                                 | Start(ms)         | "
-               "End(ms)           | Duration (ms) |\n";
-  std::cout << "|--------------------------------------|-------------------|---"
-               "----------------|---------------|\n";
-
-  for (const auto& info : regions) {
-    auto [start_ms, end_ms] = get_timing_ms(info);
-    auto duration_ms        = get_duration_ms(info);
-
-    std::cout << "| " << format_table_cell(info.name, 38) << "| "
-              << format_table_cell(std::to_string(start_ms), 19) << "| "
-              << format_table_cell(std::to_string(end_ms), 19) << "| "
-              << format_table_cell(std::to_string(duration_ms), 13) << "|\n";
-  }
+  print_timings_summary_generic(regions, "REGIONS", false);
 }
 
 void print_deepcopies_summary(const std::deque<TimingInfo>& deepcopies) {
-  std::cout << "\n==== DEEP COPIES ====\n";
-  std::cout << "| Name                                 | Start(ms)         | "
-               "End(ms)           | Duration (ms) |\n";
-  std::cout << "|--------------------------------------|-------------------|---"
-               "----------------|---------------|\n";
-
-  for (const auto& info : deepcopies) {
-    auto [start_ms, end_ms] = get_timing_ms(info);
-    auto duration_ms        = get_duration_ms(info);
-
-    std::cout << "| " << format_table_cell(info.name, 38) << "| "
-              << format_table_cell(std::to_string(start_ms), 19) << "| "
-              << format_table_cell(std::to_string(end_ms), 19) << "| "
-              << format_table_cell(std::to_string(duration_ms), 13) << "|\n";
-  }
+  print_timings_summary_generic(deepcopies, "DEEP COPIES", false);
 }
 
 // === KernelTimerTool Implementation ===
@@ -314,5 +287,5 @@ const std::deque<TimingInfo>& KernelTimerTool::get_deep_copy_timings() const {
   return completed_deepcopies_;
 }
 
-}  // namespace Timer
+}  // namespace EnergyProfiler
 }  // namespace KokkosTools

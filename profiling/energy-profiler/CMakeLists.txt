@@ -5,7 +5,7 @@
 # - Tool interface definitions
 # - Basic kernel timer tool
 
-option(ENABLE_ENERGY_PROFILER_VERBOSE "Enable verbose output for energy profiler tools" OFF)
+option(KOKKOS_TOOLS_ENABLE_ENERGY_PROFILER_VERBOSE "Enable verbose output for energy profiler tools" OFF)
 
 add_subdirectory(unit-tests)
 add_subdirectory(kokkos-tools)

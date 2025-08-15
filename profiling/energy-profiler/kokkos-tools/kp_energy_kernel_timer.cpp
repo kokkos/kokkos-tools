@@ -15,9 +15,8 @@
 //@HEADER
 
 /**
- * Kokkos Power Profiler - Specialized for Variorum
- * Simplified version focused on Variorum energy monitoring with integrated
- * timing
+ * Kokkos Energy Profiler - Kernel Timer
+ * Basic kernel timing tool for the energy profiling infrastructure
  */
 
 #include <cstring>
@@ -30,10 +29,10 @@
 namespace KokkosTools {
 namespace KernelTimer {
 
-// --- Core Initialization ---
-Timer::KernelTimerTool timer;
+// --- Core Timer Infrastructure ---
+EnergyProfiler::KernelTimerTool timer;
 
-#ifdef ENABLE_VERBOSE_OUTPUT
+#ifdef KOKKOS_TOOLS_ENABLE_VERBOSE_OUTPUT
 constexpr bool VERBOSE = true;
 #else
 constexpr bool VERBOSE = false;
@@ -58,19 +57,21 @@ void kokkosp_finalize_library() {
   std::string prefix = generate_prefix();
 
   const auto& kernels = timer.get_kernel_timings();
-  KokkosTools::Timer::print_kernels_summary(kernels);
-  KokkosTools::Timer::export_kernels_csv(kernels, prefix + "_kernels.csv");
+  KokkosTools::EnergyProfiler::print_kernels_summary(kernels);
+  KokkosTools::EnergyProfiler::export_kernels_csv(kernels,
+                                                  prefix + "_kernels.csv");
 
   // Récapitulatif des régions
   const auto& regions = timer.get_region_timings();
-  KokkosTools::Timer::print_regions_summary(regions);
-  KokkosTools::Timer::export_regions_csv(regions, prefix + "_regions.csv");
+  KokkosTools::EnergyProfiler::print_regions_summary(regions);
+  KokkosTools::EnergyProfiler::export_regions_csv(regions,
+                                                  prefix + "_regions.csv");
 
   // Récapitulatif des deep copies
   const auto& deepcopies = timer.get_deep_copy_timings();
-  KokkosTools::Timer::print_deepcopies_summary(deepcopies);
-  KokkosTools::Timer::export_deepcopies_csv(deepcopies,
-                                            prefix + "_deepcopies.csv");
+  KokkosTools::EnergyProfiler::print_deepcopies_summary(deepcopies);
+  KokkosTools::EnergyProfiler::export_deepcopies_csv(
+      deepcopies, prefix + "_deepcopies.csv");
 }
 
 // --- Kernels Launch/End ---

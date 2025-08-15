@@ -20,7 +20,7 @@
 #include <thread>
 #include "../common/timer_system.hpp"
 
-using namespace KokkosTools::Timer;
+using namespace KokkosTools::EnergyProfiler;
 
 int main() {
   std::cout << "Testing CSV export functions..." << std::endl;
@@ -54,14 +54,15 @@ int main() {
   std::cout << "Found " << deepcopies.size() << " deep copies" << std::endl;
 
   // Test export functions
-  KokkosTools::Timer::export_kernels_csv(kernels, "test_kernels.csv");
-  KokkosTools::Timer::export_regions_csv(regions, "test_regions.csv");
-  KokkosTools::Timer::export_deepcopies_csv(deepcopies, "test_deepcopies.csv");
+  KokkosTools::EnergyProfiler::export_kernels_csv(kernels, "test_kernels.csv");
+  KokkosTools::EnergyProfiler::export_regions_csv(regions, "test_regions.csv");
+  KokkosTools::EnergyProfiler::export_deepcopies_csv(deepcopies,
+                                                     "test_deepcopies.csv");
 
   // Test print functions
-  KokkosTools::Timer::print_kernels_summary(kernels);
-  KokkosTools::Timer::print_regions_summary(regions);
-  KokkosTools::Timer::print_deepcopies_summary(deepcopies);
+  KokkosTools::EnergyProfiler::print_kernels_summary(kernels);
+  KokkosTools::EnergyProfiler::print_regions_summary(regions);
+  KokkosTools::EnergyProfiler::print_deepcopies_summary(deepcopies);
 
   std::cout << "CSV export test completed successfully!" << std::endl;
 

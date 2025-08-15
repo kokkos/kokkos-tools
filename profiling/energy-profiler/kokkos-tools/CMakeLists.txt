@@ -12,6 +12,6 @@ target_include_directories(kp_energy_kernel_timer PRIVATE
 )
 
 # Add verbose output option
-if(ENABLE_ENERGY_PROFILER_VERBOSE)
-    target_compile_definitions(kp_energy_kernel_timer PRIVATE ENABLE_VERBOSE_OUTPUT)
+if(KOKKOS_TOOLS_ENABLE_ENERGY_PROFILER_VERBOSE)
+    target_compile_definitions(kp_energy_kernel_timer PRIVATE KOKKOS_TOOLS_ENABLE_VERBOSE_OUTPUT)
 endif()

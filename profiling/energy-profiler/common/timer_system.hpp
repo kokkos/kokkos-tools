@@ -24,7 +24,7 @@
 #include "kp_core.hpp"
 
 namespace KokkosTools {
-namespace Timer {
+namespace EnergyProfiler {
 
 // Forward declarations
 enum class RegionType {
@@ -70,8 +70,7 @@ class KernelTimerTool {
                     Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo);
   void finalize_library();
 
-  void begin_parallel_for(const char* name, const uint32_t devID,
-                          uint64_t kID);
+  void begin_parallel_for(const char* name, const uint32_t devID, uint64_t kID);
   void end_parallel_for(uint64_t kID);
 
   void begin_parallel_scan(const char* name, const uint32_t devID,
@@ -109,5 +108,5 @@ class KernelTimerTool {
   uint64_t next_region_id_ = 1;
 };
 
-}  // namespace Timer
+}  // namespace EnergyProfiler
 }  // namespace KokkosTools

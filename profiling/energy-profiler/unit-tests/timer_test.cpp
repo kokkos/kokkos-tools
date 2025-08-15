@@ -4,7 +4,7 @@
 #include <cassert>
 #include "../common/timer_system.hpp"
 
-using namespace KokkosTools::Timer;
+using namespace KokkosTools::EnergyProfiler;
 
 // Test helper function to check if a value is within expected range
 bool is_within_range(uint64_t actual, uint64_t expected, uint64_t tolerance) {
