@@ -2,6 +2,23 @@
 
 enable_testing()
 
+# Find Threads package for pthread support (needed by std::thread in daemon.cpp)
+find_package(Threads REQUIRED)
+
+# Daemon test
+add_executable(daemon_test
+    daemon_test.cpp
+    ../common/daemon.cpp
+)
+
+target_include_directories(daemon_test PRIVATE
+    ../common
+)
+
+target_link_libraries(daemon_test PRIVATE Threads::Threads)
+
+add_test(NAME daemon_test COMMAND daemon_test)
+
 add_executable(timer_test 
     timer_test.cpp
     ../common/timer_system.cpp
