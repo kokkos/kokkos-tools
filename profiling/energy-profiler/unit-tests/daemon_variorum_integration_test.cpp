@@ -21,11 +21,10 @@ void power_monitoring_function() {
   }
 
   double current_power = 0.0;
-  Result power_result =
+  bool power_success =
       g_variorum_provider->get_total_power_usage(current_power);
-  if (!power_result.is_success()) {
-    std::cout << "ERROR: Failed to get power reading: " << power_result.message
-              << std::endl;
+  if (!power_success) {
+    std::cout << "ERROR: Failed to get power reading" << std::endl;
     return;
   }
 
@@ -51,9 +50,9 @@ void power_monitoring_function() {
   if (device_count > 1) {
     for (size_t i = 0; i < device_count; ++i) {
       double device_power = 0.0;
-      Result device_result =
+      bool device_success =
           g_variorum_provider->get_device_power_usage(i, device_power);
-      if (device_result.is_success()) {
+      if (device_success) {
         std::cout << "  " << g_variorum_provider->get_device_name(i) << ": "
                   << device_power << " W" << std::endl;
       }
@@ -72,10 +71,9 @@ bool test_daemon_variorum_integration() {
   // Initialize Variorum provider
   std::cout << "\n1. Initializing Variorum provider..." << std::endl;
   VariorumProvider variorum_provider;
-  Result init_result = variorum_provider.initialize();
-  if (!init_result.is_success()) {
-    std::cout << "ERROR: Failed to initialize Variorum provider: "
-              << init_result.message << std::endl;
+  bool init_success = variorum_provider.initialize();
+  if (!init_success) {
+    std::cout << "ERROR: Failed to initialize Variorum provider" << std::endl;
     return false;
   }
 

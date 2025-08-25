@@ -28,9 +28,9 @@ void fast_power_monitoring_function() {
   }
 
   double current_power = 0.0;
-  Result power_result =
+  bool power_success =
       g_variorum_provider->get_total_power_usage(current_power);
-  if (!power_result.is_success()) {
+  if (!power_success) {
     return;  // Skip this sample if we can't get power reading
   }
 
@@ -202,17 +202,17 @@ bool test_daemon_variorum_fast_integration() {
       std::cout << "\n=== Per-Device Final Readings ===" << std::endl;
       for (size_t i = 0; i < device_count; ++i) {
         double device_power = 0.0;
-        Result device_result =
+        bool device_success =
             variorum_provider.get_device_power_usage(i, device_power);
         std::string device_name = variorum_provider.get_device_name(i);
 
-        if (device_result.is_success()) {
+        if (device_success) {
           std::cout << "  " << device_name << ": " << std::fixed
                     << std::setprecision(2) << device_power << " W"
                     << std::endl;
         } else {
-          std::cout << "  " << device_name << ": Error - "
-                    << device_result.message << std::endl;
+          std::cout << "  " << device_name << ": Failed to read power"
+                    << std::endl;
         }
       }
     }

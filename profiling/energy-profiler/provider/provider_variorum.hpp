@@ -26,13 +26,13 @@ class VariorumProvider {
   ~VariorumProvider();
 
   // Core functionality
-  Result initialize();
+  bool initialize();
   void finalize();
   bool is_initialized() const { return is_initialized_; }
 
   // Power monitoring
-  Result get_total_power_usage(double& power_watts);
-  Result get_device_power_usage(size_t device_index, double& power_watts);
+  bool get_total_power_usage(double& power_watts);
+  bool get_device_power_usage(size_t device_index, double& power_watts);
 
   // Device information
   size_t get_device_count() const;
@@ -56,11 +56,11 @@ class VariorumProvider {
   using unique_cstring = std::unique_ptr<char, CFreeDeleter>;
 
   // Internal methods
-  Result discover_devices();
+  bool discover_devices();
   void cleanup_devices();
   unique_json_ptr get_variorum_json_data() const;
   std::map<uint32_t, double> get_current_power_readings() const;
-  Result validate_device_index(size_t device_index) const;
+  bool validate_device_index(size_t device_index) const;
 
   // Member variables
   bool is_initialized_;

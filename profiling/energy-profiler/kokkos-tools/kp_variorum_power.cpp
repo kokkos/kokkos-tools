@@ -43,11 +43,15 @@
 #include "../common/daemon.hpp"
 #include "../common/filename_prefix.hpp"
 #include "../common/timer_system.hpp"
+#include "../common/error_handling.hpp"
 
 using namespace KokkosTools::EnergyProfiler;
 
 namespace KokkosTools {
 namespace VariorumPower {
+
+using EnergyProfiler::log_message;
+using EnergyProfiler::LogLevel;
 
 EnergyProfiler::KernelTimerTool timer;
 
@@ -101,11 +105,11 @@ void variorum_power_monitoring_tick() {
   }
 
   double current_power_W = 0.0;
-  Result power_result =
+  bool power_success =
       g_variorum_provider->get_total_power_usage(current_power_W);
-  if (!power_result.is_success()) {
-    std::cerr << "KokkosP Variorum Power: Failed to get power reading: "
-              << power_result.message << std::endl;
+  if (!power_success) {
+    log_message(LogLevel::WARNING, "VariorumPower",
+                "Failed to get power reading");
     return;
   }
 
@@ -133,11 +137,10 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   g_start_time = std::chrono::high_resolution_clock::now();
 
   g_variorum_provider = std::make_unique<VariorumProvider>();
-  Result init_result  = g_variorum_provider->initialize();
-  if (!init_result.is_success()) {
-    std::cerr << "KokkosP Variorum Power: Failed to initialize Variorum: "
-              << init_result.message << std::endl;
-    std::cerr << "KokkosP Variorum Power: Power monitoring disabled\n";
+  bool init_success   = g_variorum_provider->initialize();
+  if (!init_success) {
+    log_message(LogLevel::ERROR, "VariorumPower",
+                "Failed to initialize Variorum. Power monitoring disabled");
     g_variorum_provider.reset();
     return;
   }
@@ -205,19 +208,25 @@ void kokkosp_finalize_library() {
   std::string prefix = generate_prefix();
 
   const auto& kernels = timer.get_kernel_timings();
-  KokkosTools::EnergyProfiler::print_kernels_summary(kernels);
-  KokkosTools::EnergyProfiler::export_kernels_csv(kernels,
-                                                  prefix + "_kernels.csv");
+  KokkosTools::EnergyProfiler::print_timings_summary(
+      kernels, KokkosTools::EnergyProfiler::DataCategory::Kernels);
+  KokkosTools::EnergyProfiler::export_timings_csv(
+      kernels, prefix + "_kernels.csv",
+      KokkosTools::EnergyProfiler::DataCategory::Kernels);
 
   const auto& regions = timer.get_region_timings();
-  KokkosTools::EnergyProfiler::print_regions_summary(regions);
-  KokkosTools::EnergyProfiler::export_regions_csv(regions,
-                                                  prefix + "_regions.csv");
+  KokkosTools::EnergyProfiler::print_timings_summary(
+      regions, KokkosTools::EnergyProfiler::DataCategory::Regions);
+  KokkosTools::EnergyProfiler::export_timings_csv(
+      regions, prefix + "_regions.csv",
+      KokkosTools::EnergyProfiler::DataCategory::Regions);
 
   const auto& deepcopies = timer.get_deep_copy_timings();
-  KokkosTools::EnergyProfiler::print_deepcopies_summary(deepcopies);
-  KokkosTools::EnergyProfiler::export_deepcopies_csv(
-      deepcopies, prefix + "_deepcopies.csv");
+  KokkosTools::EnergyProfiler::print_timings_summary(
+      deepcopies, KokkosTools::EnergyProfiler::DataCategory::DeepCopies);
+  KokkosTools::EnergyProfiler::export_timings_csv(
+      deepcopies, prefix + "_deepcopies.csv",
+      KokkosTools::EnergyProfiler::DataCategory::DeepCopies);
 }
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,

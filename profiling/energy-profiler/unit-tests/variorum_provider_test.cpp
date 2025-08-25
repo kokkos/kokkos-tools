@@ -12,10 +12,9 @@ void test_variorum_provider() {
 
   // Test initialization
   std::cout << "\n1. Testing initialization..." << std::endl;
-  Result init_result = provider.initialize();
-  if (!init_result.is_success()) {
-    std::cout << "ERROR: Failed to initialize Variorum provider: "
-              << init_result.message << std::endl;
+  bool init_success = provider.initialize();
+  if (!init_success) {
+    std::cout << "ERROR: Failed to initialize Variorum provider" << std::endl;
     return;
   }
   std::cout << "SUCCESS: Variorum provider initialized successfully"
@@ -45,24 +44,22 @@ void test_variorum_provider() {
 
     // Individual device power
     for (size_t i = 0; i < device_count; ++i) {
-      double power         = 0.0;
-      Result device_result = provider.get_device_power_usage(i, power);
-      if (device_result.is_success()) {
+      double power        = 0.0;
+      bool device_success = provider.get_device_power_usage(i, power);
+      if (device_success) {
         std::cout << "  Device " << i << ": " << power << " W" << std::endl;
       } else {
-        std::cout << "  Device " << i << ": Failed to read power - "
-                  << device_result.message << std::endl;
+        std::cout << "  Device " << i << ": Failed to read power" << std::endl;
       }
     }
 
     // Total power
-    double total_power  = 0.0;
-    Result total_result = provider.get_total_power_usage(total_power);
-    if (total_result.is_success()) {
+    double total_power = 0.0;
+    bool total_success = provider.get_total_power_usage(total_power);
+    if (total_success) {
       std::cout << "  Total Power: " << total_power << " W" << std::endl;
     } else {
-      std::cout << "  Total Power: Failed to read - " << total_result.message
-                << std::endl;
+      std::cout << "  Total Power: Failed to read" << std::endl;
     }
 
     if (sample < 4) {
