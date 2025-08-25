@@ -49,7 +49,7 @@ using namespace KokkosTools::EnergyProfiler;
 namespace KokkosTools {
 namespace VariorumPower {
 
-Timer::KernelTimerTool timer;
+EnergyProfiler::KernelTimerTool timer;
 
 // --- Data Structures for Self-Contained Management ---
 
@@ -205,16 +205,16 @@ void kokkosp_finalize_library() {
   std::string prefix = generate_prefix();
 
   const auto& kernels = timer.get_kernel_timings();
-  KokkosTools::Timer::print_kernels_summary(kernels);
-  KokkosTools::Timer::export_kernels_csv(kernels, prefix + "_kernels.csv");
+  KokkosTools::EnergyProfiler::print_kernels_summary(kernels);
+  KokkosTools::EnergyProfiler::export_kernels_csv(kernels, prefix + "_kernels.csv");
 
   const auto& regions = timer.get_region_timings();
-  KokkosTools::Timer::print_regions_summary(regions);
-  KokkosTools::Timer::export_regions_csv(regions, prefix + "_regions.csv");
+  KokkosTools::EnergyProfiler::print_regions_summary(regions);
+  KokkosTools::EnergyProfiler::export_regions_csv(regions, prefix + "_regions.csv");
 
   const auto& deepcopies = timer.get_deep_copy_timings();
-  KokkosTools::Timer::print_deepcopies_summary(deepcopies);
-  KokkosTools::Timer::export_deepcopies_csv(deepcopies,
+  KokkosTools::EnergyProfiler::print_deepcopies_summary(deepcopies);
+  KokkosTools::EnergyProfiler::export_deepcopies_csv(deepcopies,
                                             prefix + "_deepcopies.csv");
 }
 

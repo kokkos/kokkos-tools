@@ -28,7 +28,7 @@ Result VariorumProvider::initialize() {
   }
 
   is_initialized_ = true;
-  ENERGY_PROFILER_LOG_INFO(
+  KOKKOS_TOOLS_ENERGY_PROFILER_LOG_INFO(
       COMPONENT_NAME, "Successfully initialized with " +
                           std::to_string(device_ids_.size()) + " device(s)");
 
@@ -43,7 +43,7 @@ void VariorumProvider::finalize() {
   cleanup_devices();
   is_initialized_ = false;
 
-  ENERGY_PROFILER_LOG_INFO(COMPONENT_NAME, "Finalized");
+  KOKKOS_TOOLS_ENERGY_PROFILER_LOG_INFO(COMPONENT_NAME, "Finalized");
 }
 
 Result VariorumProvider::get_total_power_usage(double& power_watts) {
@@ -123,7 +123,7 @@ Result VariorumProvider::discover_devices() {
             uint32_t device_id = std::stoul(s_key.substr(4));
             found_device_ids.insert(device_id);
           } catch (const std::exception& e) {
-            ENERGY_PROFILER_LOG_WARNING(
+            KOKKOS_TOOLS_ENERGY_PROFILER_LOG_WARNING(
                 COMPONENT_NAME, "Could not parse GPU ID from key: " + s_key +
                                     " (" + e.what() + ")");
           }
@@ -144,25 +144,25 @@ Result VariorumProvider::discover_devices() {
     device_ids_.push_back(device_id);
     device_names_.push_back("GPU_" + std::to_string(device_id));
 
-    ENERGY_PROFILER_LOG_INFO(
+    KOKKOS_TOOLS_ENERGY_PROFILER_LOG_INFO(
         COMPONENT_NAME, "Found device " +
                             std::to_string(device_ids_.size() - 1) + ": GPU_" +
                             std::to_string(device_id));
   }
 
   // Test initial power readings
-  ENERGY_PROFILER_LOG_INFO(COMPONENT_NAME, "Testing initial power readings...");
+  KOKKOS_TOOLS_ENERGY_PROFILER_LOG_INFO(COMPONENT_NAME, "Testing initial power readings...");
   std::map<uint32_t, double> test_readings = get_current_power_readings();
   for (size_t i = 0; i < device_ids_.size(); ++i) {
     uint32_t device_id = device_ids_[i];
     auto it            = test_readings.find(device_id);
     if (it != test_readings.end()) {
-      ENERGY_PROFILER_LOG_INFO(
+      KOKKOS_TOOLS_ENERGY_PROFILER_LOG_INFO(
           COMPONENT_NAME,
           "Device " + std::to_string(i) +
               ": Current power usage: " + std::to_string(it->second) + " W");
     } else {
-      ENERGY_PROFILER_LOG_WARNING(
+      KOKKOS_TOOLS_ENERGY_PROFILER_LOG_WARNING(
           COMPONENT_NAME,
           "Device " + std::to_string(i) + ": Power reading failed");
     }
