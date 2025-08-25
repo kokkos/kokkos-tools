@@ -151,7 +151,8 @@ Result VariorumProvider::discover_devices() {
   }
 
   // Test initial power readings
-  KOKKOS_TOOLS_ENERGY_PROFILER_LOG_INFO(COMPONENT_NAME, "Testing initial power readings...");
+  KOKKOS_TOOLS_ENERGY_PROFILER_LOG_INFO(COMPONENT_NAME,
+                                        "Testing initial power readings...");
   std::map<uint32_t, double> test_readings = get_current_power_readings();
   for (size_t i = 0; i < device_ids_.size(); ++i) {
     uint32_t device_id = device_ids_[i];

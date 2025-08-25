@@ -206,16 +206,18 @@ void kokkosp_finalize_library() {
 
   const auto& kernels = timer.get_kernel_timings();
   KokkosTools::EnergyProfiler::print_kernels_summary(kernels);
-  KokkosTools::EnergyProfiler::export_kernels_csv(kernels, prefix + "_kernels.csv");
+  KokkosTools::EnergyProfiler::export_kernels_csv(kernels,
+                                                  prefix + "_kernels.csv");
 
   const auto& regions = timer.get_region_timings();
   KokkosTools::EnergyProfiler::print_regions_summary(regions);
-  KokkosTools::EnergyProfiler::export_regions_csv(regions, prefix + "_regions.csv");
+  KokkosTools::EnergyProfiler::export_regions_csv(regions,
+                                                  prefix + "_regions.csv");
 
   const auto& deepcopies = timer.get_deep_copy_timings();
   KokkosTools::EnergyProfiler::print_deepcopies_summary(deepcopies);
-  KokkosTools::EnergyProfiler::export_deepcopies_csv(deepcopies,
-                                            prefix + "_deepcopies.csv");
+  KokkosTools::EnergyProfiler::export_deepcopies_csv(
+      deepcopies, prefix + "_deepcopies.csv");
 }
 
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
