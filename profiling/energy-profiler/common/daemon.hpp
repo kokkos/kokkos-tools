@@ -7,7 +7,7 @@
 class Daemon {
  public:
   Daemon(std::function<void()> func, int interval_ms)
-      : interval_(interval_ms), func_(func) {};
+      : interval_(interval_ms), func_(func){};
 
   void start();
   void tick();
