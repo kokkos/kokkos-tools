@@ -21,32 +21,6 @@ namespace KokkosTools {
 namespace EnergyProfiler {
 
 /**
- * @brief Simple error handling for the energy profiler
- *
- * This provides basic error reporting and status checking.
- */
-
-enum class ErrorCode {
-  SUCCESS = 0,
-  PROVIDER_INIT_FAILED,
-  DEVICE_ACCESS_FAILED,
-  FILE_WRITE_FAILED,
-  INVALID_DEVICE_INDEX,
-  MEASUREMENT_FAILED,
-  UNKNOWN_ERROR
-};
-
-struct Result {
-  ErrorCode code = ErrorCode::SUCCESS;
-  std::string message;
-
-  bool is_success() const { return code == ErrorCode::SUCCESS; }
-  bool is_error() const { return code != ErrorCode::SUCCESS; }
-
-  operator bool() const { return is_success(); }
-};
-
-/**
  * @brief Simple logging utility
  *
  * Usage example:
