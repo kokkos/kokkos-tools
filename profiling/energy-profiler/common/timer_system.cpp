@@ -36,6 +36,35 @@ std::string region_type_to_string(RegionType type) {
   }
 }
 
+// Helper function to convert data category to display strings
+struct CategoryInfo {
+  std::string title;
+  std::string csv_header;
+  std::string export_message;
+  std::string no_data_message;
+  bool include_type;
+};
+
+CategoryInfo get_category_info(DataCategory category) {
+  switch (category) {
+    case DataCategory::Kernels:
+      return {"KERNELS",
+              "name,type,start_time_epoch_ms,end_time_epoch_ms,duration_ms",
+              "Timing data exported to", "No kernel timing data to export.",
+              true};
+    case DataCategory::Regions:
+      return {
+          "REGIONS", "name,start_time_epoch_ms,end_time_epoch_ms,duration_ms",
+          "Region data exported to", "No region timing data to export.", false};
+    case DataCategory::DeepCopies:
+      return {"DEEP COPIES",
+              "name,start_time_epoch_ms,end_time_epoch_ms,duration_ms",
+              "Deep copy data exported to",
+              "No deep copy timing data to export.", false};
+    default: return {"UNKNOWN", "", "", "", false};
+  }
+}
+
 // Helper function to avoid code duplication in time calculations
 std::pair<long, long> get_timing_ms(const TimingInfo& info) {
   auto start_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -48,6 +77,8 @@ std::pair<long, long> get_timing_ms(const TimingInfo& info) {
 }
 
 // Helper function to get duration in milliseconds
+// Note: duration is stored in nanoseconds, so we divide by 1,000,000 to get
+// milliseconds
 long get_duration_ms(const TimingInfo& info) {
   return info.duration.count() / 1000000;
 }
@@ -57,15 +88,20 @@ std::string format_table_cell(const std::string& content, size_t width) {
   return content + std::string(width - std::min(content.size(), width), ' ');
 }
 
-void export_timings_csv_generic(const std::deque<TimingInfo>& timings,
-                                const std::string& filename,
-                                const std::string& header,
-                                bool include_type = false) {
-  if (timings.empty()) return;
+// === CSV Export Functions ===
+
+void export_timings_csv(const std::deque<TimingInfo>& timings,
+                        const std::string& filename, DataCategory category) {
+  auto info = get_category_info(category);
+
+  if (timings.empty()) {
+    std::cout << info.no_data_message << std::endl;
+    return;
+  }
 
   FILE* file = fopen(filename.c_str(), "w");
   if (file) {
-    fprintf(file, "%s\n", header.c_str());
+    fprintf(file, "%s\n", info.csv_header.c_str());
     for (const auto& timing : timings) {
       auto start_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                           timing.start_time.time_since_epoch())
@@ -73,9 +109,10 @@ void export_timings_csv_generic(const std::deque<TimingInfo>& timings,
       auto end_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                         timing.end_time.time_since_epoch())
                         .count();
+      // Convert nanoseconds to milliseconds
       auto duration_ms = timing.duration.count() / 1000000;
 
-      if (include_type) {
+      if (info.include_type) {
         std::string type = region_type_to_string(timing.type);
         fprintf(file, "%s,%s,%ld,%ld,%ld\n", timing.name.c_str(), type.c_str(),
                 start_ms, end_ms, duration_ms);
@@ -85,76 +122,35 @@ void export_timings_csv_generic(const std::deque<TimingInfo>& timings,
       }
     }
     fclose(file);
+    std::cout << info.export_message << " " << filename << std::endl;
   } else {
     std::cerr << "ERROR: Unable to open file " << filename << " for writing.\n";
-  }
-}
-
-// === CSV Export Functions ===
-
-void export_kernels_csv(const std::deque<TimingInfo>& timings,
-                        const std::string& filename) {
-  export_timings_csv_generic(
-      timings, filename,
-      "name,type,start_time_epoch_ms,end_time_epoch_ms,duration_ms", true);
-  if (!timings.empty()) {
-    std::cout << "Timing data exported to " << filename << std::endl;
-  }
-}
-
-void export_regions_csv(const std::deque<TimingInfo>& timings,
-                        const std::string& filename) {
-  export_timings_csv_generic(
-      timings, filename,
-      "name,start_time_epoch_ms,end_time_epoch_ms,duration_ms", false);
-  if (!timings.empty()) {
-    std::cout << "Region data exported to " << filename << std::endl;
-  }
-}
-
-void export_deepcopies_csv(const std::deque<TimingInfo>& timings,
-                           const std::string& filename) {
-  export_timings_csv_generic(
-      timings, filename,
-      "name,start_time_epoch_ms,end_time_epoch_ms,duration_ms", false);
-  if (!timings.empty()) {
-    std::cout << "Deep copy data exported to " << filename << std::endl;
   }
 }
 
 // === Summary Printing Functions ===
 
 void print_timings_summary(const std::deque<TimingInfo>& timings,
-                           const std::string& title) {
-  std::cout << "\n==== " << title << " ====\n";
+                           DataCategory category) {
+  auto info = get_category_info(category);
+
+  std::cout << "\n==== " << info.title << " ====\n";
   std::cout << "| Name                                 | Type           | "
                "Start(ms)         | End(ms)           | Duration (ms) |\n";
   std::cout << "|--------------------------------------|----------------|------"
                "-------------|-------------------|---------------|\n";
 
-  for (const auto& info : timings) {
-    auto [start_ms, end_ms] = get_timing_ms(info);
-    auto duration_ms        = get_duration_ms(info);
-    std::string type        = region_type_to_string(info.type);
+  for (const auto& timing_info : timings) {
+    auto [start_ms, end_ms] = get_timing_ms(timing_info);
+    auto duration_ms        = get_duration_ms(timing_info);
+    std::string type        = region_type_to_string(timing_info.type);
 
-    std::cout << "| " << format_table_cell(info.name, 38) << "| "
+    std::cout << "| " << format_table_cell(timing_info.name, 38) << "| "
               << format_table_cell(type, 16) << "| "
               << format_table_cell(std::to_string(start_ms), 19) << "| "
               << format_table_cell(std::to_string(end_ms), 19) << "| "
               << format_table_cell(std::to_string(duration_ms), 13) << "|\n";
   }
-}
-
-void print_kernels_summary(const std::deque<TimingInfo>& kernels) {
-  print_timings_summary(kernels, "KERNELS");
-}
-
-void print_regions_summary(const std::deque<TimingInfo>& regions) {
-  print_timings_summary(regions, "REGIONS");
-}
-
-void print_deepcopies_summary(const std::deque<TimingInfo>& deepcopies) {
-  print_timings_summary(deepcopies, "DEEP COPIES");
 }
 
 // === KernelTimerTool Implementation ===

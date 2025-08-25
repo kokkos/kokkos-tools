@@ -23,8 +23,7 @@ namespace EnergyProfiler {
 /**
  * @brief Simple error handling for the energy profiler
  *
- * This provides basic error reporting and status checking without
- * complex exception handling systems. Keeps it simple as requested.
+ * This provides basic error reporting and status checking.
  */
 
 enum class ErrorCode {
@@ -38,12 +37,8 @@ enum class ErrorCode {
 };
 
 struct Result {
-  ErrorCode code;
+  ErrorCode code = ErrorCode::SUCCESS;
   std::string message;
-
-  Result() : code(ErrorCode::SUCCESS) {}
-  Result(ErrorCode c) : code(c) {}
-  Result(ErrorCode c, const std::string& msg) : code(c), message(msg) {}
 
   bool is_success() const { return code == ErrorCode::SUCCESS; }
   bool is_error() const { return code != ErrorCode::SUCCESS; }
@@ -53,49 +48,25 @@ struct Result {
 
 /**
  * @brief Simple logging utility
+ *
+ * Usage example:
+ *   log_message(LogLevel::INFO, "EnergyProfiler", "Initialization complete");
+ *   log_message(LogLevel::ERROR, "DeviceManager", "Failed to access device");
  */
-class Logger {
- public:
-  enum Level { INFO, WARNING, ERROR };
+enum class LogLevel { INFO, WARNING, ERROR };
 
-  static void log(Level level, const std::string& component,
-                  const std::string& message) {
-    const char* level_str = "";
-    switch (level) {
-      case INFO: level_str = "INFO"; break;
-      case WARNING: level_str = "WARNING"; break;
-      case ERROR: level_str = "ERROR"; break;
-    }
-
-    std::cerr << "[" << level_str << "] " << component << ": " << message
-              << std::endl;
+inline void log_message(LogLevel level, const std::string& component,
+                        const std::string& message) {
+  const char* level_str = "";
+  switch (level) {
+    case LogLevel::INFO: level_str = "INFO"; break;
+    case LogLevel::WARNING: level_str = "WARNING"; break;
+    case LogLevel::ERROR: level_str = "ERROR"; break;
   }
 
-  static void info(const std::string& component, const std::string& message) {
-    log(INFO, component, message);
-  }
-
-  static void warning(const std::string& component,
-                      const std::string& message) {
-    log(WARNING, component, message);
-  }
-
-  static void error(const std::string& component, const std::string& message) {
-    log(ERROR, component, message);
-  }
-};
-
-/**
- * @brief Helper macros for consistent error reporting
- */
-#define KOKKOS_TOOLS_ENERGY_PROFILER_LOG_INFO(component, msg) \
-  KokkosTools::EnergyProfiler::Logger::info(component, msg)
-
-#define KOKKOS_TOOLS_ENERGY_PROFILER_LOG_WARNING(component, msg) \
-  KokkosTools::EnergyProfiler::Logger::warning(component, msg)
-
-#define KOKKOS_TOOLS_ENERGY_PROFILER_LOG_ERROR(component, msg) \
-  KokkosTools::EnergyProfiler::Logger::error(component, msg)
+  std::cerr << "[" << level_str << "] " << component << ": " << message
+            << std::endl;
+}
 
 }  // namespace EnergyProfiler
 }  // namespace KokkosTools

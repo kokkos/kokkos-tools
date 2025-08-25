@@ -54,15 +54,23 @@ int main() {
   std::cout << "Found " << deepcopies.size() << " deep copies" << std::endl;
 
   // Test export functions
-  KokkosTools::EnergyProfiler::export_kernels_csv(kernels, "test_kernels.csv");
-  KokkosTools::EnergyProfiler::export_regions_csv(regions, "test_regions.csv");
-  KokkosTools::EnergyProfiler::export_deepcopies_csv(deepcopies,
-                                                     "test_deepcopies.csv");
+  KokkosTools::EnergyProfiler::export_timings_csv(
+      kernels, "test_kernels.csv",
+      KokkosTools::EnergyProfiler::DataCategory::Kernels);
+  KokkosTools::EnergyProfiler::export_timings_csv(
+      regions, "test_regions.csv",
+      KokkosTools::EnergyProfiler::DataCategory::Regions);
+  KokkosTools::EnergyProfiler::export_timings_csv(
+      deepcopies, "test_deepcopies.csv",
+      KokkosTools::EnergyProfiler::DataCategory::DeepCopies);
 
   // Test print functions
-  KokkosTools::EnergyProfiler::print_kernels_summary(kernels);
-  KokkosTools::EnergyProfiler::print_regions_summary(regions);
-  KokkosTools::EnergyProfiler::print_deepcopies_summary(deepcopies);
+  KokkosTools::EnergyProfiler::print_timings_summary(
+      kernels, KokkosTools::EnergyProfiler::DataCategory::Kernels);
+  KokkosTools::EnergyProfiler::print_timings_summary(
+      regions, KokkosTools::EnergyProfiler::DataCategory::Regions);
+  KokkosTools::EnergyProfiler::print_timings_summary(
+      deepcopies, KokkosTools::EnergyProfiler::DataCategory::DeepCopies);
 
   std::cout << "CSV export test completed successfully!" << std::endl;
 
