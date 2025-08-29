@@ -46,82 +46,65 @@ void log_verbose(const std::string& message) {
 
 // Start a region
 void start_region(const std::string& name, RegionType type, uint64_t id) {
-  try {
-    TimingInfo region;
-    region.name       = name;
-    region.type       = type;
-    region.start_time = std::chrono::high_resolution_clock::now();
-    region.id         = id;
-    auto& state       = EnergyProfilerState::get_instance();
-    std::lock_guard<std::mutex> lock(state.get_mutex());
-    state.get_active_regions().push_back(region);
-  } catch (const std::exception& e) {
-    std::cerr << "Error in start_region: " << e.what() << std::endl;
-  }
+  TimingInfo region;
+  region.name       = name;
+  region.type       = type;
+  region.start_time = std::chrono::high_resolution_clock::now();
+  region.id         = id;
+  auto& state       = EnergyProfilerState::get_instance();
+  std::lock_guard<std::mutex> lock(state.get_mutex());
+  state.get_active_regions().push_back(region);
 }
 
 // End last region of given type
 void end_region_by_type(RegionType type_to_end) {
-  try {
-    auto& state = EnergyProfilerState::get_instance();
-    std::lock_guard<std::mutex> lock(state.get_mutex());
-    auto& active_regions = state.get_active_regions();
-    if (active_regions.empty()) return;
-    auto it = std::find_if(active_regions.rbegin(), active_regions.rend(),
-                           [type_to_end](const TimingInfo& region) {
-                             return region.type == type_to_end;
-                           });
-    if (it != active_regions.rend()) {
-      auto region = *it;
-      active_regions.erase(std::next(it).base());
-      region.end_time = std::chrono::high_resolution_clock::now();
-      state.get_completed_timings().push_back(region);
-    }
-  } catch (const std::exception& e) {
-    std::cerr << "Error in end_region_by_type: " << e.what() << std::endl;
+  auto& state = EnergyProfilerState::get_instance();
+  std::lock_guard<std::mutex> lock(state.get_mutex());
+  auto& active_regions = state.get_active_regions();
+  if (active_regions.empty()) return;
+  auto it = std::find_if(active_regions.rbegin(), active_regions.rend(),
+                         [type_to_end](const TimingInfo& region) {
+                           return region.type == type_to_end;
+                         });
+  if (it != active_regions.rend()) {
+    auto region = *it;
+    active_regions.erase(std::next(it).base());
+    region.end_time = std::chrono::high_resolution_clock::now();
+    state.get_completed_timings().push_back(region);
   }
 }
 
 // End region by id
 void end_region_with_id(uint64_t expected_id) {
-  try {
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto& state   = EnergyProfilerState::get_instance();
-    std::lock_guard<std::mutex> lock(state.get_mutex());
-    auto& active_regions = state.get_active_regions();
-    auto it = std::find_if(active_regions.begin(), active_regions.end(),
-                           [expected_id](const TimingInfo& region) {
-                             return region.id == expected_id;
-                           });
-    if (it != active_regions.end()) {
-      auto region     = *it;
-      region.end_time = end_time;
-      active_regions.erase(it);
-      state.get_completed_timings().push_back(region);
-    } else {
-      std::cerr << "Warning: No active region found with ID " << expected_id
-                << "\n";
-    }
-  } catch (const std::exception& e) {
-    std::cerr << "Error in end_region_with_id: " << e.what() << std::endl;
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto& state   = EnergyProfilerState::get_instance();
+  std::lock_guard<std::mutex> lock(state.get_mutex());
+  auto& active_regions = state.get_active_regions();
+  auto it = std::find_if(active_regions.begin(), active_regions.end(),
+                         [expected_id](const TimingInfo& region) {
+                           return region.id == expected_id;
+                         });
+  if (it != active_regions.end()) {
+    auto region     = *it;
+    region.end_time = end_time;
+    active_regions.erase(it);
+    state.get_completed_timings().push_back(region);
+  } else {
+    std::cerr << "Warning: No active region found with ID " << expected_id
+              << "\n";
   }
 }
 
 // Get all completed timings
 std::vector<TimingInfo> get_all_timings() {
-  try {
-    auto& state = EnergyProfilerState::get_instance();
-    std::lock_guard<std::mutex> lock(state.get_mutex());
-    std::vector<TimingInfo> all_timings = state.get_completed_timings();
-    std::sort(all_timings.begin(), all_timings.end(),
-              [](const TimingInfo& a, const TimingInfo& b) {
-                return a.start_time < b.start_time;
-              });
-    return all_timings;
-  } catch (const std::exception& e) {
-    std::cerr << "Error in get_all_timings: " << e.what() << std::endl;
-    return {};
-  }
+  auto& state = EnergyProfilerState::get_instance();
+  std::lock_guard<std::mutex> lock(state.get_mutex());
+  std::vector<TimingInfo> all_timings = state.get_completed_timings();
+  std::sort(all_timings.begin(), all_timings.end(),
+            [](const TimingInfo& a, const TimingInfo& b) {
+              return a.start_time < b.start_time;
+            });
+  return all_timings;
 }
 
 }  // namespace EnergyProfiler
