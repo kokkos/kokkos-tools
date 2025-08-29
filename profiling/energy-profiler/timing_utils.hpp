@@ -58,10 +58,10 @@ class EnergyProfilerState {
   }
 
   // Delete copy and move operations
-  EnergyProfilerState(const EnergyProfilerState&)            = delete;
+  EnergyProfilerState(const EnergyProfilerState&) = delete;
   EnergyProfilerState& operator=(const EnergyProfilerState&) = delete;
   EnergyProfilerState(EnergyProfilerState&&)                 = delete;
-  EnergyProfilerState& operator=(EnergyProfilerState&&)      = delete;
+  EnergyProfilerState& operator=(EnergyProfilerState&&) = delete;
 
   // Accessors for state
   std::mutex& get_mutex() { return mutex_; }
