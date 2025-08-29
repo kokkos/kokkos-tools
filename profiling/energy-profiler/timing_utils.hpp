@@ -90,7 +90,7 @@ void end_region_with_id(uint64_t expected_id);
 uint64_t generate_new_region_id();
 bool is_verbose_enabled();
 void set_verbose_enabled(bool enabled);
-void log_verbose(const char* format, ...);
+void log_verbose(const std::string& message);
 std::vector<TimingInfo> get_all_timings();
 
 // Filename prefix generation
