@@ -25,20 +25,16 @@
 #include <string>
 #include <vector>
 
-#include "../all/kp_core.hpp"
+#include "kp_core.hpp"
 #include "timing_utils.hpp"
 #include "timing_export.hpp"
-#ifdef KOKKOS_ENERGY_PROFILER_HAS_NVML
 #include "power_sampler.hpp"
-#endif
 
 namespace KokkosTools {
 namespace EnergyProfiler {
 
 // Global power sampler instance (completely decoupled from timing)
-#ifdef KOKKOS_ENERGY_PROFILER_HAS_NVML
 static std::unique_ptr<PowerSampler> g_power_sampler;
-#endif
 
 // Helper function to generate new region ID
 uint64_t generate_new_region_id() {
@@ -182,7 +178,6 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   printf("Kokkos Energy Profiler: Library initialized\n");
 
   // Initialize power sampling (completely independent of timing)
-#ifdef KOKKOS_ENERGY_PROFILER_HAS_NVML
   KokkosTools::EnergyProfiler::g_power_sampler.reset(
       new KokkosTools::EnergyProfiler::PowerSampler());
   if (KokkosTools::EnergyProfiler::g_power_sampler->initialize()) {
@@ -191,10 +186,6 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
   } else {
     printf("Kokkos Energy Profiler: Power sampling initialization failed\n");
   }
-#else
-  printf(
-      "Kokkos Energy Profiler: NVML not available, power sampling disabled\n");
-#endif
 }
 
 // Library finalize
@@ -210,7 +201,6 @@ void kokkosp_finalize_library() {
       all_timings, prefix + "_timing_data.csv");
 
   // Stop and export power data (completely independent of timing)
-#ifdef KOKKOS_ENERGY_PROFILER_HAS_NVML
   if (KokkosTools::EnergyProfiler::g_power_sampler) {
     KokkosTools::EnergyProfiler::g_power_sampler->stop_sampling();
 
@@ -226,7 +216,6 @@ void kokkosp_finalize_library() {
     KokkosTools::EnergyProfiler::g_power_sampler->finalize();
     KokkosTools::EnergyProfiler::g_power_sampler.reset();
   }
-#endif
 
   printf("Kokkos Energy Profiler: Library finalized\n");
 }
