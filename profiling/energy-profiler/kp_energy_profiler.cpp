@@ -58,7 +58,8 @@ void start_region(const std::string& name, RegionType type, uint64_t id) {
 
 // End last region of given type
 void end_region_by_type(RegionType type_to_end) {
-  auto& state = EnergyProfilerState::get_instance();
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto& state   = EnergyProfilerState::get_instance();
   std::lock_guard<std::mutex> lock(state.get_mutex());
   auto& active_regions = state.get_active_regions();
   if (active_regions.empty()) return;
@@ -69,7 +70,7 @@ void end_region_by_type(RegionType type_to_end) {
   if (it != active_regions.rend()) {
     auto region = *it;
     active_regions.erase(std::next(it).base());
-    region.end_time = std::chrono::high_resolution_clock::now();
+    region.end_time = end_time;
     state.get_completed_timings().push_back(region);
   }
 }
