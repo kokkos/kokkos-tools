@@ -8,7 +8,8 @@ kp_add_library(kp_energy_profiler
 )
 
 # Find NVML for power monitoring
-find_package(CUDAToolkit QUIET)
+set(MIN_CUDA_VERSION 12.6)
+find_package(CUDAToolkit ${MIN_CUDA_VERSION} QUIET)
 if (CUDAToolkit_FOUND)
     find_package(CUDA::nvml QUIET)
     if(TARGET CUDA::nvml)
@@ -19,5 +20,5 @@ if (CUDAToolkit_FOUND)
         message(STATUS "CUDA::nvml target not found, power profiling disabled in energy profiler.")
     endif()
 else()
-    message(STATUS "CUDAToolkit not found, power profiling disabled in energy profiler.")
+    message(STATUS "CUDAToolkit ${MIN_CUDA_VERSION} or higher not found, power profiling disabled in energy profiler.")
 endif()
