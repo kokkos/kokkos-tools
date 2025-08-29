@@ -29,9 +29,9 @@ void Daemon::start() {
 
 void Daemon::run() {
   while (running_) {
-    auto next_tick = std::chrono::high_resolution_clock::now() + interval_;
+    auto next_run = std::chrono::high_resolution_clock::now() + interval_;
     func_();
-    std::this_thread::sleep_until(next_tick);
+    std::this_thread::sleep_until(next_run);
   }
 }
 
