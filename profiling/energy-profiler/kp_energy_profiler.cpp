@@ -20,7 +20,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <iostream>
 #include <mutex>
 #include <string>
@@ -93,7 +92,8 @@ void end_region_by_type(RegionType type_to_end) {
 // End region by id
 void end_region_with_id(uint64_t expected_id) {
   try {
-    auto& state = EnergyProfilerState::get_instance();
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto& state   = EnergyProfilerState::get_instance();
     std::lock_guard<std::mutex> lock(state.get_mutex());
     auto& active_regions = state.get_active_regions();
     if (active_regions.empty()) {
@@ -106,9 +106,9 @@ void end_region_with_id(uint64_t expected_id) {
                              return region.id == expected_id;
                            });
     if (it != active_regions.end()) {
-      auto region = *it;
+      auto region     = *it;
+      region.end_time = end_time;
       active_regions.erase(it);
-      region.end_time = std::chrono::high_resolution_clock::now();
       state.get_completed_timings().push_back(region);
     } else {
       std::cerr << "Warning: No active region found with ID " << expected_id
@@ -154,7 +154,9 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           Kokkos_Profiling_KokkosPDeviceInfo* deviceInfo) {
   (void)devInfoCount;
   (void)deviceInfo;
-  if (std::getenv("KOKKOS_TOOLS_ENERGY_VERBOSE")) {
+  const char* verbose_env = std::getenv("KOKKOS_TOOLS_ENERGY_VERBOSE");
+  if (verbose_env &&
+      (std::string(verbose_env) == "1" || std::string(verbose_env) == "ON")) {
     KokkosTools::EnergyProfiler::EnergyProfilerState::get_instance()
         .set_verbose_enabled(true);
   }
@@ -170,7 +172,8 @@ void kokkosp_finalize_library() {
   printf("Kokkos Energy Profiler: Finalizing library\n");
   std::string prefix = KokkosTools::EnergyProfiler::generate_prefix();
   auto all_timings   = KokkosTools::EnergyProfiler::get_all_timings();
-  KokkosTools::EnergyProfiler::print_all_timings_summary(all_timings);
+  KokkosTools::EnergyProfiler::print_all_timings_summary(
+      std::cout, all_timings.begin(), all_timings.end());
   KokkosTools::EnergyProfiler::export_all_timings_csv(
       all_timings, prefix + "_timing_data.csv");
   printf("Kokkos Energy Profiler: Library finalized\n");
