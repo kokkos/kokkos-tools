@@ -89,11 +89,6 @@ void end_region_with_id(uint64_t expected_id) {
     auto& state   = EnergyProfilerState::get_instance();
     std::lock_guard<std::mutex> lock(state.get_mutex());
     auto& active_regions = state.get_active_regions();
-    if (active_regions.empty()) {
-      std::cerr << "Warning: Attempting to end region with ID " << expected_id
-                << " but no active regions found.\n";
-      return;
-    }
     auto it = std::find_if(active_regions.begin(), active_regions.end(),
                            [expected_id](const TimingInfo& region) {
                              return region.id == expected_id;
