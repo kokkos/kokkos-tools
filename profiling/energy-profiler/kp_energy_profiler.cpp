@@ -171,7 +171,8 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     KokkosTools::EnergyProfiler::g_power_sampler->start_sampling();
     std::cout << "Kokkos Energy Profiler: Power sampling started" << std::endl;
   } else {
-    std::cout << "Kokkos Energy Profiler: Power sampling initialization failed" << std::endl;
+    std::cout << "Kokkos Energy Profiler: Power sampling initialization failed"
+              << std::endl;
   }
 }
 
