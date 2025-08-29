@@ -47,13 +47,14 @@ void log_verbose(const std::string& message) {
 // Start a region
 void start_region(const std::string& name, RegionType type, uint64_t id) {
   TimingInfo region;
-  region.name       = name;
-  region.type       = type;
-  region.start_time = std::chrono::high_resolution_clock::now();
-  region.id         = id;
-  auto& state       = EnergyProfilerState::get_instance();
+  region.name = name;
+  region.type = type;
+  region.id   = id;
+  auto& state = EnergyProfilerState::get_instance();
   std::lock_guard<std::mutex> lock(state.get_mutex());
   state.get_active_regions().push_back(region);
+  state.get_active_regions().back().start_time =
+      std::chrono::high_resolution_clock::now();
 }
 
 // End last region of given type
