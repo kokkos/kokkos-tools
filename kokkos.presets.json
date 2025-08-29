@@ -6,7 +6,7 @@
             "binaryDir"     : "${sourceDir}/build-with-${presetName}",
             "cacheVariables" : {
                 "CMAKE_BUILD_TYPE"              : "Release",
-                "CMAKE_CXX_STANDARD"            : "17",
+                "CMAKE_CXX_STANDARD"            : "20",
                 "CMAKE_CXX_EXTENSIONS"          : "OFF",
                 "BUILD_SHARED_LIBS"             : "ON"
             }
