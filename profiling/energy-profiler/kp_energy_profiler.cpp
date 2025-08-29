@@ -19,8 +19,10 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdio>
+#include <exception>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -67,8 +69,8 @@ void start_region(const std::string& name, RegionType type, uint64_t id) {
     std::lock_guard<std::mutex> lock(state.get_mutex());
     state.get_active_regions().push_back(region);
   } catch (const std::exception& e) {
-    KokkosTools::EnergyProfiler::log_error("Error in start_region: " +
-                                           std::string(e.what()));
+    std::cerr << "EnergyProfiler ERROR: Error in start_region: "
+              << std::string(e.what()) << std::endl;
   }
 }
 
@@ -90,8 +92,8 @@ void end_region_by_type(RegionType type_to_end) {
       state.get_completed_timings().push_back(region);
     }
   } catch (const std::exception& e) {
-    KokkosTools::EnergyProfiler::log_error("Error in end_region_by_type: " +
-                                           std::string(e.what()));
+    std::cerr << "EnergyProfiler ERROR: Error in end_region_by_type: "
+              << std::string(e.what()) << std::endl;
   }
 }
 
@@ -103,9 +105,10 @@ void end_region_with_id(uint64_t expected_id) {
     std::lock_guard<std::mutex> lock(state.get_mutex());
     auto& active_regions = state.get_active_regions();
     if (active_regions.empty()) {
-      KokkosTools::EnergyProfiler::log_error(
-          "Warning: Attempting to end region with ID " +
-          std::to_string(expected_id) + " but no active regions found.");
+      std::cerr
+          << "EnergyProfiler ERROR: Warning: Attempting to end region with ID "
+          << std::to_string(expected_id) << " but no active regions found."
+          << std::endl;
       return;
     }
     auto it = std::find_if(active_regions.begin(), active_regions.end(),
@@ -118,13 +121,13 @@ void end_region_with_id(uint64_t expected_id) {
       active_regions.erase(it);
       state.get_completed_timings().push_back(region);
     } else {
-      KokkosTools::EnergyProfiler::log_error(
-          "Warning: No active region found with ID " +
-          std::to_string(expected_id));
+      std::cerr
+          << "EnergyProfiler ERROR: Warning: No active region found with ID "
+          << std::to_string(expected_id) << std::endl;
     }
   } catch (const std::exception& e) {
-    KokkosTools::EnergyProfiler::log_error("Error in end_region_with_id: " +
-                                           std::string(e.what()));
+    std::cerr << "EnergyProfiler ERROR: Error in end_region_with_id: "
+              << std::string(e.what()) << std::endl;
   }
 }
 
@@ -141,8 +144,8 @@ std::vector<TimingInfo> get_all_timings() {
               });
     return all_timings;
   } catch (const std::exception& e) {
-    KokkosTools::EnergyProfiler::log_error("Error in get_all_timings: " +
-                                           std::string(e.what()));
+    std::cerr << "EnergyProfiler ERROR: Error in get_all_timings: "
+              << std::string(e.what()) << std::endl;
     return {};
   }
 }
@@ -224,8 +227,9 @@ void kokkosp_finalize_library() {
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
   if (!name || !kID) {
-    KokkosTools::EnergyProfiler::log_error(
-        "Error: Invalid parameters in kokkosp_begin_parallel_for");
+    std::cerr << "EnergyProfiler ERROR: Error: Invalid parameters in "
+                 "kokkosp_begin_parallel_for"
+              << std::endl;
     return;
   }
   (void)devID;

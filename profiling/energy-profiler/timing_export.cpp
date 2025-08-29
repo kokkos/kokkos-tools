@@ -27,7 +27,8 @@ void export_all_timings_csv(const std::vector<TimingInfo>& all_timings,
                             const std::string& filename) {
   std::ofstream file(filename);
   if (!file.is_open()) {
-    log_error("Unable to open file " + filename + " for writing.");
+    std::cerr << "EnergyProfiler ERROR: Unable to open file " << filename
+              << " for writing." << std::endl;
     return;
   }
   file << "name,type,start_time_epoch_ms,end_time_epoch_ms,duration_ms\n";
@@ -83,8 +84,9 @@ void export_power_data_csv(const std::vector<PowerSample>& samples,
                            const std::string& filename) {
   std::ofstream file(filename);
   if (!file.is_open()) {
-    log_error("[KokkosPowerProfiler] Unable to open file " + filename +
-              " for writing.");
+    std::cerr
+        << "EnergyProfiler ERROR: [KokkosPowerProfiler] Unable to open file "
+        << filename << " for writing." << std::endl;
     return;
   }
   file << "timestamp_epoch_ms,power_watts\n";

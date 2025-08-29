@@ -55,10 +55,10 @@ class EnergyProfilerState {
   }
 
   // Delete copy and move operations
-  EnergyProfilerState(const EnergyProfilerState&) = delete;
+  EnergyProfilerState(const EnergyProfilerState&)            = delete;
   EnergyProfilerState& operator=(const EnergyProfilerState&) = delete;
   EnergyProfilerState(EnergyProfilerState&&)                 = delete;
-  EnergyProfilerState& operator=(EnergyProfilerState&&) = delete;
+  EnergyProfilerState& operator=(EnergyProfilerState&&)      = delete;
 
   // Accessors for state
   std::mutex& get_mutex() { return mutex_; }
@@ -92,9 +92,6 @@ bool is_verbose_enabled();
 void set_verbose_enabled(bool enabled);
 void log_verbose(const char* format, ...);
 std::vector<TimingInfo> get_all_timings();
-
-// Simple error logging
-void log_error(const std::string& msg);
 
 // Filename prefix generation
 /// @brief Generate a prefix for output files based on hostname and PID
