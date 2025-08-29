@@ -20,13 +20,10 @@
 #include <chrono>
 #include <vector>
 #include <mutex>
+#include "energy_profiler_constants.hpp"
 
 namespace KokkosTools {
 namespace EnergyProfiler {
-
-// Constants
-/// @brief Buffer size for hostname
-const size_t HOSTNAME_BUFFER_SIZE = 256;
 
 // Helper functions for region type conversion
 /// @brief Enumeration of region types
@@ -95,6 +92,9 @@ bool is_verbose_enabled();
 void set_verbose_enabled(bool enabled);
 void log_verbose(const char* format, ...);
 std::vector<TimingInfo> get_all_timings();
+
+// Simple error logging
+void log_error(const std::string& msg);
 
 // Filename prefix generation
 /// @brief Generate a prefix for output files based on hostname and PID

@@ -16,24 +16,23 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include "timing_utils.hpp"
-#include "power_sampler.hpp"
+#include <cstddef>
 
 namespace KokkosTools {
 namespace EnergyProfiler {
 
-void export_all_timings_csv(const std::vector<TimingInfo>& all_timings,
-                            const std::string& filename);
-void print_all_timings_summary(std::ostream& os,
-                               std::vector<TimingInfo>::const_iterator begin,
-                               std::vector<TimingInfo>::const_iterator end);
+// Sampling interval in milliseconds
+constexpr int SAMPLING_INTERVAL_MS = 20;
 
-void export_power_data_csv(const std::vector<PowerSample>& samples,
-                           const std::string& filename);
-void print_power_summary(const std::vector<PowerSample>& samples,
-                         const std::string& device_name = "N/A");
+// Buffer size for hostname
+const size_t HOSTNAME_BUFFER_SIZE = 256;
+
+// Table formatting constants for timing export
+const int COLUMN_WIDTH_CATEGORY = 10;
+const int COLUMN_WIDTH_NAME     = 32;
+const int COLUMN_WIDTH_TYPE     = 14;
+const int COLUMN_WIDTH_TIME     = 17;
+const int COLUMN_WIDTH_DURATION = 13;
 
 }  // namespace EnergyProfiler
 }  // namespace KokkosTools

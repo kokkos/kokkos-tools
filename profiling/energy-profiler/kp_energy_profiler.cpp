@@ -25,12 +25,20 @@
 #include <string>
 #include <vector>
 
-#include "kp_core.hpp"
+#include "../all/kp_core.hpp"
 #include "timing_utils.hpp"
 #include "timing_export.hpp"
+#ifdef KOKKOS_ENERGY_PROFILER_HAS_NVML
+#include "power_sampler.hpp"
+#endif
 
 namespace KokkosTools {
 namespace EnergyProfiler {
+
+// Global power sampler instance (completely decoupled from timing)
+#ifdef KOKKOS_ENERGY_PROFILER_HAS_NVML
+static std::unique_ptr<PowerSampler> g_power_sampler;
+#endif
 
 // Helper function to generate new region ID
 uint64_t generate_new_region_id() {
@@ -63,7 +71,8 @@ void start_region(const std::string& name, RegionType type, uint64_t id) {
     std::lock_guard<std::mutex> lock(state.get_mutex());
     state.get_active_regions().push_back(region);
   } catch (const std::exception& e) {
-    std::cerr << "Error in start_region: " << e.what() << std::endl;
+    KokkosTools::EnergyProfiler::log_error("Error in start_region: " +
+                                           std::string(e.what()));
   }
 }
 
@@ -85,7 +94,8 @@ void end_region_by_type(RegionType type_to_end) {
       state.get_completed_timings().push_back(region);
     }
   } catch (const std::exception& e) {
-    std::cerr << "Error in end_region_by_type: " << e.what() << std::endl;
+    KokkosTools::EnergyProfiler::log_error("Error in end_region_by_type: " +
+                                           std::string(e.what()));
   }
 }
 
@@ -97,8 +107,9 @@ void end_region_with_id(uint64_t expected_id) {
     std::lock_guard<std::mutex> lock(state.get_mutex());
     auto& active_regions = state.get_active_regions();
     if (active_regions.empty()) {
-      std::cerr << "Warning: Attempting to end region with ID " << expected_id
-                << " but no active regions found.\n";
+      KokkosTools::EnergyProfiler::log_error(
+          "Warning: Attempting to end region with ID " +
+          std::to_string(expected_id) + " but no active regions found.");
       return;
     }
     auto it = std::find_if(active_regions.begin(), active_regions.end(),
@@ -111,11 +122,13 @@ void end_region_with_id(uint64_t expected_id) {
       active_regions.erase(it);
       state.get_completed_timings().push_back(region);
     } else {
-      std::cerr << "Warning: No active region found with ID " << expected_id
-                << "\n";
+      KokkosTools::EnergyProfiler::log_error(
+          "Warning: No active region found with ID " +
+          std::to_string(expected_id));
     }
   } catch (const std::exception& e) {
-    std::cerr << "Error in end_region_with_id: " << e.what() << std::endl;
+    KokkosTools::EnergyProfiler::log_error("Error in end_region_with_id: " +
+                                           std::string(e.what()));
   }
 }
 
@@ -125,13 +138,15 @@ std::vector<TimingInfo> get_all_timings() {
     auto& state = EnergyProfilerState::get_instance();
     std::lock_guard<std::mutex> lock(state.get_mutex());
     std::vector<TimingInfo> all_timings = state.get_completed_timings();
+    // Sort by start time; called only once at end, so O(n log n) is acceptable
     std::sort(all_timings.begin(), all_timings.end(),
               [](const TimingInfo& a, const TimingInfo& b) {
                 return a.start_time < b.start_time;
               });
     return all_timings;
   } catch (const std::exception& e) {
-    std::cerr << "Error in get_all_timings: " << e.what() << std::endl;
+    KokkosTools::EnergyProfiler::log_error("Error in get_all_timings: " +
+                                           std::string(e.what()));
     return {};
   }
 }
@@ -165,17 +180,54 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
       "interface version %lu\n",
       loadSeq, interfaceVer);
   printf("Kokkos Energy Profiler: Library initialized\n");
+
+  // Initialize power sampling (completely independent of timing)
+#ifdef KOKKOS_ENERGY_PROFILER_HAS_NVML
+  KokkosTools::EnergyProfiler::g_power_sampler.reset(
+      new KokkosTools::EnergyProfiler::PowerSampler());
+  if (KokkosTools::EnergyProfiler::g_power_sampler->initialize()) {
+    KokkosTools::EnergyProfiler::g_power_sampler->start_sampling();
+    printf("Kokkos Energy Profiler: Power sampling started\n");
+  } else {
+    printf("Kokkos Energy Profiler: Power sampling initialization failed\n");
+  }
+#else
+  printf(
+      "Kokkos Energy Profiler: NVML not available, power sampling disabled\n");
+#endif
 }
 
 // Library finalize
 void kokkosp_finalize_library() {
   printf("Kokkos Energy Profiler: Finalizing library\n");
+
+  // Export timing data
   std::string prefix = KokkosTools::EnergyProfiler::generate_prefix();
   auto all_timings   = KokkosTools::EnergyProfiler::get_all_timings();
   KokkosTools::EnergyProfiler::print_all_timings_summary(
       std::cout, all_timings.begin(), all_timings.end());
   KokkosTools::EnergyProfiler::export_all_timings_csv(
       all_timings, prefix + "_timing_data.csv");
+
+  // Stop and export power data (completely independent of timing)
+#ifdef KOKKOS_ENERGY_PROFILER_HAS_NVML
+  if (KokkosTools::EnergyProfiler::g_power_sampler) {
+    KokkosTools::EnergyProfiler::g_power_sampler->stop_sampling();
+
+    auto power_samples =
+        KokkosTools::EnergyProfiler::g_power_sampler->get_samples();
+    if (!power_samples.empty()) {
+      KokkosTools::EnergyProfiler::print_power_summary(power_samples,
+                                                       "NVIDIA GPU");
+      KokkosTools::EnergyProfiler::export_power_data_csv(
+          power_samples, prefix + "_power_data.csv");
+    }
+
+    KokkosTools::EnergyProfiler::g_power_sampler->finalize();
+    KokkosTools::EnergyProfiler::g_power_sampler.reset();
+  }
+#endif
+
   printf("Kokkos Energy Profiler: Library finalized\n");
 }
 
@@ -183,7 +235,8 @@ void kokkosp_finalize_library() {
 void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
                                 uint64_t* kID) {
   if (!name || !kID) {
-    std::cerr << "Error: Invalid parameters in kokkosp_begin_parallel_for\n";
+    KokkosTools::EnergyProfiler::log_error(
+        "Error: Invalid parameters in kokkosp_begin_parallel_for");
     return;
   }
   (void)devID;

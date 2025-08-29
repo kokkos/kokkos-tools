@@ -17,6 +17,7 @@
 #include "timing_utils.hpp"
 #include <unistd.h>
 #include <cstring>
+#include <iostream>
 
 namespace KokkosTools {
 namespace EnergyProfiler {
@@ -40,6 +41,10 @@ std::string region_type_to_string(RegionType type) {
     case RegionType::UserRegion: return "user_region";
     default: return "unknown";
   }
+}
+
+void log_error(const std::string& msg) {
+  std::cerr << "EnergyProfiler ERROR: " << msg << std::endl;
 }
 
 }  // namespace EnergyProfiler
