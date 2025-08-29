@@ -26,7 +26,7 @@ class Daemon {
       : interval_(interval_ms), func_(func){};
 
   void start();
-  void tick();
+  void run();
   void stop();
   bool is_running() const { return running_; }
   std::thread& get_thread() { return thread_; }
