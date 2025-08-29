@@ -16,10 +16,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cstdarg>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
 #include <iostream>
 #include <mutex>
 #include <string>
@@ -42,12 +38,9 @@ uint64_t generate_new_region_id() {
 }
 
 // Helper function for verbose logging
-void log_verbose(const char* format, ...) {
+void log_verbose(const std::string& message) {
   if (EnergyProfilerState::get_instance().get_verbose_enabled()) {
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
+    std::cout << message << std::endl;
   }
 }
 
@@ -160,23 +153,22 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     KokkosTools::EnergyProfiler::EnergyProfilerState::get_instance()
         .set_verbose_enabled(true);
   }
-  printf(
-      "Kokkos Energy Profiler: Initializing with load sequence %d and "
-      "interface version %lu\n",
-      loadSeq, interfaceVer);
-  printf("Kokkos Energy Profiler: Library initialized\n");
+  std::cout << "Kokkos Energy Profiler: Initializing with load sequence "
+            << loadSeq << " and interface version " << interfaceVer
+            << std::endl;
+  std::cout << "Kokkos Energy Profiler: Library initialized" << std::endl;
 }
 
 // Library finalize
 void kokkosp_finalize_library() {
-  printf("Kokkos Energy Profiler: Finalizing library\n");
+  std::cout << "Kokkos Energy Profiler: Finalizing library" << std::endl;
   std::string prefix = KokkosTools::EnergyProfiler::generate_prefix();
   auto all_timings   = KokkosTools::EnergyProfiler::get_all_timings();
   KokkosTools::EnergyProfiler::print_all_timings_summary(
       std::cout, all_timings.begin(), all_timings.end());
   KokkosTools::EnergyProfiler::export_all_timings_csv(
       all_timings, prefix + "_timing_data.csv");
-  printf("Kokkos Energy Profiler: Library finalized\n");
+  std::cout << "Kokkos Energy Profiler: Library finalized" << std::endl;
 }
 
 // Begin parallel_for
@@ -192,9 +184,9 @@ void kokkosp_begin_parallel_for(const char* name, const uint32_t devID,
   KokkosTools::EnergyProfiler::start_region(
       name, KokkosTools::EnergyProfiler::RegionType::ParallelFor, *kID);
   KokkosTools::EnergyProfiler::log_verbose(
-      "Kokkos Energy Profiler: Started parallel_for '%s' on device %u with ID "
-      "%lu\n",
-      name, devID, *kID);
+      std::string("Kokkos Energy Profiler: Started parallel_for '") + name +
+      "' on device " + std::to_string(devID) + " with ID " +
+      std::to_string(*kID));
 }
 
 // End parallel_for
@@ -205,7 +197,8 @@ void kokkosp_end_parallel_for(const uint64_t kID) {
   }
   KokkosTools::EnergyProfiler::end_region_with_id(kID);
   KokkosTools::EnergyProfiler::log_verbose(
-      "Kokkos Energy Profiler: Ended parallel_for with ID %lu\n", kID);
+      std::string("Kokkos Energy Profiler: Ended parallel_for with ID ") +
+      std::to_string(kID));
 }
 
 // Begin parallel_scan
@@ -221,9 +214,9 @@ void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID,
   KokkosTools::EnergyProfiler::start_region(
       name, KokkosTools::EnergyProfiler::RegionType::ParallelScan, *kID);
   KokkosTools::EnergyProfiler::log_verbose(
-      "Kokkos Energy Profiler: Started parallel_scan '%s' on device %u with ID "
-      "%lu\n",
-      name, devID, *kID);
+      std::string("Kokkos Energy Profiler: Started parallel_scan '") + name +
+      "' on device " + std::to_string(devID) + " with ID " +
+      std::to_string(*kID));
 }
 
 // End parallel_scan
@@ -234,7 +227,8 @@ void kokkosp_end_parallel_scan(const uint64_t kID) {
   }
   KokkosTools::EnergyProfiler::end_region_with_id(kID);
   KokkosTools::EnergyProfiler::log_verbose(
-      "Kokkos Energy Profiler: Ended parallel_scan with ID %lu\n", kID);
+      std::string("Kokkos Energy Profiler: Ended parallel_scan with ID ") +
+      std::to_string(kID));
 }
 
 // Begin parallel_reduce
@@ -250,9 +244,9 @@ void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID,
   KokkosTools::EnergyProfiler::start_region(
       name, KokkosTools::EnergyProfiler::RegionType::ParallelReduce, *kID);
   KokkosTools::EnergyProfiler::log_verbose(
-      "Kokkos Energy Profiler: Started parallel_reduce '%s' on device %u with "
-      "ID %lu\n",
-      name, devID, *kID);
+      std::string("Kokkos Energy Profiler: Started parallel_reduce '") + name +
+      "' on device " + std::to_string(devID) + " with ID " +
+      std::to_string(*kID));
 }
 
 // End parallel_reduce
@@ -263,7 +257,8 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
   }
   KokkosTools::EnergyProfiler::end_region_with_id(kID);
   KokkosTools::EnergyProfiler::log_verbose(
-      "Kokkos Energy Profiler: Ended parallel_reduce with ID %lu\n", kID);
+      std::string("Kokkos Energy Profiler: Ended parallel_reduce with ID ") +
+      std::to_string(kID));
 }
 
 // Push user region
@@ -276,7 +271,8 @@ void kokkosp_push_profile_region(char const* regionName) {
   KokkosTools::EnergyProfiler::start_region(
       regionName, KokkosTools::EnergyProfiler::RegionType::UserRegion, new_id);
   KokkosTools::EnergyProfiler::log_verbose(
-      "Kokkos Energy Profiler: Pushed profile region '%s'\n", regionName);
+      std::string("Kokkos Energy Profiler: Pushed profile region '") +
+      regionName + "'");
 }
 
 // Pop user region
@@ -284,7 +280,7 @@ void kokkosp_pop_profile_region() {
   KokkosTools::EnergyProfiler::end_region_by_type(
       KokkosTools::EnergyProfiler::RegionType::UserRegion);
   KokkosTools::EnergyProfiler::log_verbose(
-      "Kokkos Energy Profiler: Popped profile region\n");
+      "Kokkos Energy Profiler: Popped profile region");
 }
 
 // Begin deep copy
@@ -300,9 +296,9 @@ void kokkosp_begin_deep_copy(Kokkos::Tools::SpaceHandle, const char* dst_name,
   KokkosTools::EnergyProfiler::start_region(
       name, KokkosTools::EnergyProfiler::RegionType::DeepCopy, new_id);
   KokkosTools::EnergyProfiler::log_verbose(
-      "Kokkos Energy Profiler: Started deep copy from '%s' to '%s' (size: %lu "
-      "bytes)\n",
-      src_name, dst_name, size);
+      std::string("Kokkos Energy Profiler: Started deep copy from '") +
+      src_name + "' to '" + dst_name + "' (size: " + std::to_string(size) +
+      " bytes)");
 }
 
 // End deep copy
@@ -310,7 +306,7 @@ void kokkosp_end_deep_copy() {
   KokkosTools::EnergyProfiler::end_region_by_type(
       KokkosTools::EnergyProfiler::RegionType::DeepCopy);
   KokkosTools::EnergyProfiler::log_verbose(
-      "Kokkos Energy Profiler: Ended deep copy\n");
+      "Kokkos Energy Profiler: Ended deep copy");
 }
 
 }  // extern "C"
