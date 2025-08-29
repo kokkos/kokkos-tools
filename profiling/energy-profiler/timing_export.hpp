@@ -18,7 +18,6 @@
 
 #include <string>
 #include <vector>
-#include <chrono>
 #include "timing_utils.hpp"
 
 namespace KokkosTools {
