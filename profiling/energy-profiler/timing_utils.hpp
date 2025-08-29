@@ -96,26 +96,6 @@ void set_verbose_enabled(bool enabled);
 void log_verbose(const char* format, ...);
 std::vector<TimingInfo> get_all_timings();
 
-/// @brief RAII class for automatic timing region management
-class ScopedTimingRegion {
- public:
-  ScopedTimingRegion(const std::string& name, RegionType type)
-      : region_id_(generate_new_region_id()) {
-    start_region(name, type, region_id_);
-  }
-
-  ~ScopedTimingRegion() { end_region_with_id(region_id_); }
-
-  // Delete copy and move operations
-  ScopedTimingRegion(const ScopedTimingRegion&)            = delete;
-  ScopedTimingRegion& operator=(const ScopedTimingRegion&) = delete;
-  ScopedTimingRegion(ScopedTimingRegion&&)                 = delete;
-  ScopedTimingRegion& operator=(ScopedTimingRegion&&)      = delete;
-
- private:
-  uint64_t region_id_;
-};
-
 // Filename prefix generation
 /// @brief Generate a prefix for output files based on hostname and PID
 std::string generate_prefix();

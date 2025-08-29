@@ -59,27 +59,29 @@ std::string get_category_from_type(RegionType type) {
   }
 }
 
-void print_all_timings_summary(const std::vector<TimingInfo>& all_timings) {
-  std::cout << "\n==== TIMING SUMMARY ====\n";
-  std::cout << "| Category   | Name                             | Type         "
-               "  | Start (ms)        | End (ms)          | Duration (ms) |\n";
-  std::cout << "|------------|----------------------------------|--------------"
-               "--|-------------------|-------------------|---------------|\n";
-  for (const auto& timing_info : all_timings) {
-    auto start_ms = get_epoch_ms(timing_info.start_time);
-    auto end_ms   = get_epoch_ms(timing_info.end_time);
+void print_all_timings_summary(std::ostream& os,
+                               std::vector<TimingInfo>::const_iterator begin,
+                               std::vector<TimingInfo>::const_iterator end) {
+  os << "\n==== TIMING SUMMARY ====\n";
+  os << "| Category   | Name                             | Type         "
+        "  | Start (ms)        | End (ms)          | Duration (ms) |\n";
+  os << "|------------|----------------------------------|--------------"
+        "--|-------------------|-------------------|---------------|\n";
+  for (auto it = begin; it != end; ++it) {
+    const auto& timing_info = *it;
+    auto start_ms           = get_epoch_ms(timing_info.start_time);
+    auto end_ms             = get_epoch_ms(timing_info.end_time);
     auto duration_ms =
         get_duration_ms(timing_info.start_time, timing_info.end_time);
     std::string type_str = region_type_to_string(timing_info.type);
     std::string category = get_category_from_type(timing_info.type);
-    std::cout << "| " << std::setw(COLUMN_WIDTH_CATEGORY) << std::left
-              << category << " | " << std::setw(COLUMN_WIDTH_NAME) << std::left
-              << timing_info.name << " | " << std::setw(COLUMN_WIDTH_TYPE)
-              << std::left << type_str << " | " << std::setw(COLUMN_WIDTH_TIME)
-              << std::right << start_ms << " | " << std::setw(COLUMN_WIDTH_TIME)
-              << std::right << end_ms << " | "
-              << std::setw(COLUMN_WIDTH_DURATION) << std::right << duration_ms
-              << " |\n";
+    os << "| " << std::setw(COLUMN_WIDTH_CATEGORY) << std::left << category
+       << " | " << std::setw(COLUMN_WIDTH_NAME) << std::left << timing_info.name
+       << " | " << std::setw(COLUMN_WIDTH_TYPE) << std::left << type_str
+       << " | " << std::setw(COLUMN_WIDTH_TIME) << std::right << start_ms
+       << " | " << std::setw(COLUMN_WIDTH_TIME) << std::right << end_ms << " | "
+       << std::setw(COLUMN_WIDTH_DURATION) << std::right << duration_ms
+       << " |\n";
   }
 }
 

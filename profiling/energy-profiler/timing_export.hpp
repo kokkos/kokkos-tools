@@ -25,7 +25,9 @@ namespace EnergyProfiler {
 
 void export_all_timings_csv(const std::vector<TimingInfo>& all_timings,
                             const std::string& filename);
-void print_all_timings_summary(const std::vector<TimingInfo>& all_timings);
+void print_all_timings_summary(std::ostream& os,
+                               std::vector<TimingInfo>::const_iterator begin,
+                               std::vector<TimingInfo>::const_iterator end);
 
 }  // namespace EnergyProfiler
 }  // namespace KokkosTools
