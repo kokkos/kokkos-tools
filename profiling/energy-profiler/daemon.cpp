@@ -24,8 +24,6 @@ void Daemon::start() {
   if (!running_) {
     running_ = true;
     thread_  = std::thread(&Daemon::run, this);
-  } else {
-    throw std::runtime_error("Daemon already started");
   }
 }
 
@@ -41,8 +39,6 @@ void Daemon::stop() {
   if (running_) {
     running_ = false;
     thread_.join();
-  } else {
-    throw std::runtime_error("Daemon not started");
   }
 }
 }  // namespace EnergyProfiler
