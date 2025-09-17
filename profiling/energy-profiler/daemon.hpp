@@ -17,9 +17,9 @@
 #ifndef KOKKOSP_ENERGY_PROFILER_DAEMON_HPP
 #define KOKKOSP_ENERGY_PROFILER_DAEMON_HPP
 
+#include <chrono>
 #include <functional>
 #include <thread>
-#include <chrono>
 
 namespace KokkosTools {
 namespace EnergyProfiler {
