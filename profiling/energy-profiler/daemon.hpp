@@ -25,8 +25,8 @@ namespace KokkosTools {
 namespace EnergyProfiler {
 class Daemon {
  public:
-  Daemon(std::function<void()> func, int interval_ms)
-      : interval_(interval_ms), func_(func){};
+  Daemon(std::function<void()> func, std::chrono::duration interval)
+      : interval_(interval), func_(func){};
 
   void start();
   void stop();
@@ -35,7 +35,7 @@ class Daemon {
 
  private:
   void run();
-  std::chrono::milliseconds interval_;
+  std::chrono::duration interval_;
   bool running_{false};
   std::function<void()> func_;
   std::thread thread_;
