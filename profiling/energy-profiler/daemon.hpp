@@ -14,7 +14,8 @@
 //
 //@HEADER
 
-#pragma once
+#ifndef KOKKOSP_ENERGY_PROFILER_DAEMON_HPP
+#define KOKKOSP_ENERGY_PROFILER_DAEMON_HPP
 
 #include <functional>
 #include <thread>
@@ -41,3 +42,4 @@ class Daemon {
 };
 }  // namespace EnergyProfiler
 }  // namespace KokkosTools
+#endif
