@@ -18,6 +18,8 @@
 #include <stdexcept>
 #include <thread>
 
+namespace KokkosTools {
+namespace EnergyProfiler {
 void Daemon::start() {
   if (!running_) {
     running_ = true;
@@ -43,3 +45,5 @@ void Daemon::stop() {
     throw std::runtime_error("Daemon not started");
   }
 }
+}  // namespace EnergyProfiler
+}  // namespace KokkosTools

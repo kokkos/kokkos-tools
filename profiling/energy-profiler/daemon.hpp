@@ -20,6 +20,8 @@
 #include <thread>
 #include <chrono>
 
+namespace KokkosTools {
+namespace EnergyProfiler {
 class Daemon {
  public:
   Daemon(std::function<void()> func, int interval_ms)
@@ -37,3 +39,5 @@ class Daemon {
   std::function<void()> func_;
   std::thread thread_;
 };
+}  // namespace EnergyProfiler
+}  // namespace KokkosTools
