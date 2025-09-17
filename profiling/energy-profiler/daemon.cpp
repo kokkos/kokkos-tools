@@ -27,18 +27,18 @@ void Daemon::start() {
   }
 }
 
+void Daemon::stop() {
+  if (running_) {
+    running_ = false;
+    thread_.join();
+  }
+}
+
 void Daemon::run() {
   while (running_) {
     auto next_run = std::chrono::high_resolution_clock::now() + interval_;
     func_();
     std::this_thread::sleep_until(next_run);
-  }
-}
-
-void Daemon::stop() {
-  if (running_) {
-    running_ = false;
-    thread_.join();
   }
 }
 }  // namespace EnergyProfiler

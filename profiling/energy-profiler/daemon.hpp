@@ -28,12 +28,12 @@ class Daemon {
       : interval_(interval_ms), func_(func){};
 
   void start();
-  void run();
   void stop();
   bool is_running() const { return running_; }
   std::thread& get_thread() { return thread_; }
 
  private:
+  void run();
   std::chrono::milliseconds interval_;
   bool running_{false};
   std::function<void()> func_;
