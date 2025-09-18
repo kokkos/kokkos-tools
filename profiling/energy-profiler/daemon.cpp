@@ -18,8 +18,7 @@
 #include <stdexcept>
 #include <thread>
 
-namespace KokkosTools {
-namespace EnergyProfiler {
+namespace KokkosTools::EnergyProfiler {
 void Daemon::start() {
   if (!running_) {
     running_ = true;
