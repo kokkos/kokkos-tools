@@ -26,7 +26,7 @@ namespace EnergyProfiler {
 class Daemon {
  public:
   Daemon(std::function<void()> func, const std::chrono::duration& interval)
-      : interval_(interval), func_(func){};
+      : interval_(interval), func_(std::move(func)){};
 
   void start();
   void stop();
