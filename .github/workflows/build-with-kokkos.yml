@@ -22,7 +22,7 @@ jobs:
           - image: rocm/dev-ubuntu-22.04:6.3
             preset: ROCm
             compiler: default
-          - image: rocm/dev-ubuntu-22.04:6.3
+          - image: rocm/dev-ubuntu-22.04:6.2
             preset: ROCm
             compiler: default
     container:
