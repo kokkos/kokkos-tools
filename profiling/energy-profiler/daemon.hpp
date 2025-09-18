@@ -21,8 +21,7 @@
 #include <functional>
 #include <thread>
 
-namespace KokkosTools {
-namespace EnergyProfiler {
+namespace KokkosTools::EnergyProfiler {
 class Daemon {
  public:
   Daemon(std::function<void()> func, const std::chrono::duration& interval)
