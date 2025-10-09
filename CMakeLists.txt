@@ -271,6 +271,6 @@ endif()
 install(TARGETS ${EXPORT_TARGETS} EXPORT ${EXPORT_NAME})
 install(EXPORT ${EXPORT_NAME}
   NAMESPACE KokkosTools::
-  DESTINATION ${EXPORT_LIB_DIR}/cmake)
+  DESTINATION ${EXPORT_LIB_DIR}/cmake/KokkosTools)
 install(CODE "SET(KokkosTools_HAS_MPI ${USE_MPI})")
 
