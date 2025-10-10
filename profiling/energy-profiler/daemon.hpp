@@ -30,7 +30,7 @@ class Daemon {
   void start();
   void stop();
   bool is_running() const { return running_; }
-  std::thread& get_thread() { return thread_; }
+  auto& get_thread() { return thread_; }
 
  private:
   void run();
