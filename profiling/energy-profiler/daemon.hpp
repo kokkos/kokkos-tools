@@ -39,6 +39,5 @@ class Daemon {
   std::function<void()> func_;
   std::thread thread_;
 };
-}  // namespace EnergyProfiler
-}  // namespace KokkosTools
+}  // namespace KokkosTools::EnergyProfiler
 #endif

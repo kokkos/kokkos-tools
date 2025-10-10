@@ -40,5 +40,4 @@ void Daemon::run() {
     std::this_thread::sleep_until(next_run);
   }
 }
-}  // namespace EnergyProfiler
-}  // namespace KokkosTools
+}  // namespace KokkosTools::EnergyProfiler
