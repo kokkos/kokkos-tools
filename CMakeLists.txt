@@ -29,7 +29,7 @@ message(STATUS Configuring Kokkos-Tools)
 message(STATUS)
 
 # Common settings
-set(BUILD_SHARED_LIBS "Build shared libraries" ON)
+set(BUILD_SHARED_LIBS ON)
 if(WIN32)
   set(BUILD_SHARED_LIBS OFF) # We need to add __declspec(dllexport/dllimport) for Windows DLLs
 endif()
