@@ -29,10 +29,11 @@ message(STATUS Configuring Kokkos-Tools)
 message(STATUS)
 
 # Common settings
-set(BUILD_SHARED_LIBS ON)
+set(BUILD_SHARED_LIBS_INIT ON)
 if(WIN32)
-  set(BUILD_SHARED_LIBS OFF) # We need to add __declspec(dllexport/dllimport) for Windows DLLs
+  set(BUILD_SHARED_LIBS_INIT OFF) # We need to add __declspec(dllexport/dllimport) for Windows DLLs
 endif()
+option(BUILD_SHARED_LIBS "Build shared libraries" ${BUILD_SHARED_LIBS_INIT})
 
 # Tools settings
 option(KokkosTools_ENABLE_SINGLE  "Build single library interfacing all profilers and dispatching at runtime" OFF)
