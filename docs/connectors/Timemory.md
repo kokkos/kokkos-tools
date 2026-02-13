@@ -128,7 +128,9 @@ timemory-roofline -t gpu_roofline \
 
 ## Output
 
-Output is located in `timemory-output/<DATE-TIME>` unless `KOKKOS_ROOFLINE` is set. The `<DATE-TIME>` format can be customized via `TIMEMORY_TIME_FORMAT` (default: `"%F_%I.%M_%p"`).
+Output is located in `timemory-output/<DATE-TIME>` by default. The `<DATE-TIME>` format can be customized via `TIMEMORY_TIME_FORMAT` (default: `"%F_%I.%M_%p"`).
+
+When using roofline analysis with `KOKKOS_ROOFLINE=ON`, the output location is controlled by the `TIMEMORY_OUTPUT_PATH` environment variable as shown in the roofline example above.
 
 Output formats include:
 - Console output (printed at end of application)

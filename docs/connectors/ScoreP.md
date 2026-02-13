@@ -21,7 +21,7 @@ ScoreP is particularly valuable for:
 - Tracing communication and synchronization in distributed applications
 - Performance tuning of HPC applications
 
-Note: While ScoreP provides advanced tracing capabilities from a third-party library, it focuses on profiling and tracing rather than intelligent analysis or automatic tuning (unlike tools such as APEX).
+Note: While ScoreP provides advanced tracing capabilities as a third-party library, it focuses on profiling and tracing rather than intelligent analysis or automatic tuning (unlike tools such as APEX).
 
 ## Installation and Setup
 
