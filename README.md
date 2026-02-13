@@ -41,6 +41,13 @@ Given your installed tool shared library `<name_of_tool_shared_lib>.so` and an a
 `export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_LIB_SRC_DIR}/<name_of_tool_shared_lib>.so; ./yourApplication.exe`
 
 
+## Documentation
+
+For detailed documentation, including information about third-party connectors and advanced usage, see the [docs/](docs/) directory:
+
+- [Connector Documentation](docs/connectors/) - Third-party library connectors (ScoreP, Timemory, etc.)
+- [Kokkos Tools Wiki](https://github.com/kokkos/kokkos-tools/wiki) - Additional tutorials and guides
+
 ## Explicit Instrumentation
 
 One can explicitly add instrumentation to a library or an application. Currently, the only hooks intended for explicit programmer use are the Region related hooks. These use a push/pop model to mark coarser regions in your code.
@@ -112,7 +119,9 @@ The following provides an overview of the tools available in the set of Kokkos T
 
     Defining a timemory component will enable your plug-in to output to stdout, text, and JSON, 
     accumulate statistics, and utilize various portable function calls for common needs w.r.t. timers,
-    resource usage, etc. 
+    resource usage, etc.
+
+For more detailed information about third-party connectors, see the [connector documentation](docs/connectors/). 
 
 # Tutorial
 
