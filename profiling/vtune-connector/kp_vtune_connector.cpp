@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
+#include <stack>
 
 #include "kp_core.hpp"
 #include "kp_vtune_connector_domain.h"
@@ -31,6 +32,7 @@ struct Section {
   __itt_domain* domain;
 };
 std::vector<Section> kokkosp_sections;
+std::stack<__itt_domain*> kokkosp_region_stack;
 }  // namespace
 
 namespace KokkosTools {
@@ -39,7 +41,7 @@ namespace VTuneConnector {
 static KernelVTuneConnectorInfo* currentKernel;
 static std::unordered_map<std::string, KernelVTuneConnectorInfo*> domain_map;
 static uint64_t nextKernelID;
-static bool tool_globfences;
+static bool tool_globfences = false;
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
@@ -156,13 +158,16 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
 void kokkosp_push_profile_region(const char* name) {
   __itt_domain* domain = __itt_domain_create(name);
   domain->flags        = 1;
+  kokkosp_region_stack.push(domain);
   __itt_frame_begin_v3(domain, NULL);
 }
 
 void kokkosp_pop_profile_region() {
-  // VTune requires domain to end frame, but we don't track it in push/pop
-  // This is a known limitation - regions won't show properly in VTune
-  // Users should use profile sections for better VTune integration
+  if (!kokkosp_region_stack.empty()) {
+    __itt_domain* domain = kokkosp_region_stack.top();
+    kokkosp_region_stack.pop();
+    __itt_frame_end_v3(domain, NULL);
+  }
 }
 
 void kokkosp_create_profile_section(const char* name, uint32_t* sID) {
@@ -173,11 +178,13 @@ void kokkosp_create_profile_section(const char* name, uint32_t* sID) {
 }
 
 void kokkosp_start_profile_section(const uint32_t sID) {
+  if (sID >= kokkosp_sections.size()) return;
   auto& section = kokkosp_sections[sID];
   __itt_frame_begin_v3(section.domain, NULL);
 }
 
 void kokkosp_stop_profile_section(const uint32_t sID) {
+  if (sID >= kokkosp_sections.size()) return;
   auto const& section = kokkosp_sections[sID];
   __itt_frame_end_v3(section.domain, NULL);
 }
@@ -193,6 +200,7 @@ void kokkosp_profile_event(const char* name) {
 
 void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
                          uint64_t* handle) {
+  (void)deviceId;  // Unused parameter - VTune doesn't require device ID
   __itt_domain* domain = __itt_domain_create(name);
   domain->flags        = 1;
   __itt_frame_begin_v3(domain, NULL);
