@@ -45,11 +45,7 @@ static bool tool_globfences = false;
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
-  if (tool_globfences) {
-    settings->requires_global_fencing = true;
-  } else {
-    settings->requires_global_fencing = false;
-  }
+  settings->requires_global_fencing = tool_globfences;
 }
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
@@ -198,9 +194,8 @@ void kokkosp_profile_event(const char* name) {
   __itt_event_start(event);
 }
 
-void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
+void kokkosp_begin_fence(const char* name, const uint32_t /*deviceId*/,
                          uint64_t* handle) {
-  (void)deviceId;  // Unused parameter - VTune doesn't require device ID
   __itt_domain* domain = __itt_domain_create(name);
   domain->flags        = 1;
   __itt_frame_begin_v3(domain, NULL);
