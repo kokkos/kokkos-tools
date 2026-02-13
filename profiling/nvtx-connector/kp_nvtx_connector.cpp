@@ -118,6 +118,10 @@ void kokkosp_stop_profile_section(const uint32_t sID) {
   nvtxRangeEnd(section.id);
 }
 
+void kokkosp_destroy_profile_section(const uint32_t sID) {
+  // NVTX ranges are automatically managed, no explicit destroy needed
+}
+
 void kokkosp_profile_event(const char* name) { nvtxMarkA(name); }
 
 void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
@@ -147,23 +151,24 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
   Kokkos::Tools::Experimental::EventSet my_event_set;
   memset(&my_event_set, 0,
          sizeof(my_event_set));  // zero any pointers not set here
-  my_event_set.request_tool_settings  = kokkosp_request_tool_settings;
-  my_event_set.init                   = kokkosp_init_library;
-  my_event_set.finalize               = kokkosp_finalize_library;
-  my_event_set.push_region            = kokkosp_push_profile_region;
-  my_event_set.pop_region             = kokkosp_pop_profile_region;
-  my_event_set.begin_parallel_for     = kokkosp_begin_parallel_for;
-  my_event_set.begin_parallel_reduce  = kokkosp_begin_parallel_reduce;
-  my_event_set.begin_parallel_scan    = kokkosp_begin_parallel_scan;
-  my_event_set.end_parallel_for       = kokkosp_end_parallel_for;
-  my_event_set.end_parallel_reduce    = kokkosp_end_parallel_reduce;
-  my_event_set.end_parallel_scan      = kokkosp_end_parallel_scan;
-  my_event_set.create_profile_section = kokkosp_create_profile_section;
-  my_event_set.start_profile_section  = kokkosp_start_profile_section;
-  my_event_set.stop_profile_section   = kokkosp_stop_profile_section;
-  my_event_set.profile_event          = kokkosp_profile_event;
-  my_event_set.begin_fence            = kokkosp_begin_fence;
-  my_event_set.end_fence              = kokkosp_end_fence;
+  my_event_set.request_tool_settings   = kokkosp_request_tool_settings;
+  my_event_set.init                    = kokkosp_init_library;
+  my_event_set.finalize                = kokkosp_finalize_library;
+  my_event_set.push_region             = kokkosp_push_profile_region;
+  my_event_set.pop_region              = kokkosp_pop_profile_region;
+  my_event_set.begin_parallel_for      = kokkosp_begin_parallel_for;
+  my_event_set.begin_parallel_reduce   = kokkosp_begin_parallel_reduce;
+  my_event_set.begin_parallel_scan     = kokkosp_begin_parallel_scan;
+  my_event_set.end_parallel_for        = kokkosp_end_parallel_for;
+  my_event_set.end_parallel_reduce     = kokkosp_end_parallel_reduce;
+  my_event_set.end_parallel_scan       = kokkosp_end_parallel_scan;
+  my_event_set.create_profile_section  = kokkosp_create_profile_section;
+  my_event_set.start_profile_section   = kokkosp_start_profile_section;
+  my_event_set.stop_profile_section    = kokkosp_stop_profile_section;
+  my_event_set.destroy_profile_section = kokkosp_destroy_profile_section;
+  my_event_set.profile_event           = kokkosp_profile_event;
+  my_event_set.begin_fence             = kokkosp_begin_fence;
+  my_event_set.end_fence               = kokkosp_end_fence;
   return my_event_set;
 }
 
@@ -188,6 +193,7 @@ EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
 EXPOSE_CREATE_PROFILE_SECTION(impl::kokkosp_create_profile_section)
 EXPOSE_START_PROFILE_SECTION(impl::kokkosp_start_profile_section)
 EXPOSE_STOP_PROFILE_SECTION(impl::kokkosp_stop_profile_section)
+EXPOSE_DESTROY_PROFILE_SECTION(impl::kokkosp_destroy_profile_section)
 EXPOSE_PROFILE_EVENT(impl::kokkosp_profile_event);
 EXPOSE_BEGIN_FENCE(impl::kokkosp_begin_fence);
 EXPOSE_END_FENCE(impl::kokkosp_end_fence);
