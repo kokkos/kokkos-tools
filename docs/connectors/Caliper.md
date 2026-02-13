@@ -126,8 +126,8 @@ gf = ht.GraphFrame.from_caliper("profile.json")
 
 ### Official Caliper Resources
 
-- **Website**: [software.llnl.gov/Caliper](https://software.llnl.gov/Caliper/index.html)
-- **Documentation**: [Caliper Documentation](https://software.llnl.gov/Caliper/index.html)
+- **Website**: [software.llnl.gov/Caliper](https://software.llnl.gov/Caliper/)
+- **Documentation**: [Caliper Documentation](https://software.llnl.gov/Caliper/)
 - **Repository**: [GitHub - LLNL/Caliper](https://github.com/LLNL/Caliper)
 - **ConfigManager Guide**: [Configuration Guide](https://software.llnl.gov/Caliper/ConfigManagerAPI.html)
 
