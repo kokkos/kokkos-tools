@@ -18,14 +18,16 @@ Third-party library connectors (also known as advanced TPL connectors or aTPLs) 
 
 - [**ScoreP**](connectors/ScoreP.md) - Performance measurement infrastructure for parallel applications with profiling and tracing capabilities
 - [**Timemory**](connectors/Timemory.md) - Modular performance analysis library with extensive component support
+- [**Caliper**](connectors/Caliper.md) - Flexible and composable performance measurement framework from LLNL
 
 ### Contributing Documentation
 
 If you maintain a third-party connector for Kokkos Tools, you can contribute documentation by:
 
-1. Creating a markdown file in the `docs/connectors/` directory
-2. Following the structure of existing connector documentation
-3. Opening a pull request to the Kokkos Tools repository
+1. Using the [documentation template](connectors/TEMPLATE.md) as a starting point
+2. Creating a markdown file in the `docs/connectors/` directory
+3. Following the structure of existing connector documentation
+4. Opening a pull request to the Kokkos Tools repository
 
 See the [ScoreP documentation](connectors/ScoreP.md) as a reference example.
 
