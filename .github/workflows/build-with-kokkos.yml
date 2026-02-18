@@ -30,6 +30,7 @@ jobs:
     env:
       Kokkos_ROOT: /opt/kokkos
       VARIORUM_ROOT: /opt/variorum
+      ROCM_PATH: /opt/rocm
     steps:
       - name: Checkout Kokkos Tools
         uses: actions/checkout@v4

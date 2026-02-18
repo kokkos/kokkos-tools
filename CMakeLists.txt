@@ -50,6 +50,21 @@ option(KokkosTools_ENABLE_SYSTEMTAP "Enable SystemTap support"      OFF)
 option(KokkosTools_ENABLE_EXAMPLES "Build examples"                 OFF)
 option(KokkosTools_ENABLE_TESTS    "Build tests"                    OFF)
 
+# Configure CMAKE_PREFIX_PATH for ROCm/HIP if ROCM_PATH is set
+# This is needed for find_package(Kokkos) when Kokkos was built with HIP support
+if(DEFINED ENV{ROCM_PATH} AND NOT "$ENV{ROCM_PATH}" STREQUAL "")
+  list(APPEND CMAKE_PREFIX_PATH "$ENV{ROCM_PATH}")
+  list(APPEND CMAKE_PREFIX_PATH "$ENV{ROCM_PATH}/lib/cmake")
+  list(APPEND CMAKE_PREFIX_PATH "$ENV{ROCM_PATH}/hip")
+  message(STATUS "Adding ROCM_PATH to CMAKE_PREFIX_PATH: $ENV{ROCM_PATH}")
+  
+  # Also set hip_DIR as a hint for find_package(hip) if not already set
+  if(NOT DEFINED hip_DIR AND EXISTS "$ENV{ROCM_PATH}/lib/cmake/hip")
+    set(hip_DIR "$ENV{ROCM_PATH}/lib/cmake/hip" CACHE PATH "Path to hip CMake config")
+    message(STATUS "Setting hip_DIR hint: ${hip_DIR}")
+  endif()
+endif()
+
 # Fetch Kokkos options:
 acquire_kokkos_config()
 if(DEFINED Kokkos_FOUND_MSG)
