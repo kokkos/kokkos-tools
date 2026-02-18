@@ -52,17 +52,39 @@ option(KokkosTools_ENABLE_TESTS    "Build tests"                    OFF)
 
 # Configure CMAKE_PREFIX_PATH for ROCm/HIP if ROCM_PATH is set
 # This is needed for find_package(Kokkos) when Kokkos was built with HIP support
+set(ROCM_PATH_TO_USE "")
 if(DEFINED ENV{ROCM_PATH} AND NOT "$ENV{ROCM_PATH}" STREQUAL "")
-  list(APPEND CMAKE_PREFIX_PATH "$ENV{ROCM_PATH}")
-  list(APPEND CMAKE_PREFIX_PATH "$ENV{ROCM_PATH}/lib/cmake")
-  list(APPEND CMAKE_PREFIX_PATH "$ENV{ROCM_PATH}/hip")
-  message(STATUS "Adding ROCM_PATH to CMAKE_PREFIX_PATH: $ENV{ROCM_PATH}")
+  set(ROCM_PATH_TO_USE "$ENV{ROCM_PATH}")
+elseif(EXISTS "/opt/rocm")
+  # Fallback to default ROCm installation path
+  set(ROCM_PATH_TO_USE "/opt/rocm")
+  message(STATUS "ROCM_PATH not set, using default: /opt/rocm")
+endif()
+
+if(NOT "${ROCM_PATH_TO_USE}" STREQUAL "")
+  message(STATUS "Configuring ROCm paths from: ${ROCM_PATH_TO_USE}")
+  
+  # Add multiple potential locations for ROCm CMake configs
+  list(APPEND CMAKE_PREFIX_PATH "${ROCM_PATH_TO_USE}")
+  list(APPEND CMAKE_PREFIX_PATH "${ROCM_PATH_TO_USE}/lib/cmake")
+  list(APPEND CMAKE_PREFIX_PATH "${ROCM_PATH_TO_USE}/hip/lib/cmake")
+  list(APPEND CMAKE_PREFIX_PATH "${ROCM_PATH_TO_USE}/lib/cmake/hip")
   
   # Also set hip_DIR as a hint for find_package(hip) if not already set
-  if(NOT DEFINED hip_DIR AND EXISTS "$ENV{ROCM_PATH}/lib/cmake/hip")
-    set(hip_DIR "$ENV{ROCM_PATH}/lib/cmake/hip" CACHE PATH "Path to hip CMake config")
-    message(STATUS "Setting hip_DIR hint: ${hip_DIR}")
+  # Try multiple potential locations
+  if(NOT DEFINED hip_DIR)
+    if(EXISTS "${ROCM_PATH_TO_USE}/lib/cmake/hip")
+      set(hip_DIR "${ROCM_PATH_TO_USE}/lib/cmake/hip" CACHE PATH "Path to hip CMake config")
+      message(STATUS "Setting hip_DIR hint: ${hip_DIR}")
+    elseif(EXISTS "${ROCM_PATH_TO_USE}/hip/lib/cmake/hip")
+      set(hip_DIR "${ROCM_PATH_TO_USE}/hip/lib/cmake/hip" CACHE PATH "Path to hip CMake config")
+      message(STATUS "Setting hip_DIR hint: ${hip_DIR}")
+    else()
+      message(STATUS "hip CMake config not found in standard locations under ${ROCM_PATH_TO_USE}")
+    endif()
   endif()
+  
+  message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 endif()
 
 # Fetch Kokkos options:

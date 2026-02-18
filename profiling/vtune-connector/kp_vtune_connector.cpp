@@ -167,7 +167,7 @@ void kokkosp_pop_profile_region() {
 }
 
 void kokkosp_create_profile_section(const char* name, uint32_t* sID) {
-  *sID = kokkosp_sections.size();
+  *sID                 = kokkosp_sections.size();
   __itt_domain* domain = __itt_domain_create(name);
   domain->flags        = 1;
   kokkosp_sections.push_back({std::string(name), domain});
