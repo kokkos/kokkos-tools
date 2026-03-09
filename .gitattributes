@@ -1,0 +1,8 @@
+.clang* export-ignore
+.cmake* export-ignore
+.git* export-ignore
+.jenkins* export-ignore
+.mailmap export-ignore
+.pre-commit-config.yaml export-ignore
+scripts/ export-ignore
+CTestConfig.cmake export-ignore
