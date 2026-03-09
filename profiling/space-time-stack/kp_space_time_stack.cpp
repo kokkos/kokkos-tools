@@ -894,7 +894,7 @@ void kokkosp_print_help(const char* exe) {
 Default value: 0.1
 
 Description:
-  Provide a decimal threshold value of percent of parent time for output.  
+  Provide a decimal threshold value of percent of parent time for output.
   Timers below this threshold will not be output.  Set to 0 to get unfiltered
   reports.
 
