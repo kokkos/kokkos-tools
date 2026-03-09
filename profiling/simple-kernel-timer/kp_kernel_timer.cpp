@@ -14,8 +14,7 @@ namespace KokkosTools {
 namespace KernelTimer {
 enum KokkosToolsTimerOutputFormat { ascii, binary, json };
 
-void print_ascii(FILE* output,
-                 std::map<std::string, KernelPerformanceInfo*>& count_map,
+void print_ascii(std::map<std::string, KernelPerformanceInfo*>& count_map,
                  double totalExecuteTime) {
   std::vector<KernelPerformanceInfo*> kernelInfo;
   double totalKernelsTime    = 0;
@@ -212,6 +211,9 @@ void kokkosp_finalize_library() {
   } else if (kokkos_tools_timer_binary) {
     output_format     = binary;
     output_format_str = "dat";
+  } else {
+    print_ascii(count_map, totalExecuteTime);
+    return;
   }
 
   double kernelTimes = 0;
@@ -228,7 +230,6 @@ void kokkosp_finalize_library() {
   const double totalExecuteTime = (finishTime - initTime);
   switch (output_format) {
     case ascii: {
-      print_ascii(output_data, count_map, totalExecuteTime);
       break;
     }
     case binary: {
