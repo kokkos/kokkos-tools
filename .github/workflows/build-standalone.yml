@@ -4,7 +4,7 @@ jobs:
   simple-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Configure using CMake and compile.
       run : |
         # The Kokkos Tools systemtap connector requires 'dtrace'

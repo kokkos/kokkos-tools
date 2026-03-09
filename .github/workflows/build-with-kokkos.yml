@@ -32,15 +32,15 @@ jobs:
       VARIORUM_ROOT: /opt/variorum
     steps:
       - name: Checkout Kokkos Tools
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Checkout Kokkos repository at latest develop
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: kokkos/kokkos
           path: kokkos
           ref: develop
       - name: Checkout Varioum
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: LLNL/variorum
           path: variorum
