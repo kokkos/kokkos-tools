@@ -32,10 +32,11 @@ message(STATUS Configuring Kokkos-Tools)
 message(STATUS)
 
 # Common settings
-set(BUILD_SHARED_LIBS "Build shared libraries" ON)
+set(BUILD_SHARED_LIBS_INIT ON)
 if(WIN32)
-  set(BUILD_SHARED_LIBS OFF) # We need to add __declspec(dllexport/dllimport) for Windows DLLs
+  set(BUILD_SHARED_LIBS_INIT OFF) # We need to add __declspec(dllexport/dllimport) for Windows DLLs
 endif()
+option(BUILD_SHARED_LIBS "Build shared libraries" ${BUILD_SHARED_LIBS_INIT})
 
 # Tools settings
 option(KokkosTools_ENABLE_SINGLE  "Build single library interfacing all profilers and dispatching at runtime" OFF)
@@ -47,12 +48,10 @@ option(KokkosTools_ENABLE_PAPI    "Enable PAPI support"             OFF)
 option(KokkosTools_ENABLE_MPI     "Enable MPI support"              OFF)
 option(KokkosTools_ENABLE_CALIPER "Enable building Caliper library" OFF)
 option(KokkosTools_ENABLE_APEX    "Enable building Apex library"    OFF)
+option(KokkosTools_ENABLE_VARIORUM "Enable Variorum support"        OFF)
+option(KokkosTools_ENABLE_SYSTEMTAP "Enable SystemTap support"      OFF)
 option(KokkosTools_ENABLE_EXAMPLES "Build examples"                 OFF)
 option(KokkosTools_ENABLE_TESTS    "Build tests"                    OFF)
-
-# Advanced settings
-option(KokkosTools_REUSE_KOKKOS_COMPILER "Set the compiler and flags based on installed Kokkos settings" OFF)
-mark_as_advanced(KokkosTools_REUSE_KOKKOS_COMPILER)
 
 # Fetch Kokkos options:
 acquire_kokkos_config()
@@ -64,16 +63,7 @@ if(DEFINED Kokkos_FOUND_MSG)
     "\t\tCompiler: ${Kokkos_CXX_COMPILER} (${Kokkos_CXX_COMPILER_ID})\n"
     "\t\tCMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}\n"
     "\t\tOptions: ${Kokkos_OPTIONS}")
-  # Synchronize compiler and flags (only when explicitly requested)
-  if(KokkosTools_REUSE_KOKKOS_COMPILER)
-    set(CMAKE_CXX_COMPILER "${Kokkos_CXX_COMPILER}"        CACHE STRING "C++ Compiler")
-    set(CMAKE_CXX_STANDARD "${CMAKE_CXX_STANDARD_DEFAULT}" CACHE STRING "C++ Standard: 98, 11, 14, 17, 20 or 23")
-  endif()
 else()
-  if(KokkosTools_REUSE_KOKKOS_COMPILER)
-    message(FATAL_ERROR "Kokkos not found: can't reuse Kokkos compiler (which was explicitly"
-                        "requested with KokkosTools_REUSE_KOKKOS_COMPILER=ON)")
-  endif()
   message(STATUS "Kokkos NOT found")
 endif()
 
@@ -101,7 +91,9 @@ else()
   set(KOKKOSTOOLS_HAS_MPI 0)
 endif()
 
-include(cmake/configure_variorum.cmake)
+if(KokkosTools_ENABLE_VARIORUM)
+  include(cmake/configure_variorum.cmake)
+endif()
 
 set(KOKKOSTOOLS_HAS_CALIPER ${KokkosTools_ENABLE_CALIPER})
 set(KOKKOSTOOLS_HAS_NVTX  ${Kokkos_ENABLE_CUDA}) # we assume that enabling CUDA for Kokkos program means nvtx should be available
@@ -173,14 +165,13 @@ if(KokkosTools_ENABLE_PAPI)
   add_subdirectory(profiling/papi-connector)
 endif()
 
-if(NOT WIN32 AND NOT APPLE)
-  find_program(KOKKOSTOOLS_DTRACE_EXECUTABLE dtrace)
-  if(KOKKOSTOOLS_DTRACE_EXECUTABLE)
+if(KokkosTools_ENABLE_SYSTEMTAP)
+  if(NOT WIN32 AND NOT APPLE)
+    find_program(KOKKOSTOOLS_DTRACE_EXECUTABLE dtrace REQUIRED)
     add_subdirectory(profiling/systemtap-connector)
     set(KOKKOSTOOLS_HAS_SYSTEMTAP ON)
   else()
-    message(STATUS "Skipping systemtap-connector (dtrace executable wasn't found)")
-    set(KOKKOSTOOLS_HAS_SYSTEMTAP OFF)
+    message(FATAL_ERROR "KokkosTools_ENABLE_SYSTEMTAP=ON is not supported on Windows and macOS platforms")
   endif()
 else()
   set(KOKKOSTOOLS_HAS_SYSTEMTAP OFF)

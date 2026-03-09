@@ -12,4 +12,15 @@ jobs:
         sudo apt --yes --no-install-recommends install systemtap-sdt-dev
         cmake -B build -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror"
         cmake --build build
-        cmake --install build --prefix ${PWD}/install
+        cmake --install build --prefix ${RUNNER_TEMP}/kokkos-installed
+    - name: Check KokkosTools_ROOT.
+      run : |
+        SCRATCH_DIR="${RUNNER_TEMP}/kokkos-tools-scratch"
+        rm -rf "${SCRATCH_DIR}"
+        mkdir -p "${SCRATCH_DIR}"
+        cat > "${SCRATCH_DIR}/CMakeLists.txt" <<EOF
+          cmake_minimum_required(VERSION 3.14)
+          project(TestFindKokkosTools)
+          find_package(KokkosTools REQUIRED)
+        EOF
+        KokkosTools_ROOT=${RUNNER_TEMP}/kokkos-installed cmake -S "${SCRATCH_DIR}" -B "${SCRATCH_DIR}/build" --debug-find-pkg=KokkosTools

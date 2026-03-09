@@ -17,6 +17,7 @@
 #ifndef _H_KOKKOSP_KERNEL_SHARED
 #define _H_KOKKOSP_KERNEL_SHARED
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <vector>

@@ -27,7 +27,7 @@
 
 #include "kp_nvtx_focused_connector_domain.h"
 
-#include "nvToolsExt.h"
+#include "nvtx3/nvToolsExt.h"
 
 #include "kp_core.hpp"
 
