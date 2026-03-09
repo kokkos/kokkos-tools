@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(KokkosTools CXX)
+project(KokkosTools LANGUAGES CXX VERSION 5.1.99)
+
+message(STATUS "KokkosTools version: ${KokkosTools_VERSION}")
+math(EXPR KOKKOSTOOLS_VERSION "${KokkosTools_VERSION_MAJOR} * 10000 + ${KokkosTools_VERSION_MINOR} * 100 + ${KokkosTools_VERSION_PATCH}")
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -271,10 +274,20 @@ if(KokkosTools_ENABLE_TESTS)
   add_subdirectory(tests)
 endif()
 
+include(CMakePackageConfigHelpers)
+# generate the version file for the config file
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/KokkosToolsConfigVersion.cmake"
+  COMPATIBILITY SameMajorVersion
+)
+
 # Install exports
 install(TARGETS ${EXPORT_TARGETS} EXPORT ${EXPORT_NAME})
 install(EXPORT ${EXPORT_NAME}
   NAMESPACE KokkosTools::
   DESTINATION ${EXPORT_LIB_DIR}/cmake/KokkosTools)
+install(FILES
+          "${CMAKE_CURRENT_BINARY_DIR}/KokkosToolsConfigVersion.cmake"
+          DESTINATION ${EXPORT_LIB_DIR}/cmake/KokkosTools)
 install(CODE "SET(KokkosTools_HAS_MPI ${USE_MPI})")
 
