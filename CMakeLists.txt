@@ -283,10 +283,20 @@ if(KokkosTools_ENABLE_TESTS)
   add_subdirectory(tests)
 endif()
 
+include(CMakePackageConfigHelpers)
+# generate the version file for the config file
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/KokkosToolsConfigVersion.cmake"
+  COMPATIBILITY SameMajorVersion
+)
+
 # Install exports
 install(TARGETS ${EXPORT_TARGETS} EXPORT ${EXPORT_NAME})
 install(EXPORT ${EXPORT_NAME}
   NAMESPACE KokkosTools::
   DESTINATION ${EXPORT_LIB_DIR}/cmake)
+install(FILES
+          "${CMAKE_CURRENT_BINARY_DIR}/KokkosToolsConfigVersion.cmake"
+          DESTINATION ${EXPORT_LIB_DIR}/cmake)
 install(CODE "SET(KokkosTools_HAS_MPI ${USE_MPI})")
 
