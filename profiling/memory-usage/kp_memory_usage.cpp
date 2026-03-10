@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
+#include <array>
 #include <cstdio>
 #include <inttypes.h>
 #include <vector>
@@ -8,6 +9,7 @@
 #include <atomic>
 #include <mutex>
 #include <fstream>
+#include <iomanip>
 
 #include <sys/resource.h>
 #include <unistd.h>
