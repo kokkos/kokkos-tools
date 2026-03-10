@@ -72,8 +72,9 @@ void kokkosp_finalize_library() {
 
   for (int s = 0; s < num_spaces; s++) {
     char* fileOutput = (char*)malloc(sizeof(char) * 256);
-    snprintf(fileOutput, 256, "%s-%d-%s.memspace_usage", hostname, pid,
-             space_name[s]);
+    [[maybe_unused]] auto written_bytes =
+        snprintf(fileOutput, 256, "%s-%d-%s.memspace_usage", hostname, pid,
+                 space_name[s]);
 
     FILE* ofile = fopen(fileOutput, "wb");
     free(fileOutput);
