@@ -33,7 +33,6 @@ class KernelPerformanceInfo {
       : kernelName(std::move(kName)), kType(kernelType) {}
 
   KernelExecutionType getKernelType() const { return kType; }
-  void setKernelType(KernelExecutionType kernelType) { kType = kernelType; }
 
   void incrementCount() { callCount++; }
 

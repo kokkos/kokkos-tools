@@ -12,135 +12,75 @@
 
 namespace KokkosTools {
 namespace KernelTimer {
-enum KokkosToolsTimerOutputFormat { ascii, binary, json };
-
 void print_ascii(std::map<std::string, KernelPerformanceInfo*>& count_map,
                  double totalExecuteTime) {
   std::vector<KernelPerformanceInfo*> kernelInfo;
   double totalKernelsTime    = 0;
   uint64_t totalKernelsCalls = 0;
 
-  for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
-       kernel_itr++) {
-    KernelPerformanceInfo* new_kernel =
-        new KernelPerformanceInfo(kernel_itr->first, PARALLEL_FOR);
-    new_kernel->setKernelType(kernel_itr->second->getKernelType());
-    new_kernel->addTime(kernel_itr->second->getTime());
-    new_kernel->addCallCount(kernel_itr->second->getCallCount());
-    int kernelIndex = find_index(kernelInfo, kernel_itr->first);
-    if (kernelIndex > -1) {
-      kernelInfo[kernelIndex]->addTime(new_kernel->getTime());
-      kernelInfo[kernelIndex]->addCallCount(new_kernel->getCallCount());
-    } else {
-      kernelInfo.push_back(new_kernel);
-    }
-
-    delete new_kernel;
+  for (auto const& [name, info] : count_map) {
+    kernelInfo.push_back(info);
   }
 
   std::sort(kernelInfo.begin(), kernelInfo.end(), compareKernelPerformanceInfo);
 
-  for (unsigned int i = 0; i < kernelInfo.size(); i++) {
-    if (kernelInfo[i]->getKernelType() != REGION) {
-      totalKernelsTime += kernelInfo[i]->getTime();
-      totalKernelsCalls += kernelInfo[i]->getCallCount();
+  // Calculate total time in kernels and total calls to kernels for summary
+  for (auto const& info : kernelInfo) {
+    if (info->getKernelType() != REGION) {
+      totalKernelsTime += info->getTime();
+      totalKernelsCalls += info->getCallCount();
     }
   }
 
+  // Header matching kp_reader.cpp
   printf(
-      " (Type)   Total Time, Call Count, Avg. Time per Call, %%Total Time in "
+      "\n (Type)   Total Time, Call Count, Avg. Time per Call, %%Total Time in "
       "Kernels, %%Total Program Time\n");
   printf(
       "------------------------------------------------------------------------"
       "-\n\n");
 
+  char delimiter = ' ';
+  // We check for the environment delimiter if set during init
+  if (outputDelimiter != nullptr && strlen(outputDelimiter) > 0) {
+    delimiter = outputDelimiter[0];
+  }
+
+  auto print_row = [&](KernelPerformanceInfo* info) {
+    const double callCountDouble = (double)info->getCallCount();
+    const char* typeStr          = " (Region)  ";
+    switch (info->getKernelType()) {
+      case PARALLEL_FOR: typeStr = " (ParFor)  "; break;
+      case PARALLEL_REDUCE: typeStr = " (ParRed)  "; break;
+      case PARALLEL_SCAN: typeStr = " (ParScan) "; break;
+      default: break;
+    }
+
+    printf(
+        "- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n", info->getName().c_str(),
+        typeStr, delimiter, info->getTime(), delimiter, info->getCallCount(),
+        delimiter, info->getTime() / std::max(1.0, callCountDouble), delimiter,
+        (info->getTime() / std::max(1e-9, totalKernelsTime)) * 100.0, delimiter,
+        (info->getTime() / std::max(1e-9, totalExecuteTime)) * 100.0);
+  };
+
   printf("Regions: \n\n");
-  char delimiter  = ' ';
-  int fixed_width = 0;
-  for (unsigned int i = 0; i < kernelInfo.size(); i++) {
-    const double callCountDouble = (double)kernelInfo[i]->getCallCount();
-
-    if (kernelInfo[i]->getKernelType() != REGION) continue;
-    if (fixed_width)
-      printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
-             kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
-                 ? (" (ParFor)  ")
-                 : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
-                        ? (" (ParRed)  ")
-                        : ((kernelInfo[i]->getKernelType() == PARALLEL_SCAN)
-                               ? (" (ParScan) ")
-                               : (" (Region)  "))),
-             delimiter, kernelInfo[i]->getTime(), delimiter,
-             kernelInfo[i]->getCallCount(), delimiter,
-             kernelInfo[i]->getTime() / callCountDouble, delimiter,
-             (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0, delimiter,
-             (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0);
-    else
-      printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
-             kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
-                 ? (" (ParFor)  ")
-                 : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
-                        ? (" (ParRed)  ")
-                        : ((kernelInfo[i]->getKernelType() == PARALLEL_SCAN)
-                               ? (" (ParScan) ")
-                               : (" (REGION)  "))),
-             delimiter, kernelInfo[i]->getTime(), delimiter,
-             kernelInfo[i]->getCallCount(), delimiter,
-             kernelInfo[i]->getTime() / callCountDouble, delimiter,
-             (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0, delimiter,
-             (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0);
+  for (auto const& info : kernelInfo) {
+    if (info->getKernelType() == REGION) print_row(info);
   }
 
-  printf("\n");
   printf(
-      "------------------------------------------------------------------------"
-      "-\n");
+      "\n----------------------------------------------------------------------"
+      "---\n");
   printf("Kernels: \n\n");
-
-  for (unsigned int i = 0; i < kernelInfo.size(); i++) {
-    const double callCountDouble = (double)kernelInfo[i]->getCallCount();
-
-    if (kernelInfo[i]->getKernelType() == REGION) continue;
-    if (fixed_width)
-      printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
-             kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
-                 ? (" (ParFor)  ")
-                 : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
-                        ? (" (ParRed)  ")
-                        : ((kernelInfo[i]->getKernelType() == PARALLEL_SCAN)
-                               ? (" (ParScan) ")
-                               : (" (Region)  "))),
-             delimiter, kernelInfo[i]->getTime(), delimiter,
-             kernelInfo[i]->getCallCount(), delimiter,
-             kernelInfo[i]->getTime() / callCountDouble, delimiter,
-             (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0, delimiter,
-             (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0);
-    else
-      printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
-             kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
-                 ? (" (ParFor)  ")
-                 : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
-                        ? (" (ParRed)  ")
-                        : ((kernelInfo[i]->getKernelType() == PARALLEL_SCAN)
-                               ? (" (ParScan) ")
-                               : (" (REGION)  "))),
-             delimiter, kernelInfo[i]->getTime(), delimiter,
-             kernelInfo[i]->getCallCount(), delimiter,
-             kernelInfo[i]->getTime() / callCountDouble, delimiter,
-             (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0, delimiter,
-             (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0);
+  for (auto const& info : kernelInfo) {
+    if (info->getKernelType() != REGION) print_row(info);
   }
 
-  printf("\n");
   printf(
-      "------------------------------------------------------------------------"
-      "-\n");
-  printf("Summary:\n");
-  printf("\n");
+      "\n----------------------------------------------------------------------"
+      "---\n");
+  printf("Summary:\n\n");
   printf(
       "Total Execution Time (incl. Kokkos + non-Kokkos):      %20.5f seconds\n",
       totalExecuteTime);
@@ -151,14 +91,13 @@ void print_ascii(std::map<std::string, KernelPerformanceInfo*>& count_map,
       "   -> Time outside Kokkos kernels:                     %20.5f seconds\n",
       (totalExecuteTime - totalKernelsTime));
   printf("   -> Percentage in Kokkos kernels:                    %20.2f %%\n",
-         (totalKernelsTime / totalExecuteTime) * 100);
+         (totalKernelsTime / std::max(1e-9, totalExecuteTime)) * 100.0);
   printf("Total Calls to Kokkos Kernels:                         %20" PRIu64
          "\n",
          totalKernelsCalls);
-  printf("\n");
   printf(
       "------------------------------------------------------------------------"
-      "-\n");
+      "-\n\n");
 }
 
 bool is_region(KernelPerformanceInfo const& kp) {
@@ -190,7 +129,8 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 }
 
 void kokkosp_finalize_library() {
-  double finishTime = seconds();
+  double finishTime             = seconds();
+  const double totalExecuteTime = (finishTime - initTime);
 
   auto is_enabled = [](const char* env_var) {
     const char* env_var_raw = getenv(env_var);
@@ -203,16 +143,8 @@ void kokkosp_finalize_library() {
   const bool kokkos_tools_timer_binary =
       is_enabled("KOKKOS_TOOLS_TIMER_BINARY");
 
-  KokkosToolsTimerOutputFormat output_format = ascii;
-  std::string output_format_str              = "txt";
-  const double totalExecuteTime              = (finishTime - initTime);
-  if (kokkos_tools_timer_json) {
-    output_format     = json;
-    output_format_str = "json";
-  } else if (kokkos_tools_timer_binary) {
-    output_format     = binary;
-    output_format_str = "dat";
-  } else {
+  // Quick return for ascii output (default)
+  if (!kokkos_tools_timer_json && !kokkos_tools_timer_binary) {
     print_ascii(count_map, totalExecuteTime);
     return;
   }
@@ -224,79 +156,73 @@ void kokkosp_finalize_library() {
 
   char* fileOutput = (char*)malloc(sizeof(char) * 256);
   snprintf(fileOutput, 256, "%s-%d.%s", hostname, (int)getpid(),
-           output_format_str.c_str());
+           kokkos_tools_timer_json ? "json" : "dat");
 
   free(hostname);
   FILE* output_data = fopen(fileOutput, "wb");
-  switch (output_format) {
-    case binary: {
-      fwrite(&totalExecuteTime, sizeof(totalExecuteTime), 1, output_data);
+  if (kokkos_tools_timer_binary) {
+    fwrite(&totalExecuteTime, sizeof(totalExecuteTime), 1, output_data);
 
-      for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
-           kernel_itr++) {
-        kernel_itr->second->writeToBinaryFile(output_data);
-      }
-      break;
+    for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
+         kernel_itr++) {
+      kernel_itr->second->writeToBinaryFile(output_data);
     }
-    case json: {
-      std::vector<KernelPerformanceInfo*> kernelList;
+  } else if (kokkos_tools_timer_json) {
+    std::vector<KernelPerformanceInfo*> kernelList;
 
-      for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
-           kernel_itr++) {
-        kernelList.push_back(kernel_itr->second);
-        kernelTimes += kernel_itr->second->getTime();
-      }
+    for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
+         kernel_itr++) {
+      kernelList.push_back(kernel_itr->second);
+      kernelTimes += kernel_itr->second->getTime();
+    }
 
-      std::sort(kernelList.begin(), kernelList.end(),
-                compareKernelPerformanceInfo);
+    std::sort(kernelList.begin(), kernelList.end(),
+              compareKernelPerformanceInfo);
 
-      fprintf(output_data, "{\n\"kokkos-kernel-data\" : {\n");
-      fprintf(output_data, "    \"total-app-time\"         : %10.3f,\n",
-              totalExecuteTime);
-      fprintf(output_data, "    \"total-kernel-times\"     : %10.3f,\n",
-              kernelTimes);
-      fprintf(output_data, "    \"total-non-kernel-times\" : %10.3f,\n",
-              (totalExecuteTime - kernelTimes));
+    fprintf(output_data, "{\n\"kokkos-kernel-data\" : {\n");
+    fprintf(output_data, "    \"total-app-time\"         : %10.3f,\n",
+            totalExecuteTime);
+    fprintf(output_data, "    \"total-kernel-times\"     : %10.3f,\n",
+            kernelTimes);
+    fprintf(output_data, "    \"total-non-kernel-times\" : %10.3f,\n",
+            (totalExecuteTime - kernelTimes));
 
-      const double percentKokkos = (kernelTimes / totalExecuteTime) * 100.0;
-      fprintf(output_data, "    \"percent-in-kernels\"     : %6.2f,\n",
-              percentKokkos);
-      fprintf(output_data, "    \"unique-kernel-calls\"    : %22llu,\n",
-              (unsigned long long)count_map.size());
-      fprintf(output_data, "\n");
+    const double percentKokkos = (kernelTimes / totalExecuteTime) * 100.0;
+    fprintf(output_data, "    \"percent-in-kernels\"     : %6.2f,\n",
+            percentKokkos);
+    fprintf(output_data, "    \"unique-kernel-calls\"    : %22llu,\n",
+            (unsigned long long)count_map.size());
+    fprintf(output_data, "\n");
 
-      fprintf(output_data, "    \"region-perf-info\"       : [\n");
+    fprintf(output_data, "    \"region-perf-info\"       : [\n");
 
 #define KERNEL_INFO_INDENT "       "
 
-      bool print_comma = false;
-      for (auto const& kernel : count_map) {
-        if (!is_region(*std::get<1>(kernel))) continue;
-        if (print_comma) fprintf(output_data, ",\n");
-        kernel.second->writeToJSONFile(output_data, KERNEL_INFO_INDENT);
-        print_comma = true;
-      }
-
-      fprintf(output_data, "\n");
-      fprintf(output_data, "    ],\n");
-
-      fprintf(output_data, "    \"kernel-perf-info\"       : [\n");
-
-      print_comma = false;
-      for (auto const& kernel : count_map) {
-        if (is_region(*std::get<1>(kernel))) continue;
-        if (print_comma) fprintf(output_data, ",\n");
-        kernel.second->writeToJSONFile(output_data, KERNEL_INFO_INDENT);
-        print_comma = true;
-      }
-
-      fprintf(output_data, "\n");
-      fprintf(output_data, "    ]\n");
-
-      fprintf(output_data, "}\n}");
-      break;
+    bool print_comma = false;
+    for (auto const& kernel : count_map) {
+      if (!is_region(*std::get<1>(kernel))) continue;
+      if (print_comma) fprintf(output_data, ",\n");
+      kernel.second->writeToJSONFile(output_data, KERNEL_INFO_INDENT);
+      print_comma = true;
     }
-    default: fprintf(stderr, "Error: Unrecognized output format\n"); break;
+
+    fprintf(output_data, "\n");
+    fprintf(output_data, "    ],\n");
+
+    fprintf(output_data, "    \"kernel-perf-info\"       : [\n");
+
+    print_comma = false;
+    for (auto const& kernel : count_map) {
+      if (is_region(*std::get<1>(kernel))) continue;
+      if (print_comma) fprintf(output_data, ",\n");
+      kernel.second->writeToJSONFile(output_data, KERNEL_INFO_INDENT);
+      print_comma = true;
+    }
+
+    fprintf(output_data, "\n");
+    fprintf(output_data, "    ]\n");
+
+    fprintf(output_data, "}\n}");
   }
 
   fclose(output_data);
