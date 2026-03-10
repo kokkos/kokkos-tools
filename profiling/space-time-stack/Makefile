@@ -12,4 +12,4 @@ kp_space_time_stack.so: ${MAKEFILE_PATH}kp_space_time_stack.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 clean:
-	rm *.so 
+	rm *.so

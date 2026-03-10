@@ -23,11 +23,11 @@ provider kokkos {
 	    SpaceHandle, const char*, const void*,
 	    uint64_t);
 	probe end_deep_copy();
-      
+
 	probe create_profile_section(const char*, uint32_t*);
 	probe start_profile_section(const uint32_t);
 	probe stop_profile_section(const uint32_t);
 	probe destroy_profile_section(const uint32_t);
-      
+
 	probe profile_event(const char*);
 };

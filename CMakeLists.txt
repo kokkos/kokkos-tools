@@ -290,4 +290,3 @@ install(FILES
           "${CMAKE_CURRENT_BINARY_DIR}/KokkosToolsConfigVersion.cmake"
           DESTINATION ${EXPORT_LIB_DIR}/cmake/KokkosTools)
 install(CODE "SET(KokkosTools_HAS_MPI ${USE_MPI})")
-
