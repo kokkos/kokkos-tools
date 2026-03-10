@@ -133,8 +133,11 @@ void kokkosp_finalize_library() {
   fclose(output_data);
 
   char currentwd[256];
-  getcwd(currentwd, 256);
-  printf("KokkosP: Kernel timing written to %s/%s \n", currentwd, fileOutput);
+  auto return_value = getcwd(currentwd, 256);
+  if (return_value)
+    printf("KokkosP: Kernel timing written to %s/%s \n", currentwd, fileOutput);
+  else
+    printf("KokkosP: Couldn't read current working directory.\n");
 
   /*printf("\n");
   printf("======================================================================\n");
