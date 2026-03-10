@@ -34,7 +34,8 @@
         "Kokkos_ENABLE_HIP": "ON",
         "Kokkos_ENABLE_ROCTHRUST": "OFF",
         "Kokkos_ARCH_VEGA906": "ON",
-        "CMAKE_CXX_COMPILER": "hipcc"
+        "CMAKE_CXX_COMPILER": "hipcc",
+        "CMAKE_PREFIX_PATH": "/opt/rocm"
       }
     }
   ],

@@ -32,7 +32,8 @@
         "ROCM_PATH": "/opt/rocm"
       },
       "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "hipcc"
+        "CMAKE_CXX_COMPILER": "hipcc",
+        "CMAKE_PREFIX_PATH": "/opt/rocm"
       }
     }
   ],
