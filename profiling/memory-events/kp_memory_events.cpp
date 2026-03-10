@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
+#include <array>
 #include <cstdio>
 #include <cinttypes>
 #include <vector>
@@ -14,6 +15,8 @@
 #include "kp_core.hpp"
 #include "kp_memory_events.hpp"
 #include "kp_timer.hpp"
+
+#include <fstream>
 
 namespace KokkosTools {
 namespace MemoryEvents {
@@ -50,31 +53,31 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 }
 
 void kokkosp_finalize_library() {
-  char* hostname = (char*)malloc(sizeof(char) * 256);
-  gethostname(hostname, 256);
+  std::array<char, 256> hostname_buf{};
+  gethostname(hostname_buf.data(), hostname_buf.size());
+  std::string hostname(hostname_buf.data());
+
   int pid = getpid();
 
-  {
-    char* fileOutput = (char*)malloc(sizeof(char) * 256);
-    snprintf(fileOutput, 256, "%s-%d.mem_events", hostname, pid);
+  std::string fileOutput = hostname + "-" + std::to_string(pid) + ".mem_events";
 
-    FILE* ofile = fopen(fileOutput, "wb");
-    free(fileOutput);
+  std::ofstream ofile(fileOutput, std::ios::binary);
 
-    fprintf(ofile, "# Memory Events\n");
-    fprintf(ofile,
-            "# Time     Ptr                  Size        MemSpace      Op      "
-            "   Name\n");
-    for (unsigned int i = 0; i < events.size(); i++)
-      events[i].print_record(ofile);
-    fclose(ofile);
+  ofile << "# Memory Events\n";
+  ofile << "# Time     Ptr                  Size        MemSpace      Op"
+        << "         Name\n";
+
+  for (const auto& e : events) {
+    e.print_record(ofile);  // assuming you overload to accept std::ostream
   }
+
+  ofile.close();
 
   for (int s = 0; s < num_spaces; s++) {
     char* fileOutput = (char*)malloc(sizeof(char) * 256);
     [[maybe_unused]] auto written_bytes =
-        snprintf(fileOutput, 256, "%s-%d-%s.memspace_usage", hostname, pid,
-                 space_name[s]);
+        snprintf(fileOutput, 256, "%s-%d-%s.memspace_usage", hostname.c_str(),
+                 pid, space_name[s]);
 
     FILE* ofile = fopen(fileOutput, "wb");
     free(fileOutput);
@@ -94,7 +97,6 @@ void kokkosp_finalize_library() {
     }
     fclose(ofile);
   }
-  free(hostname);
 }
 
 void kokkosp_allocate_data(const SpaceHandle space, const char* label,
