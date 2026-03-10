@@ -24,7 +24,7 @@
       "inherits": "default",
       "cacheVariables": {
         "CMAKE_CXX_COMPILER": "$env{Kokkos_ROOT}/bin/nvcc_wrapper",
-        "CMAKE_CXX_FLAGS": "$penv{CMAKE_CXX_FLAGS} -Wno-undef"
+        "CMAKE_CXX_FLAGS": "-Werror -Wno-undef"
       }
     },
     {
