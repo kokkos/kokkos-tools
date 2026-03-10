@@ -205,6 +205,7 @@ void kokkosp_finalize_library() {
 
   KokkosToolsTimerOutputFormat output_format = ascii;
   std::string output_format_str              = "txt";
+  const double totalExecuteTime              = (finishTime - initTime);
   if (kokkos_tools_timer_json) {
     output_format     = json;
     output_format_str = "json";
@@ -226,12 +227,8 @@ void kokkosp_finalize_library() {
            output_format_str.c_str());
 
   free(hostname);
-  FILE* output_data             = fopen(fileOutput, "wb");
-  const double totalExecuteTime = (finishTime - initTime);
+  FILE* output_data = fopen(fileOutput, "wb");
   switch (output_format) {
-    case ascii: {
-      break;
-    }
     case binary: {
       fwrite(&totalExecuteTime, sizeof(totalExecuteTime), 1, output_data);
 
