@@ -12,4 +12,4 @@ kp_chrome_tracing.so: ${MAKEFILE_PATH}kp_chrome_tracing.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 clean:
-	rm *.so 
+	rm *.so

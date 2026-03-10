@@ -8,4 +8,3 @@ For randomized sampling, the user can ensure reproducibility of this tool's outp
 
 In order for the state of the sampled profiling and logging data in memory to be captured at the time of the utility's callback invocation, it might be important to enforce fences. However, this also means that there are more synchronization points compared with running the program without the tool.
 This fencing behavior can be controlled by setting the environment variable `KOKKOS_TOOLS_GLOBALFENCES`. A non-zero value implies global fences on invocation of the tool. The default is not to introduce extra fences.
-

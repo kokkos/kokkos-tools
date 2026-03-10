@@ -9,7 +9,7 @@ MAKEFILE_PATH := $(subst Makefile,,$(abspath $(lastword $(MAKEFILE_LIST))))
 CXXFLAGS+=-I${MAKEFILE_PATH} -I${MAKEFILE_PATH}/../../common/makefile-only -I${MAKEFILE_PATH}../all -I${MAKEFILE_PATH}../../common
 
 kp_reader: ${MAKEFILE_PATH}kp_reader.cpp kp_kernel_timer.so
-	$(CXX) $(CXXFLAGS) -o kp_reader ${MAKEFILE_PATH}kp_reader.cpp ${MAKEFILE_PATH}kp_shared.cpp 
+	$(CXX) $(CXXFLAGS) -o kp_reader ${MAKEFILE_PATH}kp_reader.cpp ${MAKEFILE_PATH}kp_shared.cpp
 
 kp_json_writer: ${MAKEFILE_PATH}kp_json_writer.cpp kp_kernel_timer.so
 	$(CXX) $(CXXFLAGS) -o kp_json_writer ${MAKEFILE_PATH}kp_json_writer.cpp ${MAKEFILE_PATH}kp_shared.cpp

@@ -12,7 +12,7 @@ To use one of the tools you have to compile it, which will generate a dynamic li
 
 CMake and Makefiles are supported for building Kokkos Tools. The following provides instructions for both.
 
-## Using cmake 
+## Using cmake
 
 ### Build
 
@@ -21,9 +21,9 @@ CMake and Makefiles are supported for building Kokkos Tools. The following provi
 3. To compile, type `make`
 4. To install, type `make install`
 
-### Run 
+### Run
 
-Given your installed tool shared library `lib<name_of_tool_shared_lib>.so` and an application executable called yourApplication.exe, type: 
+Given your installed tool shared library `lib<name_of_tool_shared_lib>.so` and an application executable called yourApplication.exe, type:
 
 `export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_INSTALL_DIR}/lib<name_of_tool_shared_lib>.so; ./yourApplication.exe`
 
@@ -32,11 +32,11 @@ Given your installed tool shared library `lib<name_of_tool_shared_lib>.so` and a
 
 ### Build
 
-To build some library `<name_of_tool_shared_lib>` with make, simply type `make` within that library's subdirectory `${YOUR_KOKKOS_TOOLS_LIB_SRC_DIR}` of Kokkos Tools. This generates the shared library within that subdirectory. 
+To build some library `<name_of_tool_shared_lib>` with make, simply type `make` within that library's subdirectory `${YOUR_KOKKOS_TOOLS_LIB_SRC_DIR}` of Kokkos Tools. This generates the shared library within that subdirectory.
 
-### Run 
+### Run
 
-Given your installed tool shared library `<name_of_tool_shared_lib>.so` and an application executable called `yourApplication.exe`, type: 
+Given your installed tool shared library `<name_of_tool_shared_lib>.so` and an application executable called `yourApplication.exe`, type:
 
 `export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_LIB_SRC_DIR}/<name_of_tool_shared_lib>.so; ./yourApplication.exe`
 
@@ -56,10 +56,10 @@ void foo() {
 
 ## Tools
 
-The following provides an overview of the tools available in the set of Kokkos Tools. Click on each Kokkos Tools name to see more details about the tool via the Kokkos Tools Wiki. 
+The following provides an overview of the tools available in the set of Kokkos Tools. Click on each Kokkos Tools name to see more details about the tool via the Kokkos Tools Wiki.
 
 ### Utilities
-+ [**KernelFilter:**](https://github.com/kokkos/kokkos-tools/wiki/KernelFilter) 
++ [**KernelFilter:**](https://github.com/kokkos/kokkos-tools/wiki/KernelFilter)
 
     A tool which is used in conjunction with analysis tools, to restrict them to a subset of the application.
 
@@ -70,11 +70,11 @@ The following provides an overview of the tools available in the set of Kokkos T
 ### Memory Analysis
 + [**MemoryHighWater:**](https://github.com/kokkos/kokkos-tools/wiki/MemoryHighWater)
 
-    This tool outputs the _high water mark_ of memory usage of the application. The _high water mark_ of memory usage is the highest amount of memory that is being utilized during the application's execution. 
+    This tool outputs the _high water mark_ of memory usage of the application. The _high water mark_ of memory usage is the highest amount of memory that is being utilized during the application's execution.
 
 + [**MemoryUsage:**](https://github.com/kokkos/kokkos-tools/wiki/MemoryUsage)
 
-    Generates a per Memory Space timeline of memory utilization. 
+    Generates a per Memory Space timeline of memory utilization.
 
 + [**MemoryEvents:**](https://github.com/kokkos/kokkos-tools/wiki/MemoryEvents)
 
@@ -91,12 +91,12 @@ The following provides an overview of the tools available in the set of Kokkos T
 
 ### 3rd Party Profiling Tool Hooks
 + [**VTuneConnector:**](https://github.com/kokkos/kokkos-tools/wiki/VTuneConnector)
-    
+
     Provides Kokkos Kernel Names to VTune, so that analysis can be performed on a per kernel base.
 
 + [**VTuneFocusedConnector:**](https://github.com/kokkos/kokkos-tools/wiki/VTuneFocusedConnector)
-    
-    Like VTuneConnector but turns profiling off outside of kernels. Should be used in conjunction with the KernelFilter tool. 
+
+    Like VTuneConnector but turns profiling off outside of kernels. Should be used in conjunction with the KernelFilter tool.
 
 + [**NVTXConnector:**](https://github.com/kokkos/kokkos-tools/wiki/NVTXConnector)
 
@@ -110,15 +110,15 @@ The following provides an overview of the tools available in the set of Kokkos T
 
     ##### If you need to write your own plug-in, this provides a straight-forward API to writing the plug-in.
 
-    Defining a timemory component will enable your plug-in to output to stdout, text, and JSON, 
+    Defining a timemory component will enable your plug-in to output to stdout, text, and JSON,
     accumulate statistics, and utilize various portable function calls for common needs w.r.t. timers,
-    resource usage, etc. 
+    resource usage, etc.
 
 # Tutorial
 
 A tutorial on Kokkos Tools can be found here: https://github.com/kokkos/kokkos-tutorials/blob/main/LectureSeries/KokkosTutorial_07_Tools.pdf
 
-# Contact 
+# Contact
 
 * Vivek Kale (vlkale@sandia.gov)
 * Christian Trott (crtrott@sandia.gov)

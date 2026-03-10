@@ -2,20 +2,20 @@
 
 To use the PAPI connector you have to compile it against the latest PAPI version that includes the new high-level API.
 
-Details about PAPI's new high-level API can be found here:  
+Details about PAPI's new high-level API can be found here:
 https://bitbucket.org/icl/papi/wiki/Home
 
 #### Install PAPI (from version 6.0) or latest git version
 
 ```console
 git clone https://bitbucket.org/icl/papi.git
-```   
-Installation instructions can be found here:  
+```
+Installation instructions can be found here:
 https://icl.utk.edu/papi/software/index.html
 
 #### Install the PAPI connector
 ```console
-export PAPI_ROOT=<Path of PAPI>  
+export PAPI_ROOT=<Path of PAPI>
 make
 ```
 This will generate a dynamic library `kp_papi_connector.so`.
@@ -40,7 +40,7 @@ Note that all environment variables that are used by PAPI can be set as well, se
 During the finalization phase of a Kokkos application, an output file is generated automatically. The output format is JSON and lists several PAPI events for each parallel construct or profile section. If not specified by the user, the output file will be located in the current working directory in the "papi" folder.
 
 PAPI also offers a Python script which enhances the output
-by creating some derived metrics, like IPC, MFlops/s, and MFlips/s as well as real and processor time in case the corresponding PAPI events have been recorded. 
+by creating some derived metrics, like IPC, MFlops/s, and MFlips/s as well as real and processor time in case the corresponding PAPI events have been recorded.
 
 ```console
 papi_hl_output_writer.py --source papi

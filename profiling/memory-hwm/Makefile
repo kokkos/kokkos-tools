@@ -11,4 +11,4 @@ kp_hwm.so: ${MAKEFILE_PATH}kp_hwm.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 clean:
-	rm *.so 
+	rm *.so
