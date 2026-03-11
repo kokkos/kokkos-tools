@@ -62,6 +62,7 @@ inline std::string to_string(KernelExecutionType t) {
 
 inline void write_json(std::ostream& os, KernelPerformanceInfo const& kp,
                        std::string indent = "") {
+  const uint64_t callcount = kp.getCallCount();
   os << indent << "{\n";
   if (is_region(kp)) {
     os << indent << "  \"region-name\": \"" << kp.getName() << "\",\n";
@@ -69,10 +70,10 @@ inline void write_json(std::ostream& os, KernelPerformanceInfo const& kp,
     os << indent << "  \"kernel-name\": \"" << kp.getName() << "\",\n";
   }
 
-  os << indent << "  \"call-count\": " << kp.getCallCount() << ",\n";
+  os << indent << "  \"call-count\": " << callcount << ",\n";
   os << indent << "  \"total-time\": " << kp.getTime() << ",\n";
   os << indent << "  \"time-per-call\": "
-     << kp.getTime() / std::max((uint64_t)1, kp.getCallCount()) << ",\n";
+     << kp.getTime() / std::max((uint64_t)1, callcount) << ",\n";
   os << indent << "  \"kernel-type\": " << to_string(kp.getKernelType())
      << '\n';
   os << indent << '}';
@@ -87,12 +88,10 @@ void json_format_kernel_list(double totalExecuteTime,
   for (unsigned int i = 0; i < kernelInfo.size(); i++) {
     if (kernelInfo[i]->getKernelType() != REGION) {
       totalKernelsTime += kernelInfo[i]->getTime();
-      totalKernelsCalls += kernelInfo[i]->getCallCount();
+      // totalKernelsCalls += kernelInfo[i]->getCallCount();
+      totalKernelsCalls++;
     }
   }
-
-  // std::string filename = "test.json";
-  // std::ofstream fout(filename);
 
   fout << "{\n";
 

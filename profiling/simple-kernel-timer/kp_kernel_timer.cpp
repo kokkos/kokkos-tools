@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <vector>
-#include <algorithm>
 #include <string>
 #include <iostream>
 #include <unistd.h>
@@ -47,8 +46,6 @@ void kokkosp_finalize_library() {
           : strcmp(kokkos_tools_timer_json_raw, "1") == 0 ||
                 strcmp(kokkos_tools_timer_json_raw, "true") == 0 ||
                 strcmp(kokkos_tools_timer_json_raw, "True") == 0;
-
-  double kernelTimes = 0;
 
   char* hostname = (char*)malloc(sizeof(char) * 256);
   gethostname(hostname, 256);
