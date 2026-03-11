@@ -9,13 +9,9 @@
 
 #include "kp_core.hpp"
 #include "kp_shared.h"
-
+#include <sstream>
 namespace KokkosTools {
 namespace KernelTimer {
-
-bool is_region(KernelPerformanceInfo const& kp) {
-  return kp.getKernelType() == REGION;
-}
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t /*devInfoCount*/,
@@ -74,73 +70,20 @@ void kokkosp_finalize_library() {
     }
   } else {
     std::vector<KernelPerformanceInfo*> kernelList;
-    const std::size_t unique_counts        = count_map.size();
-    unsigned long long unique_kernel_count = 0;
+    const std::size_t unique_counts = count_map.size();
     kernelList.reserve(unique_counts);
 
     for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
          kernel_itr++) {
-      // Skip region to not count twice
-      if (!is_region(*kernel_itr->second)) {
-        kernelTimes += kernel_itr->second->getTime();
-        unique_kernel_count++;
-      }
       kernelList.push_back(kernel_itr->second);
     }
 
-    std::sort(kernelList.begin(), kernelList.end(),
-              compareKernelPerformanceInfo);
-    const double percentKokkos = (kernelTimes / totalExecuteTime) * 100.0;
-    const double nonKernelTime = totalExecuteTime - kernelTimes;
+    std::ostringstream buffer;
 
-    fprintf(output_data, "{\n\"kokkos-kernel-data\" : {\n");
-    fprintf(output_data, "    \"total-app-time\"         : %10.3f,\n",
-            totalExecuteTime);
-    fprintf(output_data, "    \"total-kernel-times\"     : %10.3f,\n",
-            kernelTimes);
-    fprintf(output_data, "    \"total-non-kernel-times\" : %10.3f,\n",
-            nonKernelTime);
+    json_format_kernel_list(totalExecuteTime, kernelList, buffer);
 
-    fprintf(output_data, "    \"percent-in-kernels\"     : %6.2f,\n",
-            percentKokkos);
-    fprintf(output_data, "    \"unique-kernel-calls\"    : %22llu,\n",
-            unique_kernel_count);
-    fprintf(output_data, "\n");
-
-    fprintf(output_data, "    \"region-perf-info\"       : [\n");
-
-    bool print_comma = false;
-    for (auto const& kernel : count_map) {
-      if (!is_region(*std::get<1>(kernel))) {
-        continue;
-      }
-      if (print_comma) {
-        fprintf(output_data, ",\n");
-      }
-      kernel.second->writeToJSONFile(output_data, KERNEL_INFO_INDENT);
-      print_comma = true;
-    }
-
-    fprintf(output_data, "\n");
-    fprintf(output_data, "    ],\n");
-    fprintf(output_data, "    \"kernel-perf-info\"       : [\n");
-
-    print_comma = false;
-    for (auto const& kernel : count_map) {
-      if (is_region(*std::get<1>(kernel))) {
-        continue;
-      }
-      if (print_comma) {
-        fprintf(output_data, ",\n");
-      }
-      kernel.second->writeToJSONFile(output_data, KERNEL_INFO_INDENT);
-      print_comma = true;
-    }
-
-    fprintf(output_data, "\n");
-    fprintf(output_data, "    ]\n");
-
-    fprintf(output_data, "}\n}");
+    const std::string& s = buffer.str();
+    fwrite(s.data(), 1, s.size(), output_data);
   }
 
   fclose(output_data);

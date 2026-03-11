@@ -9,6 +9,7 @@
 #include <string>
 #include <cstring>
 
+#include "kp_shared.h"
 #include "utils/demangle.hpp"
 
 namespace KokkosTools::KernelTimer {
@@ -144,8 +145,13 @@ class KernelPerformanceInfo {
     char* indentBuffer = (char*)malloc(sizeof(char) * 256);
     snprintf(indentBuffer, 256, "%s    ", indent);
 
-    fprintf(output, "%s\"kernel-name\"    : \"%s\",\n", indentBuffer,
-            kernelName.c_str());
+    auto name = kernelName.c_str();
+    if (kType == REGION) {
+      fprintf(output, "%s\"region-name\"    : \"%s\",\n", indentBuffer, name);
+    } else {
+      fprintf(output, "%s\"kernel-name\"    : \"%s\",\n", indentBuffer, name);
+    }
+
     // fprintf(output, "%s\"region\"         : \"%s\",\n", indentBuffer,
     // regionName);
     fprintf(output, "%s\"call-count\"     : %llu,\n", indentBuffer,
