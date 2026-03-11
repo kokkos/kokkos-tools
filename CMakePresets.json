@@ -6,7 +6,7 @@
       "binaryDir": "${sourceDir}/build-with-${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD": "20",
         "CMAKE_CXX_FLAGS": "-Werror",
         "KokkosTools_ENABLE_EXAMPLES": "ON",
         "KokkosTools_ENABLE_SINGLE": "ON",
@@ -23,8 +23,7 @@
       "name": "Cuda",
       "inherits": "default",
       "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "$env{Kokkos_ROOT}/bin/nvcc_wrapper",
-        "CMAKE_CXX_FLAGS": "-Werror"
+        "CMAKE_CXX_COMPILER": "$env{Kokkos_ROOT}/bin/nvcc_wrapper"
       }
     },
     {

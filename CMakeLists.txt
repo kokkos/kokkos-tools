@@ -6,10 +6,10 @@ message(STATUS "KokkosTools version: ${KokkosTools_VERSION}")
 math(EXPR KOKKOSTOOLS_VERSION "${KokkosTools_VERSION_MAJOR} * 10000 + ${KokkosTools_VERSION_MINOR} * 100 + ${KokkosTools_VERSION_PATCH}")
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD 20)
 endif()
-if(CMAKE_CXX_STANDARD LESS 17)
-  message(FATAL_ERROR "KokkosTools requires C++17")
+if(CMAKE_CXX_STANDARD LESS 20)
+  message(FATAL_ERROR "KokkosTools requires C++20")
 endif()
 
 
