@@ -42,17 +42,20 @@
     {
       "name": "OpenMP",
       "configurePreset": "OpenMP",
-      "inheritConfigureEnvironment": true
+      "inheritConfigureEnvironment": true,
+      "verbose": true
     },
     {
       "name": "Cuda",
       "configurePreset": "Cuda",
-      "inheritConfigureEnvironment": true
+      "inheritConfigureEnvironment": true,
+      "verbose": true
     },
     {
       "name": "ROCm",
       "configurePreset": "ROCm",
-      "inheritConfigureEnvironment": true
+      "inheritConfigureEnvironment": true,
+      "verbose": true
     }
   ],
   "testPresets": [

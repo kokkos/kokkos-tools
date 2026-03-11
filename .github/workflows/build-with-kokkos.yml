@@ -105,7 +105,7 @@ jobs:
       - name: Build Kokkos Tools, enabling examples
         run: |
           cmake -S . --preset=${{ matrix.preset }}
-          cmake --build --preset=${{ matrix.preset }} --verbose
+          cmake --build --preset=${{ matrix.preset }}
           cmake --install build-with-${{ matrix.preset }} --prefix=/opt/kokkos-tools
       # For now, GitHub runners are used. These runner don't have GPUs. Therefore, testing can only be done for OpenMP.
       # Skip variorum test since the architecture detected by variorum is not supported
