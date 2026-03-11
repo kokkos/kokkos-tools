@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <unistd.h>
+#include <filesystem>
 
 #include "kp_core.hpp"
 #include "kp_shared.h"
@@ -132,12 +133,9 @@ void kokkosp_finalize_library() {
 
   fclose(output_data);
 
-  char currentwd[256];
-  auto return_value = getcwd(currentwd, 256);
-  if (return_value)
-    printf("KokkosP: Kernel timing written to %s/%s \n", currentwd, fileOutput);
-  else
-    printf("KokkosP: Couldn't read current working directory.\n");
+  auto currentwd = std::filesystem::current_path();
+  printf("KokkosP: Kernel timing written to %s/%s \n", currentwd.c_str(),
+         fileOutput);
 
   /*printf("\n");
   printf("======================================================================\n");
