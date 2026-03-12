@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     FILE* the_file = fopen(argv[i], "rb");
 
     double fileExecuteTime = 0;
-    [[maybe_unused]] auto dummy =
+    [[maybe_unused]] auto ignore =
         fread(&fileExecuteTime, sizeof(fileExecuteTime), 1, the_file);
 
     totalExecuteTime += fileExecuteTime;

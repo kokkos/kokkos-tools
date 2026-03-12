@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <inttypes.h>
 #include <iomanip>
+#include <iosfwd>
 
 #include "kp_core.hpp"
 
