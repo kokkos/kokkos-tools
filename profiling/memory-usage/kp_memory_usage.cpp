@@ -47,8 +47,8 @@ void kokkosp_init_library(const int /*loadSeq*/,
 void kokkosp_finalize_library() {
   char* hostname = (char*)malloc(sizeof(char) * 256);
   gethostname(hostname, 256);
-  int pid = getpid();
-  std::string hostname_string;
+  int pid                     = getpid();
+  std::string hostname_string = hostname;
 
   for (int s = 0; s < num_spaces; s++) {
     std::string fileOutput = hostname_string + "-" + std::to_string(pid) + "-" +
