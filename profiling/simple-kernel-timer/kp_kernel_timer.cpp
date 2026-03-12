@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <unistd.h>
+#include <filesystem>
 
 #include "kp_core.hpp"
 #include "kp_shared.h"
@@ -132,9 +133,8 @@ void kokkosp_finalize_library() {
 
   fclose(output_data);
 
-  char currentwd[256];
-  getcwd(currentwd, 256);
-  printf("KokkosP: Kernel timing written to %s/%s \n", currentwd, fileOutput);
+  auto cwd = std::filesystem::current_path();
+  printf("KokkosP: Kernel timing written to %s/%s \n", cwd.c_str(), fileOutput);
 
   /*printf("\n");
   printf("======================================================================\n");

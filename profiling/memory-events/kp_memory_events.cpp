@@ -52,14 +52,13 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 void kokkosp_finalize_library() {
   char* hostname = (char*)malloc(sizeof(char) * 256);
   gethostname(hostname, 256);
-  int pid = getpid();
+  int pid                     = getpid();
+  std::string hostname_string = hostname;
 
   {
-    char* fileOutput = (char*)malloc(sizeof(char) * 256);
-    snprintf(fileOutput, 256, "%s-%d.mem_events", hostname, pid);
-
-    FILE* ofile = fopen(fileOutput, "wb");
-    free(fileOutput);
+    std::string fileOutput =
+        hostname_string + "-" + std::to_string(pid) + ".mem_events";
+    FILE* ofile = fopen(fileOutput.c_str(), "wb");
 
     fprintf(ofile, "# Memory Events\n");
     fprintf(ofile,
@@ -70,13 +69,11 @@ void kokkosp_finalize_library() {
     fclose(ofile);
   }
 
-  for (int s = 0; s < num_spaces; s++) {
-    char* fileOutput = (char*)malloc(sizeof(char) * 256);
-    snprintf(fileOutput, 256, "%s-%d-%s.memspace_usage", hostname, pid,
-             space_name[s]);
+  for (int s = 0; s < num_spaces; ++s) {
+    std::string fileOutput = hostname_string + "-" + std::to_string(pid) + "-" +
+                             space_name[s] + ".memspace_usage";
 
-    FILE* ofile = fopen(fileOutput, "wb");
-    free(fileOutput);
+    FILE* ofile = fopen(fileOutput.c_str(), "wb");
 
     fprintf(ofile, "# Space %s\n", space_name[s]);
     fprintf(ofile,

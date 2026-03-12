@@ -20,7 +20,7 @@ extern "C" void kokkosp_init_library(const int loadSeq,
                                      void* deviceInfo) {
   printf("-----------------------------------------------------------\n");
   printf("KokkosP: PAPI Connector (sequence is %d, version: %llu)\n", loadSeq,
-         interfaceVer);
+         static_cast<unsigned long long>(interfaceVer));
   printf("-----------------------------------------------------------\n");
 
   /* The following advanced functions of PAPI's high-level API are not part

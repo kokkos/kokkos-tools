@@ -119,7 +119,9 @@ extern "C" void kokkosp_init_library(const int loadSeq,
         printf("KokkosP: KOKKOS_TOOLS_LIBS not set.\n");
         profileLibrary = getenv("KOKKOS_PROFILE_LIBRARY");
         if (NULL == profileLibrary) {
-          printf("KokkosP: No library to call in %s\n", profileLibrary);
+          printf(
+              "KokkosP: No library to call. Neither KOKKOS_TOOLS_LIBS nor "
+              "KOKKOS_PROFILE_LIBRARY is set.\n");
           exit(-1);
         } else {
           printf(
