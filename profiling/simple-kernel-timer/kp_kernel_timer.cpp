@@ -133,9 +133,8 @@ void kokkosp_finalize_library() {
 
   fclose(output_data);
 
-  auto currentwd = std::filesystem::current_path();
-  printf("KokkosP: Kernel timing written to %s/%s \n", currentwd.c_str(),
-         fileOutput);
+  auto cwd = std::filesystem::current_path();
+  printf("KokkosP: Kernel timing written to %s/%s \n", cwd.c_str(), fileOutput);
 
   /*printf("\n");
   printf("======================================================================\n");
