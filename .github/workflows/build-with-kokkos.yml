@@ -9,10 +9,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
+        kokkos-version-tag: [5.0.2, develop]
+        build:
           - image: ubuntu:22.04
             preset: OpenMP
             compiler: default
+
           - image: nvidia/cuda:12.2.0-devel-ubuntu22.04
             preset: Cuda
             compiler: default
@@ -26,19 +28,19 @@ jobs:
             preset: ROCm
             compiler: default
     container:
-      image: ${{ matrix.image }}
+      image: ${{ matrix.build.image }}
     env:
       Kokkos_ROOT: /opt/kokkos
       VARIORUM_ROOT: /opt/variorum
     steps:
       - name: Checkout Kokkos Tools
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Checkout Kokkos repository at latest develop
+      - name: Checkout Kokkos repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: kokkos/kokkos
           path: kokkos
-          ref: develop
+          ref: ${{ matrix.kokkos-version-tag }}
       - name: Checkout Varioum
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -49,10 +51,10 @@ jobs:
         run : |
           apt update
 
-          if [ ${{ matrix.compiler }} != 'default' ];then
-              apt --yes --no-install-recommends install ${{ matrix.compiler.c }} ${{ matrix.compiler.cpp }} gfortran
-              export CC=${{ matrix.compiler.c }}
-              export CXX=${{ matrix.compiler.cpp }}
+          if [ ${{ matrix.build.compiler }} != 'default' ];then
+              apt --yes --no-install-recommends install ${{ matrix.build.compiler.c }} ${{ matrix.build.compiler.cpp }} gfortran
+              export CC=${{ matrix.build.compiler.c }}
+              export CXX=${{ matrix.build.compiler.cpp }}
           else
               apt --yes --no-install-recommends install gcc g++ gfortran
               export CC=gcc
@@ -63,7 +65,7 @@ jobs:
           echo "CXX=$CXX" >> $GITHUB_ENV
           echo "FC=gfortran" >> $GITHUB_ENV
 
-          case ${{ matrix.preset }} in
+          case ${{ matrix.build.preset }} in
               *OpenMP* )
                   echo "Preset is OpenMP, nothing to do."
                   ;;
@@ -75,7 +77,7 @@ jobs:
                   echo "Preset is ROCm, nothing to do."
                   ;;
               * )
-                  echo "Unsupported preset '${{ matrix.preset }}'."
+                  echo "Unsupported preset '${{ matrix.build.preset }}'."
                   exit -1
           esac
 
@@ -99,17 +101,17 @@ jobs:
         working-directory: kokkos
         run: |
           cp ${GITHUB_WORKSPACE}/kokkos.presets.json CMakePresets.json
-          cmake -S . --preset=${{ matrix.preset }}
-          cmake --build --preset=${{ matrix.preset }}
-          cmake --install build-with-${{ matrix.preset }} --prefix=${Kokkos_ROOT}
+          cmake -S . --preset=${{ matrix.build.preset }}
+          cmake --build --preset=${{ matrix.build.preset }}
+          cmake --install build-with-${{ matrix.build.preset }} --prefix=${Kokkos_ROOT}
       - name: Build Kokkos Tools, enabling examples
         run: |
-          cmake -S . --preset=${{ matrix.preset }}
-          cmake --build --preset=${{ matrix.preset }} --verbose
-          cmake --install build-with-${{ matrix.preset }} --prefix=/opt/kokkos-tools
+          cmake -S . --preset=${{ matrix.build.preset }}
+          cmake --build --preset=${{ matrix.build.preset }} --verbose
+          cmake --install build-with-${{ matrix.build.preset }} --prefix=/opt/kokkos-tools
       # For now, GitHub runners are used. These runner don't have GPUs. Therefore, testing can only be done for OpenMP.
       # Skip variorum test since the architecture detected by variorum is not supported
       - name: Run tests
-        if: ${{ matrix.preset == 'OpenMP' }}
+        if: ${{ matrix.build.preset == 'OpenMP' }}
         run: |
-          ctest -E "test_kokkos_tools_variorum" --preset=${{ matrix.preset }}
+          ctest -E "test_kokkos_tools_variorum" --preset=${{ matrix.build.preset }}
