@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-#include <array>
 #include <cstdio>
 #include <cinttypes>
 #include <vector>
@@ -15,8 +14,6 @@
 #include "kp_core.hpp"
 #include "kp_memory_events.hpp"
 #include "kp_timer.hpp"
-
-#include <fstream>
 
 namespace KokkosTools {
 namespace MemoryEvents {
@@ -53,50 +50,47 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 }
 
 void kokkosp_finalize_library() {
-  std::array<char, 256> hostname_buf{};
-  gethostname(hostname_buf.data(), hostname_buf.size());
-  std::string hostname(hostname_buf.data());
-
+  char* hostname = (char*)malloc(sizeof(char) * 256);
+  gethostname(hostname, 256);
   int pid = getpid();
+  std::string hostname_string;
 
-  // ---- Memory event log ----
-  std::string fileOutput = hostname + "-" + std::to_string(pid) + ".mem_events";
-  std::ofstream ofile(fileOutput, std::ios::binary);
+  {
+    std::string fileOutput =
+        hostname_string + "-" + std::to_string(pid) + ".mem_events";
+    FILE* ofile = fopen(fileOutput.c_str(), "wb");
 
-  ofile << "# Memory Events\n";
-  ofile << "# Time     Ptr                  Size        MemSpace      Op       "
-           "  Name\n";
-
-  for (const auto& e : events) {
-    e.print_record(ofile);
+    fprintf(ofile, "# Memory Events\n");
+    fprintf(ofile,
+            "# Time     Ptr                  Size        MemSpace      Op      "
+            "   Name\n");
+    for (unsigned int i = 0; i < events.size(); i++)
+      events[i].print_record(ofile);
+    fclose(ofile);
   }
 
-  // ---- Per memory space usage ----
   for (int s = 0; s < num_spaces; ++s) {
-    std::string fileName = hostname + "-" + std::to_string(pid) + "-" +
-                           space_name[s] + ".memspace_usage";
+    std::string fileOutput = hostname_string + "-" + std::to_string(pid) + "-" +
+                             space_name[s] + ".memspace_usage";
 
-    std::ofstream spaceFile(fileName, std::ios::binary);
+    FILE* ofile = fopen(fileOutput.c_str(), "wb");
 
-    spaceFile << "# Space " << space_name[s] << "\n";
-    spaceFile
-        << "# Time(s)  Size(MB)   HighWater(MB)   HighWater-Process(MB)\n";
-
+    fprintf(ofile, "# Space %s\n", space_name[s]);
+    fprintf(ofile,
+            "# Time(s)  Size(MB)   HighWater(MB)   HighWater-Process(MB)\n");
     uint64_t maxvalue = 0;
-
-    for (const auto& entry : space_size_track[s]) {
-      double time         = std::get<0>(entry);
-      uint64_t size       = std::get<1>(entry);
-      uint64_t process_hw = std::get<2>(entry);
-
-      if (size > maxvalue) maxvalue = size;
-
-      spaceFile << time << " " << std::fixed << std::setprecision(1)
-                << (size / 1024.0 / 1024.0) << " "
-                << (maxvalue / 1024.0 / 1024.0) << " "
-                << (process_hw / 1024.0 / 1024.0) << "\n";
+    for (unsigned int i = 0; i < space_size_track[s].size(); i++) {
+      if (std::get<1>(space_size_track[s][i]) > maxvalue)
+        maxvalue = std::get<1>(space_size_track[s][i]);
+      fprintf(ofile, "%lf %.1lf %.1lf %.1lf\n",
+              std::get<0>(space_size_track[s][i]),
+              1.0 * std::get<1>(space_size_track[s][i]) / 1024 / 1024,
+              1.0 * maxvalue / 1024 / 1024,
+              1.0 * std::get<2>(space_size_track[s][i]) / 1024 / 1024);
     }
+    fclose(ofile);
   }
+  free(hostname);
 }
 
 void kokkosp_allocate_data(const SpaceHandle space, const char* label,
