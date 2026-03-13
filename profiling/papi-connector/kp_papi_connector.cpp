@@ -16,8 +16,8 @@
 
 extern "C" void kokkosp_init_library(const int loadSeq,
                                      const uint64_t interfaceVer,
-                                     const uint32_t devInfoCount,
-                                     void* deviceInfo) {
+                                     const uint32_t /*devInfoCount*/,
+                                     void* /*deviceInfo*/) {
   printf("-----------------------------------------------------------\n");
   printf("KokkosP: PAPI Connector (sequence is %d, version: %llu)\n", loadSeq,
          static_cast<unsigned long long>(interfaceVer));
@@ -48,15 +48,15 @@ extern "C" void kokkosp_finalize_library() {
   printf("-----------------------------------------------------------\n");
 }
 
-extern "C" void kokkosp_begin_parallel_for(const char* name, uint32_t devid,
-                                           uint64_t* kernid) {
+extern "C" void kokkosp_begin_parallel_for(const char* name, uint32_t /*devid*/,
+                                           uint64_t* /*kernid*/) {
   // printf("kokkosp_begin_parallel_for: %s %d\n", name, *kernid);
   std::stringstream ss;
   ss << "kokkosp_parallel_for:" << name;
   parallel_for_name.push(ss.str());
   PAPI_hl_region_begin(ss.str().c_str());
 }
-extern "C" void kokkosp_end_parallel_for(uint64_t kernid) {
+extern "C" void kokkosp_end_parallel_for(uint64_t /*kernid*/) {
   // printf("kokkosp_end_parallel_for: %d\n", kernid);
   if (parallel_for_name.empty() == false) {
     PAPI_hl_region_end(parallel_for_name.top().c_str());
@@ -66,15 +66,16 @@ extern "C" void kokkosp_end_parallel_for(uint64_t kernid) {
   }
 }
 
-extern "C" void kokkosp_begin_parallel_reduce(const char* name, uint32_t devid,
-                                              uint64_t* kernid) {
+extern "C" void kokkosp_begin_parallel_reduce(const char* name,
+                                              uint32_t /*devid*/,
+                                              uint64_t* /*kernid*/) {
   // printf("kokkosp_begin_parallel_reduce: %s %d\n", name, *kernid);
   std::stringstream ss;
   ss << "kokkosp_parallel_reduce:" << name;
   parallel_reduce_name.push(ss.str());
   PAPI_hl_region_begin(ss.str().c_str());
 }
-extern "C" void kokkosp_end_parallel_reduce(uint64_t kernid) {
+extern "C" void kokkosp_end_parallel_reduce(uint64_t /*kernid*/) {
   // printf("kokkosp_end_parallel_reduce: %d\n", kernid);
   if (parallel_reduce_name.empty() == false) {
     PAPI_hl_region_end(parallel_reduce_name.top().c_str());
@@ -84,15 +85,16 @@ extern "C" void kokkosp_end_parallel_reduce(uint64_t kernid) {
   }
 }
 
-extern "C" void kokkosp_begin_parallel_scan(const char* name, uint32_t devid,
-                                            uint64_t* kernid) {
+extern "C" void kokkosp_begin_parallel_scan(const char* name,
+                                            uint32_t /*devid*/,
+                                            uint64_t* /*kernid*/) {
   // printf("kokkosp_begin_parallel_scan: %s %d\n", name, *kernid);
   std::stringstream ss;
   ss << "kokkosp_parallel_scan:" << name;
   parallel_scan_name.push(ss.str());
   PAPI_hl_region_begin(ss.str().c_str());
 }
-extern "C" void kokkosp_end_parallel_scan(uint64_t kernid) {
+extern "C" void kokkosp_end_parallel_scan(uint64_t /*kernid*/) {
   // printf("kokkosp_end_parallel_scan: %d\n", kernid);
   if (parallel_scan_name.empty() == false) {
     PAPI_hl_region_end(parallel_scan_name.top().c_str());
@@ -109,7 +111,7 @@ extern "C" void kokkosp_push_profile_region(const char* name) {
   PAPI_hl_region_begin(ss.str().c_str());
 }
 
-extern "C" void kokkosp_profile_event(const char* name) {
+extern "C" void kokkosp_profile_event(const char* /*name*/) {
   if (region_name.empty() == false) {
     PAPI_hl_read(region_name.top().c_str());
   }
@@ -124,12 +126,10 @@ extern "C" void kokkosp_pop_profile_region() {
   }
 }
 
-extern "C" void kokkosp_begin_deep_copy(SpaceHandle dst_handle,
-                                        const char* dst_name,
-                                        const void* dst_ptr,
-                                        SpaceHandle src_handle,
-                                        const char* src_name,
-                                        const void* src_ptr, uint64_t size) {
+extern "C" void kokkosp_begin_deep_copy(
+    SpaceHandle /*dst_handle*/, const char* /*dst_name*/,
+    const void* /*dst_ptr*/, SpaceHandle /*src_handle*/,
+    const char* /*src_name*/, const void* /*src_ptr*/, uint64_t /*size*/) {
   PAPI_hl_region_begin("kokkosp_deep_copy");
 }
 extern "C" void kokkosp_end_deep_copy() {

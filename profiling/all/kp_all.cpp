@@ -53,6 +53,7 @@ using EventSet = Kokkos::Tools::Experimental::EventSet;
 namespace KokkosTools {
 
 EventSet get_event_set(const char* profiler, const char* config_str) {
+  (void)config_str;
   std::map<std::string, EventSet> handlers;
 #ifndef WIN32
   handlers["kernel-timer"]  = KernelTimer::get_event_set();

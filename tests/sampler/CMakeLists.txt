@@ -1,4 +1,7 @@
-## tests for skip rate 5, no fencing selected
+## tests for skip rate 5, no fencing selec`ted
+
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-Wrestrict" HAVE_RESTRICT_WARNING)
 
 kp_add_executable_and_test(
     TARGET_NAME       test_sampling_parfor
@@ -7,6 +10,9 @@ kp_add_executable_and_test(
     KOKKOS_TOOLS_SAMPLER_VERBOSE 2
     KOKKOS_TOOLS_SAMPLER_SKIP 5
 )
+if(HAVE_RESTRICT_WARNING)
+target_compile_options(test_sampling_parfor PRIVATE "-Wno-restrict")
+endif()
 
 kp_add_executable_and_test(
     TARGET_NAME       test_sampling_parscan
@@ -15,6 +21,9 @@ kp_add_executable_and_test(
     KOKKOS_TOOLS_SAMPLER_VERBOSE 2
     KOKKOS_TOOLS_SAMPLER_SKIP 5
 )
+if(HAVE_RESTRICT_WARNING)
+target_compile_options(test_sampling_parscan PRIVATE "-Wno-restrict")
+endif()
 
 kp_add_executable_and_test(
     TARGET_NAME       test_sampling_parreduce
@@ -23,6 +32,9 @@ kp_add_executable_and_test(
     KOKKOS_TOOLS_SAMPLER_VERBOSE 2
     KOKKOS_TOOLS_SAMPLER_SKIP 5
 )
+if(HAVE_RESTRICT_WARNING)
+target_compile_options(test_sampling_parreduce PRIVATE "-Wno-restrict")
+endif()
 
 ## tests for probability of 51.6% (with skip rate 0), no fencing selected
 
@@ -34,6 +46,9 @@ kp_add_executable_and_test(
     KOKKOS_TOOLS_RANDOM_SEED 2
     KOKKOS_TOOLS_SAMPLER_PROB 51.6
 )
+if(HAVE_RESTRICT_WARNING)
+target_compile_options(test_sampling_prob_parfor PRIVATE "-Wno-restrict")
+endif()
 
 kp_add_executable_and_test(
     TARGET_NAME       test_sampling_prob_parscan
@@ -43,6 +58,9 @@ kp_add_executable_and_test(
     KOKKOS_TOOLS_RANDOM_SEED 2
     KOKKOS_TOOLS_SAMPLER_PROB 51.6
 )
+if(HAVE_RESTRICT_WARNING)
+target_compile_options(test_sampling_prob_parscan PRIVATE "-Wno-restrict")
+endif()
 
 kp_add_executable_and_test(
     TARGET_NAME       test_sampling_prob_parreduce
@@ -52,6 +70,9 @@ kp_add_executable_and_test(
     KOKKOS_TOOLS_RANDOM_SEED 2
     KOKKOS_TOOLS_SAMPLER_PROB 51.6
 )
+if(HAVE_RESTRICT_WARNING)
+target_compile_options(test_sampling_prob_parreduce PRIVATE "-Wno-restrict")
+endif()
 
 ## tests for probability of 51.6% (with skip rate 0), with fences
 
@@ -64,6 +85,9 @@ kp_add_executable_and_test(
     KOKKOS_TOOLS_SAMPLER_PROB 51.6
     KOKKOS_TOOLS_GLOBALFENCES 1
 )
+if(HAVE_RESTRICT_WARNING)
+target_compile_options(test_sampling_prob_parfor_fence PRIVATE "-Wno-restrict")
+endif()
 
 kp_add_executable_and_test(
     TARGET_NAME       test_sampling_prob_parscan_fence
@@ -74,6 +98,9 @@ kp_add_executable_and_test(
     KOKKOS_TOOLS_SAMPLER_PROB 51.6
     KOKKOS_TOOLS_GLOBALFENCES 1
 )
+if(HAVE_RESTRICT_WARNING)
+target_compile_options(test_sampling_prob_parscan_fence PRIVATE "-Wno-restrict")
+endif()
 
 kp_add_executable_and_test(
     TARGET_NAME       test_sampling_prob_parreduce_fence
@@ -84,3 +111,6 @@ kp_add_executable_and_test(
     KOKKOS_TOOLS_SAMPLER_PROB 51.6
     KOKKOS_TOOLS_GLOBALFENCES 1
 )
+if(HAVE_RESTRICT_WARNING)
+target_compile_options(test_sampling_prob_parreduce_fence PRIVATE "-Wno-restrict")
+endif()
