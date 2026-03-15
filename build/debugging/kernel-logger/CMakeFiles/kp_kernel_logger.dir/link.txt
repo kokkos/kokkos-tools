@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/kp_kernel_logger.dir/link.d -shared -Wl,-soname,libkp_kernel_logger.so -o libkp_kernel_logger.so CMakeFiles/kp_kernel_logger.dir/kp_kernel_logger.cpp.o

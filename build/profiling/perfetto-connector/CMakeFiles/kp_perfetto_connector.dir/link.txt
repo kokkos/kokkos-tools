@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/kp_perfetto_connector.dir/link.d -shared -Wl,-soname,libkp_perfetto_connector.so -o libkp_perfetto_connector.so "CMakeFiles/kp_perfetto_connector.dir/libperfetto-connector.cpp.o" CMakeFiles/kp_perfetto_connector.dir/perfetto/perfetto.cc.o

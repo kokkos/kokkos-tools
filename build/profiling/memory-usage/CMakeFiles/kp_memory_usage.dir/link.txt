@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/kp_memory_usage.dir/link.d -shared -Wl,-soname,libkp_memory_usage.so -o libkp_memory_usage.so CMakeFiles/kp_memory_usage.dir/kp_memory_usage.cpp.o

@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/kp_chrome_tracing.dir/link.d -shared -Wl,-soname,libkp_chrome_tracing.so -o libkp_chrome_tracing.so CMakeFiles/kp_chrome_tracing.dir/kp_chrome_tracing.cpp.o

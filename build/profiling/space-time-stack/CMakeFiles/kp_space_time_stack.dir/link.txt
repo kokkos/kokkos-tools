@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/kp_space_time_stack.dir/link.d -shared -Wl,-soname,libkp_space_time_stack.so -o libkp_space_time_stack.so CMakeFiles/kp_space_time_stack.dir/kp_space_time_stack.cpp.o

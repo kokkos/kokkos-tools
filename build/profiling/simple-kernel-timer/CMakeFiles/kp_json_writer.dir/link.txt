@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/kp_json_writer.dir/link.d CMakeFiles/kp_json_writer.dir/kp_json_writer.cpp.o -o kp_json_writer  -Wl,-rpath,/home/runner/work/kokkos-tools/kokkos-tools/build/profiling/simple-kernel-timer: libkp_kernel_timer.so
