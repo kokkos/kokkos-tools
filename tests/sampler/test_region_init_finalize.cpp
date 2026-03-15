@@ -11,8 +11,8 @@
 
 #include "Kokkos_Core.hpp"
 
+using ::testing::ContainsRegex;
 using ::testing::HasSubstr;
-using ::testing::Not;
 
 /**
  * @test This death test checks that kokkosp_init_library and
@@ -36,75 +36,13 @@ TEST(SimpleKernelTimerRegion_DeathTest, region) {
         exit(0);
       },
       ::testing::ExitedWithCode(0),
-      "KokkosP: Simple Kernel Timer Library Initialized");
-
-  EXPECT_EXIT(
-      {
-        dup2(STDERR_FILENO, STDOUT_FILENO);
-
-        Kokkos::initialize();
-
-        for (int i = 0; i < 5; i++) {
-          Kokkos::Profiling::pushRegion("test region");
-          Kokkos::Profiling::popRegion();
-        }
-
-        Kokkos::finalize();
-        exit(0);
-      },
-      ::testing::ExitedWithCode(0),
-      "test region.*\\(Region\\)");
-
-  EXPECT_EXIT(
-      {
-        dup2(STDERR_FILENO, STDOUT_FILENO);
-
-        Kokkos::initialize();
-
-        for (int i = 0; i < 5; i++) {
-          Kokkos::Profiling::pushRegion("test region");
-          Kokkos::Profiling::popRegion();
-        }
-
-        Kokkos::finalize();
-        exit(0);
-      },
-      ::testing::ExitedWithCode(0),
-      "\\(Region\\)[ ]+[0-9]+\\.[0-9]+[ ]+5[ ]+[0-9]+\\.[0-9]+");
-
-  EXPECT_EXIT(
-      {
-        dup2(STDERR_FILENO, STDOUT_FILENO);
-
-        Kokkos::initialize();
-
-        for (int i = 0; i < 5; i++) {
-          Kokkos::Profiling::pushRegion("test region");
-          Kokkos::Profiling::popRegion();
-        }
-
-        Kokkos::finalize();
-        exit(0);
-      },
-      ::testing::ExitedWithCode(0),
-      "Total Execution Time \\(incl. Kokkos \\+ "
-      "non-Kokkos\\):[ ]+[0-9]+\\.[0-9]+ seconds");
-
-  EXPECT_EXIT(
-      {
-        dup2(STDERR_FILENO, STDOUT_FILENO);
-
-        Kokkos::initialize();
-
-        for (int i = 0; i < 5; i++) {
-          Kokkos::Profiling::pushRegion("test region");
-          Kokkos::Profiling::popRegion();
-        }
-
-        Kokkos::finalize();
-        exit(0);
-      },
-      ::testing::ExitedWithCode(0),
-      // Regions are not counted as kernel calls
-      "Total Calls to Kokkos Kernels:[ ]+0");
+      ::testing::AllOf(
+          HasSubstr("KokkosP: Simple Kernel Timer Library Initialized"),
+          ContainsRegex("test region.*\\(Region\\)"),
+          ContainsRegex(
+              "\\(Region\\)[ ]+[0-9]+\\.[0-9]+[ ]+5[ ]+[0-9]+\\.[0-9]+"),
+          ContainsRegex("Total Execution Time \\(incl. Kokkos \\+ "
+                        "non-Kokkos\\):[ ]+[0-9]+\\.[0-9]+ seconds"),
+          // Regions are not counted as kernel calls
+          ContainsRegex("Total Calls to Kokkos Kernels:[ ]+0")));
 }

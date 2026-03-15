@@ -11,8 +11,8 @@
 
 #include "Kokkos_Core.hpp"
 
+using ::testing::ContainsRegex;
 using ::testing::HasSubstr;
-using ::testing::Not;
 
 struct ParScanRegionFunctor {
   KOKKOS_FUNCTION void operator()(const int, long int&, bool) const {}
@@ -45,116 +45,13 @@ TEST(SimpleKernelTimerParScanRegion_DeathTest, parscan_region) {
         exit(0);
       },
       ::testing::ExitedWithCode(0),
-      "KokkosP: Simple Kernel Timer Library Initialized");
-
-  EXPECT_EXIT(
-      {
-        dup2(STDERR_FILENO, STDOUT_FILENO);
-
-        Kokkos::initialize();
-
-        long int N = 1024;
-        long int result;
-        for (int i = 0; i < 5; i++) {
-          Kokkos::Profiling::pushRegion("test region");
-          result = 0;
-          Kokkos::parallel_scan("named kernel scan", N,
-                                ParScanRegionFunctor{}, result);
-          Kokkos::Profiling::popRegion();
-        }
-
-        Kokkos::finalize();
-        exit(0);
-      },
-      ::testing::ExitedWithCode(0),
-      "test region.*\\(Region\\)");
-
-  EXPECT_EXIT(
-      {
-        dup2(STDERR_FILENO, STDOUT_FILENO);
-
-        Kokkos::initialize();
-
-        long int N = 1024;
-        long int result;
-        for (int i = 0; i < 5; i++) {
-          Kokkos::Profiling::pushRegion("test region");
-          result = 0;
-          Kokkos::parallel_scan("named kernel scan", N,
-                                ParScanRegionFunctor{}, result);
-          Kokkos::Profiling::popRegion();
-        }
-
-        Kokkos::finalize();
-        exit(0);
-      },
-      ::testing::ExitedWithCode(0),
-      "named kernel scan.*\\(ParScan\\)");
-
-  EXPECT_EXIT(
-      {
-        dup2(STDERR_FILENO, STDOUT_FILENO);
-
-        Kokkos::initialize();
-
-        long int N = 1024;
-        long int result;
-        for (int i = 0; i < 5; i++) {
-          Kokkos::Profiling::pushRegion("test region");
-          result = 0;
-          Kokkos::parallel_scan("named kernel scan", N,
-                                ParScanRegionFunctor{}, result);
-          Kokkos::Profiling::popRegion();
-        }
-
-        Kokkos::finalize();
-        exit(0);
-      },
-      ::testing::ExitedWithCode(0),
-      "Total Calls to Kokkos Kernels:[ ]+5");
-
-  EXPECT_EXIT(
-      {
-        dup2(STDERR_FILENO, STDOUT_FILENO);
-
-        Kokkos::initialize();
-
-        long int N = 1024;
-        long int result;
-        for (int i = 0; i < 5; i++) {
-          Kokkos::Profiling::pushRegion("test region");
-          result = 0;
-          Kokkos::parallel_scan("named kernel scan", N,
-                                ParScanRegionFunctor{}, result);
-          Kokkos::Profiling::popRegion();
-        }
-
-        Kokkos::finalize();
-        exit(0);
-      },
-      ::testing::ExitedWithCode(0),
-      "Total Execution Time \\(incl. Kokkos \\+ "
-      "non-Kokkos\\):[ ]+[0-9]+\\.[0-9]+ seconds");
-
-  EXPECT_EXIT(
-      {
-        dup2(STDERR_FILENO, STDOUT_FILENO);
-
-        Kokkos::initialize();
-
-        long int N = 1024;
-        long int result;
-        for (int i = 0; i < 5; i++) {
-          Kokkos::Profiling::pushRegion("test region");
-          result = 0;
-          Kokkos::parallel_scan("named kernel scan", N,
-                                ParScanRegionFunctor{}, result);
-          Kokkos::Profiling::popRegion();
-        }
-
-        Kokkos::finalize();
-        exit(0);
-      },
-      ::testing::ExitedWithCode(0),
-      "\\(ParScan\\)[ ]+[0-9]+\\.[0-9]+[ ]+5[ ]+[0-9]+\\.[0-9]+");
+      ::testing::AllOf(
+          HasSubstr("KokkosP: Simple Kernel Timer Library Initialized"),
+          ContainsRegex("test region.*\\(Region\\)"),
+          ContainsRegex("named kernel scan.*\\(ParScan\\)"),
+          ContainsRegex("Total Calls to Kokkos Kernels:[ ]+5"),
+          ContainsRegex("Total Execution Time \\(incl. Kokkos \\+ "
+                        "non-Kokkos\\):[ ]+[0-9]+\\.[0-9]+ seconds"),
+          ContainsRegex(
+              "\\(ParScan\\)[ ]+[0-9]+\\.[0-9]+[ ]+5[ ]+[0-9]+\\.[0-9]+")));
 }
