@@ -1,2 +1,0 @@
-/usr/bin/ar qc libkp_kernel_shared.a CMakeFiles/kp_kernel_shared.dir/kp_shared.cpp.o
-/usr/bin/ranlib libkp_kernel_shared.a

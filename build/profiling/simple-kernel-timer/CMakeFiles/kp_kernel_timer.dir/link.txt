@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/kp_kernel_timer.dir/link.d -shared -Wl,-soname,libkp_kernel_timer.so -o libkp_kernel_timer.so CMakeFiles/kp_kernel_timer.dir/kp_kernel_timer.cpp.o  libkp_kernel_shared.a

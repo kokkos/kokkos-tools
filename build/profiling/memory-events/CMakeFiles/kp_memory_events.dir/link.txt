@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/kp_memory_events.dir/link.d -shared -Wl,-soname,libkp_memory_events.so -o libkp_memory_events.so CMakeFiles/kp_memory_events.dir/kp_memory_events.cpp.o

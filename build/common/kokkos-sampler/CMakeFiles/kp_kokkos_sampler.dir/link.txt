@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/kp_kokkos_sampler.dir/link.d -shared -Wl,-soname,libkp_kokkos_sampler.so -o libkp_kokkos_sampler.so CMakeFiles/kp_kokkos_sampler.dir/kp_sampler_skip.cpp.o

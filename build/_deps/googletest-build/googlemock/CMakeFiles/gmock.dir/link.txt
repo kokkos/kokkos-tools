@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/gmock.dir/link.d -shared -Wl,-soname,libgmock.so.1.14.0 -o ../../../lib/libgmock.so.1.14.0 "CMakeFiles/gmock.dir/src/gmock-all.cc.o"  -Wl,-rpath,/home/runner/work/kokkos-tools/kokkos-tools/build/lib ../../../lib/libgtest.so.1.14.0
