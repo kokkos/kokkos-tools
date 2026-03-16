@@ -58,8 +58,8 @@ TEST_F(SimpleKernelTimer_DeathTest, parfor) {
         Kokkos::initialize();
 
         for (int i = 0; i < 5; i++) {
-          Kokkos::parallel_for("named kernel",
-                               Kokkos::RangePolicy<>(0, 1), ParForFunctor{});
+          Kokkos::parallel_for("named kernel", Kokkos::RangePolicy<>(0, 1),
+                               ParForFunctor{});
         }
 
         Kokkos::finalize();
@@ -93,9 +93,9 @@ TEST_F(SimpleKernelTimer_DeathTest, parreduce) {
         long int sum;
         for (int i = 0; i < 5; i++) {
           sum = 0;
-          Kokkos::parallel_reduce(
-              "named kernel reduce", Kokkos::RangePolicy<>(0, 1),
-              ParReduceFunctor{}, sum);
+          Kokkos::parallel_reduce("named kernel reduce",
+                                  Kokkos::RangePolicy<>(0, 1),
+                                  ParReduceFunctor{}, sum);
         }
 
         Kokkos::finalize();
@@ -197,8 +197,7 @@ TEST_F(SimpleKernelTimer_DeathTest, parfor_region) {
 
         for (int i = 0; i < 5; i++) {
           Kokkos::Profiling::pushRegion("test region");
-          Kokkos::parallel_for("named kernel",
-                               Kokkos::RangePolicy<>(0, 1),
+          Kokkos::parallel_for("named kernel", Kokkos::RangePolicy<>(0, 1),
                                ParForFunctor{});
           Kokkos::Profiling::popRegion();
         }
@@ -236,9 +235,9 @@ TEST_F(SimpleKernelTimer_DeathTest, parreduce_region) {
         for (int i = 0; i < 5; i++) {
           Kokkos::Profiling::pushRegion("test region");
           sum = 0;
-          Kokkos::parallel_reduce(
-              "named kernel reduce", Kokkos::RangePolicy<>(0, 1),
-              ParReduceFunctor{}, sum);
+          Kokkos::parallel_reduce("named kernel reduce",
+                                  Kokkos::RangePolicy<>(0, 1),
+                                  ParReduceFunctor{}, sum);
           Kokkos::Profiling::popRegion();
         }
 
@@ -275,8 +274,8 @@ TEST_F(SimpleKernelTimer_DeathTest, parscan_region) {
         for (int i = 0; i < 5; i++) {
           Kokkos::Profiling::pushRegion("test region");
           result = 0;
-          Kokkos::parallel_scan("named kernel scan", N,
-                                ParScanFunctor{}, result);
+          Kokkos::parallel_scan("named kernel scan", N, ParScanFunctor{},
+                                result);
           Kokkos::Profiling::popRegion();
         }
 
