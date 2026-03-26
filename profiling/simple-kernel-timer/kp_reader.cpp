@@ -98,12 +98,11 @@ int main(int argc, char* argv[]) {
   printf("Regions: \n\n");
 
   for (unsigned int i = 0; i < kernelInfo.size(); i++) {
-    const double callCountDouble = (double)kernelInfo[i]->getCallCount();
+    const double callCountDouble =
+        (double)(std::max((uint64_t)1, kernelInfo[i]->getCallCount()));
 
     if (kernelInfo[i]->getKernelType() != REGION) continue;
-    const double avgTime = (callCountDouble > 0)
-                               ? kernelInfo[i]->getTime() / callCountDouble
-                               : 0.0;
+    const double avgTime = kernelInfo[i]->getTime() / callCountDouble;
     const double pctKernels =
         (totalKernelsTime > 0)
             ? (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0
@@ -133,12 +132,11 @@ int main(int argc, char* argv[]) {
   printf("Kernels: \n\n");
 
   for (unsigned int i = 0; i < kernelInfo.size(); i++) {
-    const double callCountDouble = (double)kernelInfo[i]->getCallCount();
+    const double callCountDouble =
+        (double)(std::max((uint64_t)1, kernelInfo[i]->getCallCount()));
 
     if (kernelInfo[i]->getKernelType() == REGION) continue;
-    const double avgTime = (callCountDouble > 0)
-                               ? kernelInfo[i]->getTime() / callCountDouble
-                               : 0.0;
+    const double avgTime = kernelInfo[i]->getTime() / callCountDouble;
     const double pctKernels =
         (totalKernelsTime > 0)
             ? (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0
