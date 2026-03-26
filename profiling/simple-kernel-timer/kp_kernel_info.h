@@ -24,7 +24,8 @@ enum KernelExecutionType {
   PARALLEL_FOR    = 0,
   PARALLEL_REDUCE = 1,
   PARALLEL_SCAN   = 2,
-  REGION          = 3
+  SINGLE          = 3,
+  REGION          = 4
 };
 
 class KernelPerformanceInfo {
@@ -99,6 +100,8 @@ class KernelPerformanceInfo {
     } else if (kernelT == 2) {
       kType = PARALLEL_SCAN;
     } else if (kernelT == 3) {
+      kType = SINGLE;
+    } else if (kernelT == 4) {
       kType = REGION;
     }
 
@@ -158,7 +161,8 @@ class KernelPerformanceInfo {
     fprintf(output, "%s\"kernel-type\"    : \"%s\"\n", indentBuffer,
             (kType == PARALLEL_FOR)      ? "PARALLEL-FOR"
             : (kType == PARALLEL_REDUCE) ? "PARALLEL-REDUCE"
-                                         : "PARALLEL-SCAN");
+            : (kType == PARALLEL_SCAN)   ? "PARALLEL-SCAN"
+                                         : "SINGLE");
 
     fprintf(output, "%s}", indent);
   }

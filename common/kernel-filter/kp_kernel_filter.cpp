@@ -27,9 +27,11 @@ static finalizeFunction finalizeProfileLibrary = NULL;
 static beginFunction beginForCallee            = NULL;
 static beginFunction beginScanCallee           = NULL;
 static beginFunction beginReduceCallee         = NULL;
+static beginFunction beginSingleCallee         = NULL;
 static endFunction endForCallee                = NULL;
 static endFunction endScanCallee               = NULL;
 static endFunction endReduceCallee             = NULL;
+static endFunction endSingleCallee             = NULL;
 
 bool kokkospFilterMatch(const char* name) {
   bool matched = false;
@@ -202,9 +204,11 @@ extern "C" void kokkosp_finalize_library() {
   beginForCallee         = NULL;
   beginScanCallee        = NULL;
   beginReduceCallee      = NULL;
+  beginSingleCallee      = NULL;
   endScanCallee          = NULL;
   endForCallee           = NULL;
   endReduceCallee        = NULL;
+  endSingleCallee        = NULL;
   initProfileLibrary     = NULL;
   finalizeProfileLibrary = NULL;
 
@@ -315,6 +319,41 @@ extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
   if (activeKernels.end() != findKernel) {
     if (NULL != endReduceCallee) {
       (*endReduceCallee)(kID);
+    }
+
+    activeKernels.erase(findKernel);
+  }
+}
+
+extern "C" void kokkosp_begin_single(const char* name, const uint32_t devID,
+                                     uint64_t* kID) {
+  if (filterKernels) {
+    if (kokkospFilterMatch(name)) {
+      if (NULL != beginSingleCallee) {
+        (*beginSingleCallee)(name, devID, kID);
+        activeKernels.insert(*kID);
+      } else {
+        *kID = nextKernelID++;
+      }
+    } else {
+      *kID = nextKernelID++;
+    }
+  } else {
+    if (NULL != beginSingleCallee) {
+      (*beginSingleCallee)(name, devID, kID);
+      activeKernels.insert(*kID);
+    } else {
+      *kID = nextKernelID++;
+    }
+  }
+}
+
+extern "C" void kokkosp_end_single(const uint64_t kID) {
+  auto findKernel = activeKernels.find(kID);
+
+  if (activeKernels.end() != findKernel) {
+    if (NULL != endSingleCallee) {
+      (*endSingleCallee)(kID);
     }
 
     activeKernels.erase(findKernel);
