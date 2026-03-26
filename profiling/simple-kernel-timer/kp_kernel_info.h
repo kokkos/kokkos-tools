@@ -23,7 +23,8 @@ enum KernelExecutionType {
   PARALLEL_FOR    = 0,
   PARALLEL_REDUCE = 1,
   PARALLEL_SCAN   = 2,
-  REGION          = 3
+  SINGLE          = 3,
+  REGION          = 4
 };
 
 class KernelPerformanceInfo {
@@ -98,6 +99,8 @@ class KernelPerformanceInfo {
     } else if (kernelT == 2) {
       kType = PARALLEL_SCAN;
     } else if (kernelT == 3) {
+      kType = SINGLE;
+    } else if (kernelT == 4) {
       kType = REGION;
     }
 
