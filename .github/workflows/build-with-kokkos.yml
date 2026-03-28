@@ -1,6 +1,10 @@
 name: Build Kokkos alongside with Kokkos Tools for various configurations
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 2 * * *'
 
 jobs:
   build-kokkos:
@@ -33,12 +37,12 @@ jobs:
     steps:
       - name: Checkout Kokkos Tools
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Checkout Kokkos repository at latest develop
+      - name: Checkout Kokkos repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: kokkos/kokkos
           path: kokkos
-          ref: develop
+          ref: ${{ github.event_name == 'schedule' && 'develop' || '5.0.2' }}
       - name: Checkout Varioum
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
