@@ -3,3 +3,8 @@ kp_add_executable_and_test(
     SOURCE_FILE       test_demangling.cpp
     KOKKOS_TOOLS_LIBS kp_space_time_stack
 )
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-Wrestrict" HAVE_RESTRICT_WARNING)
+if(HAVE_RESTRICT_WARNING)
+target_compile_options(test_space_time_stack_demangling PRIVATE "-Wno-restrict")
+endif()

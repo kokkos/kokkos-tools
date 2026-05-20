@@ -16,7 +16,9 @@ struct Tester {
 
     for (int iter = 0; iter < 15; iter++) {
       result = 0;
-      Kokkos::parallel_scan("named kernel scan", N, *this, result);
+      Kokkos::parallel_scan("named kernel scan",
+                            Kokkos::RangePolicy<execution_space>(space, 0, N),
+                            *this, result);
     }
   }
 

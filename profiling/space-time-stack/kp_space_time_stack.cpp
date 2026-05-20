@@ -512,7 +512,8 @@ struct Allocations {
       assert(size == 0);
       return;
     }
-    auto res = alloc_set.emplace(Allocation(std::move(name), ptr, size, frame));
+    [[maybe_unused]] auto res =
+        alloc_set.emplace(Allocation(std::move(name), ptr, size, frame));
     assert(res.second);
     total_size += size;
   }
