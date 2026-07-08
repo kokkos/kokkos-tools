@@ -5,6 +5,14 @@ project(KokkosTools LANGUAGES CXX VERSION 5.1.99)
 message(STATUS "KokkosTools version: ${KokkosTools_VERSION}")
 math(EXPR KOKKOSTOOLS_VERSION "${KokkosTools_VERSION_MAJOR} * 10000 + ${KokkosTools_VERSION_MINOR} * 100 + ${KokkosTools_VERSION_PATCH}")
 
+# Set default to RelWithDebInfo if not specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE
+      "RelWithDebInfo"
+      CACHE STRING "Choose the type of build" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 20)
 endif()
