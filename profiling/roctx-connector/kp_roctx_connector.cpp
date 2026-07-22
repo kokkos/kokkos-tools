@@ -103,7 +103,7 @@ void kokkosp_stop_profile_section(const uint32_t sID) {
   roctxRangeStop(section.id);
 }
 
-void kokkosp_destroy_profile_section(const uint32_t sID) {
+void kokkosp_destroy_profile_section(const uint32_t) {
   // do nothing
 }
 

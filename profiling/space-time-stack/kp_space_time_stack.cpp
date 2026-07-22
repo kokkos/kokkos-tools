@@ -512,7 +512,8 @@ struct Allocations {
       assert(size == 0);
       return;
     }
-    auto res = alloc_set.emplace(Allocation(std::move(name), ptr, size, frame));
+    [[maybe_unused]] auto res =
+        alloc_set.emplace(Allocation(std::move(name), ptr, size, frame));
     assert(res.second);
     total_size += size;
   }
@@ -935,6 +936,8 @@ EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
 EXPOSE_POP_REGION(impl::kokkosp_pop_profile_region)
 EXPOSE_ALLOCATE(impl::kokkosp_allocate_data)
 EXPOSE_DEALLOCATE(impl::kokkosp_deallocate_data)
+EXPOSE_BEGIN_DEEP_COPY(impl::kokkosp_begin_deep_copy)
+EXPOSE_END_DEEP_COPY(impl::kokkosp_end_deep_copy)
 EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
 EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
 EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)

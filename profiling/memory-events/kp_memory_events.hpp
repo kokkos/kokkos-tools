@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <inttypes.h>
+#include <string>
 
 #include "kp_core.hpp"
 
@@ -20,7 +21,7 @@ struct EventRecord {
   int operation;
   int space;
   double time;
-  char name[256];
+  std::string name;
 
   EventRecord(const void* const ptr_, const uint64_t size_,
               const int operation_, const int space_, const double time_,
@@ -30,20 +31,20 @@ struct EventRecord {
     operation = operation_;
     space     = space_;
     time      = time_;
-    strncpy(name, name_, 256);
+    name      = name_;
   }
 
   void print_record(FILE* ofile) const {
     if (operation == MEMOP_ALLOCATE)
       fprintf(ofile, "%lf %16p %14" PRId64 " %16s Allocate   %s\n", time, ptr,
-              size, space < 0 ? "" : space_name[space], name);
+              size, space < 0 ? "" : space_name[space], name.c_str());
     if (operation == MEMOP_DEALLOCATE)
       fprintf(ofile, "%lf %16p %14" PRId64 " %16s DeAllocate %s\n", time, ptr,
-              -size, space < 0 ? "" : space_name[space], name);
+              -size, space < 0 ? "" : space_name[space], name.c_str());
     if (operation == MEMOP_PUSH_REGION)
-      fprintf(ofile, "%lf PushRegion %s {\n", time, name);
+      fprintf(ofile, "%lf PushRegion %s {\n", time, name.c_str());
     if (operation == MEMOP_POP_REGION)
-      fprintf(ofile, "%lf } PopRegion %s\n", time, name);
+      fprintf(ofile, "%lf } PopRegion %s\n", time, name.c_str());
   }
 };
 

@@ -32,4 +32,6 @@ if (NOT googletest_POPULATED)
     set(INSTALL_GTEST OFF)
 
     add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
+    set_target_properties(gtest PROPERTIES COMPILE_OPTIONS -w)
+    set_target_properties(gmock PROPERTIES COMPILE_OPTIONS -w)
 endif()

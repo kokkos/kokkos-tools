@@ -65,8 +65,9 @@ class KernelPerformanceInfo {
     uint32_t actual_read = fread(&recordLen, sizeof(recordLen), 1, input);
     if (actual_read != 1) return false;
 
-    char* entry = (char*)malloc(recordLen);
-    fread(entry, recordLen, 1, input);
+    char* entry       = (char*)malloc(recordLen);
+    auto read_objects = fread(entry, recordLen, 1, input);
+    if (read_objects != 1) return false;
 
     uint32_t nextIndex = 0;
     uint32_t kernelNameLength;

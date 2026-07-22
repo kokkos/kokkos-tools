@@ -1,6 +1,10 @@
 name: Build Kokkos alongside with Kokkos Tools for various configurations
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 2 * * *'
 
 jobs:
   build-kokkos:
@@ -32,15 +36,15 @@ jobs:
       VARIORUM_ROOT: /opt/variorum
     steps:
       - name: Checkout Kokkos Tools
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Checkout Kokkos repository at latest develop
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Checkout Kokkos repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           repository: kokkos/kokkos
           path: kokkos
-          ref: develop
+          ref: ${{ github.event_name == 'schedule' && 'develop' || '5.0.2' }}
       - name: Checkout Varioum
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           repository: LLNL/variorum
           path: variorum
@@ -105,7 +109,7 @@ jobs:
       - name: Build Kokkos Tools, enabling examples
         run: |
           cmake -S . --preset=${{ matrix.preset }}
-          cmake --build --preset=${{ matrix.preset }}
+          cmake --build --preset=${{ matrix.preset }} --verbose
           cmake --install build-with-${{ matrix.preset }} --prefix=/opt/kokkos-tools
       # For now, GitHub runners are used. These runner don't have GPUs. Therefore, testing can only be done for OpenMP.
       # Skip variorum test since the architecture detected by variorum is not supported

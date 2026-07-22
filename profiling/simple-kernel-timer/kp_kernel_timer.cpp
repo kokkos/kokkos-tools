@@ -5,12 +5,100 @@
 #include <string>
 #include <iostream>
 #include <unistd.h>
+#include <filesystem>
 
 #include "kp_core.hpp"
 #include "kp_shared.h"
 #include <sstream>
 namespace KokkosTools {
 namespace KernelTimer {
+void print_ascii(std::map<std::string, KernelPerformanceInfo*>& count_map,
+                 double totalExecuteTime) {
+  std::vector<KernelPerformanceInfo*> kernelInfo;
+  double totalKernelsTime    = 0;
+  uint64_t totalKernelsCalls = 0;
+
+  for (auto const& [name, info] : count_map) {
+    kernelInfo.push_back(info);
+  }
+
+  std::sort(kernelInfo.begin(), kernelInfo.end(), compareKernelPerformanceInfo);
+
+  // Calculate total time in kernels and total calls to kernels for summary
+  for (auto const& info : kernelInfo) {
+    if (info->getKernelType() != REGION) {
+      totalKernelsTime += info->getTime();
+      totalKernelsCalls += info->getCallCount();
+    }
+  }
+
+  // Header matching kp_reader.cpp
+  printf(
+      "\n (Type)   Total Time, Call Count, Avg. Time per Call, %%Total Time in "
+      "Kernels, %%Total Program Time\n");
+  printf(
+      "------------------------------------------------------------------------"
+      "-\n\n");
+
+  char delimiter = ' ';
+  // We check for the environment delimiter if set during init
+  if (outputDelimiter != nullptr && strlen(outputDelimiter) > 0) {
+    delimiter = outputDelimiter[0];
+  }
+
+  auto print_row = [&](KernelPerformanceInfo* info) {
+    const double callCountDouble = (double)info->getCallCount();
+    const char* typeStr          = " (Region)  ";
+    switch (info->getKernelType()) {
+      case PARALLEL_FOR: typeStr = " (ParFor)  "; break;
+      case PARALLEL_REDUCE: typeStr = " (ParRed)  "; break;
+      case PARALLEL_SCAN: typeStr = " (ParScan) "; break;
+      default: break;
+    }
+
+    printf(
+        "- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n", info->getName().c_str(),
+        typeStr, delimiter, info->getTime(), delimiter, info->getCallCount(),
+        delimiter, info->getTime() / std::max(1.0, callCountDouble), delimiter,
+        (info->getTime() / std::max(1e-9, totalKernelsTime)) * 100.0, delimiter,
+        (info->getTime() / std::max(1e-9, totalExecuteTime)) * 100.0);
+  };
+
+  printf("Regions: \n\n");
+  for (auto const& info : kernelInfo) {
+    if (info->getKernelType() == REGION) print_row(info);
+  }
+
+  printf(
+      "\n----------------------------------------------------------------------"
+      "---\n");
+  printf("Kernels: \n\n");
+  for (auto const& info : kernelInfo) {
+    if (info->getKernelType() != REGION) print_row(info);
+  }
+
+  printf(
+      "\n----------------------------------------------------------------------"
+      "---\n");
+  printf("Summary:\n\n");
+  printf(
+      "Total Execution Time (incl. Kokkos + non-Kokkos):      %20.5f seconds\n",
+      totalExecuteTime);
+  printf(
+      "Total Time in Kokkos kernels:                          %20.5f seconds\n",
+      totalKernelsTime);
+  printf(
+      "   -> Time outside Kokkos kernels:                     %20.5f seconds\n",
+      (totalExecuteTime - totalKernelsTime));
+  printf("   -> Percentage in Kokkos kernels:                    %20.2f %%\n",
+         (totalKernelsTime / std::max(1e-9, totalExecuteTime)) * 100.0);
+  printf("Total Calls to Kokkos Kernels:                         %20" PRIu64
+         "\n",
+         totalKernelsCalls);
+  printf(
+      "------------------------------------------------------------------------"
+      "-\n\n");
+}
 
 void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                           const uint32_t /*devInfoCount*/,
@@ -37,15 +125,25 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 }
 #define KERNEL_INFO_INDENT "       "
 void kokkosp_finalize_library() {
-  double finishTime = seconds();
+  double finishTime             = seconds();
+  const double totalExecuteTime = (finishTime - initTime);
 
-  const char* kokkos_tools_timer_json_raw = getenv("KOKKOS_TOOLS_TIMER_JSON");
-  const bool kokkos_tools_timer_json =
-      kokkos_tools_timer_json_raw == NULL
-          ? false
-          : strcmp(kokkos_tools_timer_json_raw, "1") == 0 ||
-                strcmp(kokkos_tools_timer_json_raw, "true") == 0 ||
-                strcmp(kokkos_tools_timer_json_raw, "True") == 0;
+  auto is_enabled = [](const char* env_var) {
+    const char* env_var_raw = getenv(env_var);
+    return env_var_raw != nullptr &&
+           (strcmp(env_var_raw, "1") == 0 || strcmp(env_var_raw, "true") == 0 ||
+            strcmp(env_var_raw, "True") == 0);
+  };
+
+  const bool kokkos_tools_timer_json = is_enabled("KOKKOS_TOOLS_TIMER_JSON");
+  const bool kokkos_tools_timer_binary =
+      is_enabled("KOKKOS_TOOLS_TIMER_BINARY");
+
+  // Quick return for ascii output (default)
+  if (!kokkos_tools_timer_json && !kokkos_tools_timer_binary) {
+    print_ascii(count_map, totalExecuteTime);
+    return;
+  }
 
   char* hostname = (char*)malloc(sizeof(char) * 256);
   gethostname(hostname, 256);
@@ -56,16 +154,14 @@ void kokkosp_finalize_library() {
 
   free(hostname);
   FILE* output_data = fopen(fileOutput, "wb");
-
-  const double totalExecuteTime = (finishTime - initTime);
-  if (!kokkos_tools_timer_json) {
+  if (kokkos_tools_timer_binary) {
     fwrite(&totalExecuteTime, sizeof(totalExecuteTime), 1, output_data);
 
     for (auto kernel_itr = count_map.begin(); kernel_itr != count_map.end();
          kernel_itr++) {
       kernel_itr->second->writeToBinaryFile(output_data);
     }
-  } else {
+  } else if (kokkos_tools_timer_json) {
     std::vector<KernelPerformanceInfo*> kernelList;
     const std::size_t unique_counts = count_map.size();
     kernelList.reserve(unique_counts);
@@ -85,9 +181,8 @@ void kokkosp_finalize_library() {
 
   fclose(output_data);
 
-  char currentwd[256];
-  getcwd(currentwd, 256);
-  printf("KokkosP: Kernel timing written to %s/%s \n", currentwd, fileOutput);
+  auto cwd = std::filesystem::current_path();
+  printf("KokkosP: Kernel timing written to %s/%s \n", cwd.c_str(), fileOutput);
 
   /*printf("\n");
   printf("======================================================================\n");
