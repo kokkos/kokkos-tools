@@ -6,7 +6,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <filesystem>
-
+#include <algorithm>
 #include "kp_core.hpp"
 #include "kp_shared.h"
 #include <sstream>
