@@ -290,7 +290,7 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
                                               uint64_t* kID) {
   if (filterKernels) {
     if (kokkospFilterMatch(name)) {
-      if (NULL != beginScanCallee) {
+      if (NULL != beginReduceCallee) {
         (*beginReduceCallee)(name, devID, kID);
         activeKernels.insert(*kID);
       } else {
@@ -300,7 +300,7 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
       *kID = nextKernelID++;
     }
   } else {
-    if (NULL != beginScanCallee) {
+    if (NULL != beginReduceCallee) {
       (*beginReduceCallee)(name, devID, kID);
       activeKernels.insert(*kID);
     } else {
