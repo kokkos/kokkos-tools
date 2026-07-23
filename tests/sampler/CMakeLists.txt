@@ -114,3 +114,47 @@ kp_add_executable_and_test(
 if(HAVE_RESTRICT_WARNING)
 target_compile_options(test_sampling_prob_parreduce_fence PRIVATE "-Wno-restrict")
 endif()
+
+## tests for simple kernel timer init/finalize with print_ascii output
+
+kp_add_executable_and_test(
+    TARGET_NAME       test_init_finalize_parfor
+    SOURCE_FILE       test_parfor_init_finalize.cpp
+    KOKKOS_TOOLS_LIBS kp_kernel_timer
+)
+
+kp_add_executable_and_test(
+    TARGET_NAME       test_init_finalize_parreduce
+    SOURCE_FILE       test_parreduce_init_finalize.cpp
+    KOKKOS_TOOLS_LIBS kp_kernel_timer
+)
+
+kp_add_executable_and_test(
+    TARGET_NAME       test_init_finalize_parscan
+    SOURCE_FILE       test_parscan_init_finalize.cpp
+    KOKKOS_TOOLS_LIBS kp_kernel_timer
+)
+
+kp_add_executable_and_test(
+    TARGET_NAME       test_init_finalize_region
+    SOURCE_FILE       test_region_init_finalize.cpp
+    KOKKOS_TOOLS_LIBS kp_kernel_timer
+)
+
+kp_add_executable_and_test(
+    TARGET_NAME       test_init_finalize_parfor_region
+    SOURCE_FILE       test_parfor_region_init_finalize.cpp
+    KOKKOS_TOOLS_LIBS kp_kernel_timer
+)
+
+kp_add_executable_and_test(
+    TARGET_NAME       test_init_finalize_parreduce_region
+    SOURCE_FILE       test_parreduce_region_init_finalize.cpp
+    KOKKOS_TOOLS_LIBS kp_kernel_timer
+)
+
+kp_add_executable_and_test(
+    TARGET_NAME       test_init_finalize_parscan_region
+    SOURCE_FILE       test_parscan_region_init_finalize.cpp
+    KOKKOS_TOOLS_LIBS kp_kernel_timer
+)
