@@ -8,8 +8,6 @@
 #include <sys/time.h>
 #include <string>
 #include <cstring>
-
-#include "kp_shared.h"
 #include "utils/demangle.hpp"
 
 namespace KokkosTools::KernelTimer {

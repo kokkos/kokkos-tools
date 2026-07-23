@@ -83,27 +83,29 @@ void json_format_kernel_list(double totalExecuteTime,
                              std::vector<KernelPerformanceInfo*>& kernelInfo,
                              std::ostream& fout) {
   std::sort(kernelInfo.begin(), kernelInfo.end(), compareKernelPerformanceInfo);
-  uint64_t totalKernelsCalls = 0;
-  double totalKernelsTime    = 0;
+  uint64_t uniqueKernelsCalls = 0;
+  double totalKernelsTime     = 0;
+  // Iterate over all records.
   for (unsigned int i = 0; i < kernelInfo.size(); i++) {
+    // Exclude regions so that only kernels are included in the statistics
     if (kernelInfo[i]->getKernelType() != REGION) {
       totalKernelsTime += kernelInfo[i]->getTime();
-      // totalKernelsCalls += kernelInfo[i]->getCallCount();
-      totalKernelsCalls++;
+      uniqueKernelsCalls++;
     }
   }
+
+  const auto nonKernelTIme     = totalExecuteTime - totalKernelsTime;
+  const auto percentageKernels = 100. * totalKernelsTime / totalExecuteTime;
 
   fout << "{\n";
 
   fout << "  \"total-app-time\" : " << totalExecuteTime << ",\n";
   fout << "  \"total-kernel-time\" : " << totalKernelsTime << ",\n";
-  fout << "  \"total-non-kernel-time\" : "
-       << totalExecuteTime - totalKernelsTime << ",\n";
-  fout << "  \"percent-in-kernels\" : "
-       << 100. * totalKernelsTime / totalExecuteTime << ",\n";
-  fout << "  \"unique-kernel-calls\" : " << totalKernelsCalls << ",\n";
-
+  fout << "  \"total-non-kernel-time\" : " << nonKernelTIme << ",\n";
+  fout << "  \"percent-in-kernels\" : " << percentageKernels << ",\n";
+  fout << "  \"unique-kernel-calls\" : " << uniqueKernelsCalls << ",\n";
   fout << "  \"region-data\" : [\n";
+
   {
     bool add_comma = false;
     for (auto const& kp : kernelInfo) {
