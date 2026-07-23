@@ -114,3 +114,4 @@ target_link_libraries(test_common PUBLIC GTest::gtest GTest::gmock Kokkos::kokko
 
 add_subdirectory(space-time-stack)
 add_subdirectory(sampler)
+add_subdirectory(simple-kernel-timer)

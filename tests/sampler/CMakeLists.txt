@@ -114,11 +114,3 @@ kp_add_executable_and_test(
 if(HAVE_RESTRICT_WARNING)
 target_compile_options(test_sampling_prob_parreduce_fence PRIVATE "-Wno-restrict")
 endif()
-
-## tests for simple kernel timer init/finalize with print_ascii output
-
-kp_add_executable_and_test(
-    TARGET_NAME       test_simple_kernel_timer
-    SOURCE_FILE       test_simple_kernel_timer.cpp
-    KOKKOS_TOOLS_LIBS kp_kernel_timer
-)
