@@ -47,6 +47,8 @@ function(acquire_kokkos_config)
       Kokkos_ENABLE_OPENMP Kokkos_ENABLE_CUDA Kokkos_ENABLE_HIP
       # Kokkos exports the flags as well
       CMAKE_CXX_FLAGS)
-    set(${VAR_NAME} ${${VAR_NAME}} PARENT_SCOPE)
+    if(DEFINED ${VAR_NAME})
+      set(${VAR_NAME} ${${VAR_NAME}} PARENT_SCOPE)
+    endif()
   endforeach()
 endfunction()
