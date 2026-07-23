@@ -63,6 +63,18 @@ option(KokkosTools_ENABLE_TESTS    "Build tests"                    OFF)
 
 # Fetch Kokkos options:
 acquire_kokkos_config()
+if(Kokkos_DEVICES MATCHES "CUDA" AND COMMAND kokkos_compiler_is_nvcc)
+  kokkos_compiler_is_nvcc(IS_NVCC ${CMAKE_CXX_COMPILER})
+  if(IS_NVCC OR Kokkos_CXX_COMPILER_ID STREQUAL "Clang")
+    if(NOT DEFINED CMAKE_CXX_EXTENSIONS OR CMAKE_CXX_EXTENSIONS)
+      message(
+        WARNING
+        "The installed Kokkos configuration does not support CXX extensions. Forcing -DCMAKE_CXX_EXTENSIONS=Off"
+      )
+      set(CMAKE_CXX_EXTENSIONS OFF CACHE BOOL "" FORCE)
+    endif()
+  endif()
+endif()
 if(DEFINED Kokkos_FOUND_MSG)
   message(STATUS "${Kokkos_FOUND_MSG}: ${Kokkos_INSTALL_DIR}\n"
     "\t\tDevices: ${Kokkos_DEVICES}\n"
