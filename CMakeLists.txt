@@ -187,6 +187,8 @@ endif()
 
 if(KOKKOSTOOLS_HAS_VARIORUM)
   add_subdirectory(profiling/variorum-connector)
+else()
+  message(STATUS "Skipping variorum-connector (Variorum disabled)")
 endif()
 
 # GPU profilers
@@ -194,18 +196,21 @@ if(KOKKOSTOOLS_HAS_NVTX)
   add_subdirectory(profiling/nvtx-connector)
   add_subdirectory(profiling/nvtx-focused-connector)
 else()
-  message(STATUS "Skipping nvtx-connector:         NVTX is not enabled (maybe Kokkos was not found, or not configured with the CUDA backend)")
-  message(STATUS "Skipping nvtx-focused-connector: NVTX is not enabled (maybe Kokkos was not found, or not configured with the CUDA backend)")
+  message(STATUS "Skipping nvtx-connector (NVTX disabled)")
+  message(STATUS "Skipping nvtx-focused-connector (NVTX disabled)")
 endif()
 if(KOKKOSTOOLS_HAS_ROCTX)
   add_subdirectory(profiling/roctx-connector)
 else()
-  message(STATUS "Skipping roctx-connector: ROCTX is not enabled (maybe Kokkos was not found, or not configured with the HIP backend)")
+  message(STATUS "Skipping roctx-connector (ROCTX disabled)")
 endif()
 
 if(KOKKOSTOOLS_HAS_VTUNE)
   add_subdirectory(profiling/vtune-connector)
   add_subdirectory(profiling/vtune-focused-connector)
+else()
+  message(STATUS "Skipping vtune-connector (VTune disabled)")
+  message(STATUS "Skipping vtune-focused-connector (VTune disabled)")
 endif()
 
 # Find or build Caliper
