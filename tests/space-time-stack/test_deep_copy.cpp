@@ -7,9 +7,6 @@
 #include "Kokkos_Core.hpp"
 
 struct Tester {
-  struct TagNamed {};
-  struct TagUnnamed {};
-
   template <typename execution_space>
   explicit Tester(const execution_space& space) {
     Kokkos::View<double*, execution_space> a("view_a", 10);
@@ -46,7 +43,6 @@ TEST(SpaceTimeStackTest, deep_copy) {
   std::ostringstream output;
   std::streambuf* coutbuf = std::cout.rdbuf(output.rdbuf());
 
-  //! Run tests. @todo Replace this with Google Test.
   Tester tester(Kokkos::DefaultExecutionSpace{});
 
   //! Finalize @c Kokkos.
