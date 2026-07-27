@@ -46,7 +46,7 @@ function(kp_add_executable_and_test)
     if(DEFINED kaeat_args_RANKS)
         add_test(
             NAME ${kaeat_args_TARGET_NAME}
-            COMMAND mpirun -n ${kaeat_args_RANKS} $<TARGET_FILE:${kaeat_args_TARGET_NAME}>
+            COMMAND ${MPIEXEC_EXECUTABLE} -n ${kaeat_args_RANKS} $<TARGET_FILE:${kaeat_args_TARGET_NAME}>
         )
         set_property(TEST ${kaeat_args_TARGET_NAME} PROPERTY PROCESSORS ${kaeat_args_RANKS})
     else()
