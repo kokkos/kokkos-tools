@@ -58,7 +58,6 @@ TEST(SpaceTimeStackTest, threshold_with_imbalance) {
   std::ostringstream output;
   std::streambuf* coutbuf = std::cout.rdbuf(output.rdbuf());
 
-  //! Run tests. @todo Replace this with Google Test.
   Tester tester;
 
   //! Finalize @c Kokkos.
