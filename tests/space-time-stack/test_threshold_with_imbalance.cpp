@@ -45,7 +45,8 @@ static const std::vector<std::string> matchers{
 };
 
 /**
- * @test This test checks that the tool reports imbalanced MPI regions that would be filtered out when using average time alone.
+ * @test This test checks that the tool reports imbalanced MPI regions that
+ * would be filtered out when using average time alone.
  */
 TEST(SpaceTimeStackTest, threshold_with_imbalance) {
   MPI_Init(nullptr, nullptr);
