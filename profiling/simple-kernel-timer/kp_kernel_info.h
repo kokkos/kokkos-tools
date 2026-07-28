@@ -138,35 +138,6 @@ class KernelPerformanceInfo {
     free(entry);
   }
 
-  void writeToJSONFile(FILE* output, const char* indent) {
-    fprintf(output, "%s{\n", indent);
-
-    char* indentBuffer = (char*)malloc(sizeof(char) * 256);
-    snprintf(indentBuffer, 256, "%s    ", indent);
-
-    auto name = kernelName.c_str();
-    if (kType == REGION) {
-      fprintf(output, "%s\"region-name\"    : \"%s\",\n", indentBuffer, name);
-    } else {
-      fprintf(output, "%s\"kernel-name\"    : \"%s\",\n", indentBuffer, name);
-    }
-
-    // fprintf(output, "%s\"region\"         : \"%s\",\n", indentBuffer,
-    // regionName);
-    fprintf(output, "%s\"call-count\"     : %llu,\n", indentBuffer,
-            (unsigned long long)(callCount));
-    fprintf(output, "%s\"total-time\"     : %f,\n", indentBuffer, time);
-    fprintf(output, "%s\"time-per-call\"  : %16.8f,\n", indentBuffer,
-            (time / static_cast<double>(
-                        std::max(static_cast<uint64_t>(1), callCount))));
-    fprintf(output, "%s\"kernel-type\"    : \"%s\"\n", indentBuffer,
-            (kType == PARALLEL_FOR)      ? "PARALLEL-FOR"
-            : (kType == PARALLEL_REDUCE) ? "PARALLEL-REDUCE"
-                                         : "PARALLEL-SCAN");
-
-    fprintf(output, "%s}", indent);
-  }
-
  private:
   void copy(char* dest, const char* src, uint32_t len) {
     for (uint32_t i = 0; i < len; i++) {

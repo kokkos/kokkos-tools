@@ -123,7 +123,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 
   initTime = seconds();
 }
-#define KERNEL_INFO_INDENT "       "
+
 void kokkosp_finalize_library() {
   double finishTime             = seconds();
   const double totalExecuteTime = (finishTime - initTime);
