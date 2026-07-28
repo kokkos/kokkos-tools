@@ -202,15 +202,15 @@ endif()
 if(KOKKOSTOOLS_HAS_ROCTX)
   add_subdirectory(profiling/roctx-connector)
 else()
-  message(STATUS "Skipping roctx-connector (ROCTX disabled)")
+  message(STATUS "Skipping roctx-connector (KOKKOSTOOLS_HAS_ROCTX disabled)")
 endif()
 
 if(KOKKOSTOOLS_HAS_VTUNE)
   add_subdirectory(profiling/vtune-connector)
   add_subdirectory(profiling/vtune-focused-connector)
 else()
-  message(STATUS "Skipping vtune-connector (VTune disabled)")
-  message(STATUS "Skipping vtune-focused-connector (VTune disabled)")
+  message(STATUS "Skipping vtune-connector (KOKKOSTOOLS_HAS_VTUNE disabled)")
+  message(STATUS "Skipping vtune-focused-connector (KOKKOSTOOLS_HAS_VTUNE disabled)")
 endif()
 
 # Find or build Caliper
