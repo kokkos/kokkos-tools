@@ -1,107 +1,43 @@
 # Kokkos Tools
 
-Kokkos Tools provide a set of light-weight of profiling and debugging utilities, which interface with instrumentation hooks built directly into the Kokkos runtime. Compared to 3rd party tools these tools can provide much cleaner, context-specific information: in particular, they allow kernel-centric analysis and they use labels provided to Kokkos constructs (kernel launches and views).
+Kokkos Tools provides a collection of lightweight profiling and debugging utilities that interface with instrumentation hooks in the Kokkos runtime. Unlike NVTX or ROCTx, Kokkos Tools emphasize Kokkos-centric analysis. Profiling hooks are included in Kokkos executables by default, so applications can load tools at runtime without recompilation.
 
-Under most circumstances, the profiling hooks are compiled into Kokkos executables by default assuming that the profiling hooks' version is compatible with the tools' version. No recompilation or changes to your build procedures are required.
+**Kokkos Tools is part of the [Kokkos C++ Performance Portability Programming Ecosystem](https://kokkos.org).**
 
-Note: `Kokkos` must be configured with `Kokkos_ENABLE_LIBDL=ON` to load profiling hooks dynamically. This is the default for most cases anyway.
+## Documentation
 
-## General Usage
+For complete documentation—including build instructions, usage, tool descriptions, tutorials, and contributing guidelines—see the [Kokkos Tools Wiki](https://github.com/kokkos/kokkos-tools/wiki).
 
-To use one of the tools you have to compile it, which will generate a dynamic library. Before executing the Kokkos application you then have to set the environment variable `KOKKOS_TOOLS_LIBS` to point to the dynamic library.
+## Obtaining Kokkos Tools
 
-CMake and Makefiles are supported for building Kokkos Tools. The following provides instructions for both.
+Development versions are available from the [`develop` branch](https://github.com/kokkos/kokkos-tools/tree/develop). Tagged releases appear on the [GitHub releases page](https://github.com/kokkos/kokkos-tools/releases).
 
-## Using CMake / Building
-
-For detailed building instructions see [building instructions](./Build.md)
-
-## Explicit Instrumentation
-
-One can explicitly add instrumentation to a library or an application. Currently, the only hooks intended for explicit programmer use are the Region related hooks. These use a push/pop model to mark coarser regions in your code.
-
-```c++
-void foo() {
-   Kokkos::Profiling::pushRegion("foo");
-   bar();
-   stool();
-   Kokkos::Profiling::popRegion();
-}
+```bash
+git clone --branch develop https://github.com/kokkos/kokkos-tools.git
 ```
 
-## Tools
+## Building
 
-The following provides an overview of the tools available in the set of Kokkos Tools. Click on each Kokkos Tools name to see more details about the tool via the Kokkos Tools Wiki.
+Building Kokkos Tools requires a C++20 compatible compiler or later.  CMake is the recommended build system:
 
-### Utilities
-+ [**KernelFilter:**](https://github.com/kokkos/kokkos-tools/wiki/KernelFilter)
+```bash
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=${YOUR_KOKKOS_TOOLS_INSTALL_DIR}
+cmake --build build
+cmake --install build
+```
 
-    A tool which is used in conjunction with analysis tools, to restrict them to a subset of the application.
+See the [wiki](https://github.com/kokkos/kokkos-tools/wiki) for Makefile builds, backend-specific connectors, and runtime configuration (`KOKKOS_TOOLS_LIBS`, `--kokkos-tools-libs`).
 
-+ [**KernelSampler:**](https://github.com/kokkos/kokkos-tools/wiki/KernelSampler)
+## Support
 
-   A tool to be used in conjunction with analysis tools to restrict the tooling to samples of Kokkos kernel invocations.
+For questions, use Slack: https://kokkosteam.slack.com or open a [GitHub issue](https://github.com/kokkos/kokkos-tools/issues).
 
-### Memory Analysis
-+ [**MemoryHighWater:**](https://github.com/kokkos/kokkos-tools/wiki/MemoryHighWater)
+## Contributing
 
-    This tool outputs the _high water mark_ of memory usage of the application. The _high water mark_ of memory usage is the highest amount of memory that is being utilized during the application's execution.
+See the [wiki contributing guidance](https://github.com/kokkos/kokkos-tools/wiki#contributing) and [Submitting a Pull Request](https://github.com/kokkos/kokkos-tools/wiki/Submitting-a-Pull-Request).
 
-+ [**MemoryUsage:**](https://github.com/kokkos/kokkos-tools/wiki/MemoryUsage)
+## License
 
-    Generates a per Memory Space timeline of memory utilization.
+[![License](https://img.shields.io/badge/License-Apache--2.0_WITH_LLVM--exception-blue)](https://spdx.org/licenses/LLVM-exception.html)
 
-+ [**MemoryEvents:**](https://github.com/kokkos/kokkos-tools/wiki/MemoryEvents)
-
-    Tool to track memory events such as allocation and deallocation. It also provides the information of the MemoryUsage tool.
-
-### Kernel Inspection
-+ [**SimpleKernelTimer**](https://github.com/kokkos/kokkos-tools/wiki/SimpleKernelTimer)
-
-    Captures basic timing information for Kernels.
-
-+ [**KernelLogger**](https://github.com/kokkos/kokkos-tools/wiki/KernelLogger)
-
-    Prints Kokkos Kernel and Region events during runtime.
-
-### 3rd Party Profiling Tool Hooks
-+ [**VTuneConnector:**](https://github.com/kokkos/kokkos-tools/wiki/VTuneConnector)
-
-    Provides Kokkos Kernel Names to VTune, so that analysis can be performed on a per kernel base.
-
-+ [**VTuneFocusedConnector:**](https://github.com/kokkos/kokkos-tools/wiki/VTuneFocusedConnector)
-
-    Like VTuneConnector but turns profiling off outside of kernels. Should be used in conjunction with the KernelFilter tool.
-
-+ [**NVTXConnector:**](https://github.com/kokkos/kokkos-tools/wiki/NVTXConnector)
-
-    Provides Kokkos Kernel Names to NVTX, so that analysis can be performed on a per kernel base.
-
-+ [**Timemory:**](https://github.com/kokkos/kokkos-tools/wiki/Timemory)
-
-    Modular connector for accumulating timing, memory usage, hardware counters, and other various metrics.
-    Supports controlling VTune, CUDA profilers, and TAU + kernel name forwarding to VTune, NVTX, TAU,
-    Caliper, and LIKWID.
-
-    ##### If you need to write your own plug-in, this provides a straight-forward API to writing the plug-in.
-
-    Defining a timemory component will enable your plug-in to output to stdout, text, and JSON,
-    accumulate statistics, and utilize various portable function calls for common needs w.r.t. timers,
-    resource usage, etc.
-
-# Tutorial
-
-Given your installed tool shared library `lib<name_of_tool_shared_lib>.so` and an application executable called yourApplication.exe, type:
-
-`export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_INSTALL_DIR}/lib<name_of_tool_shared_lib>.so; ./yourApplication.exe`
-
-A tutorial on Kokkos Tools can be found here: https://github.com/kokkos/kokkos-tutorials/blob/main/LectureSeries/KokkosTutorial_07_Tools.pdf
-
-# Contact
-
-* Vivek Kale (vlkale@sandia.gov)
-* Christian Trott (crtrott@sandia.gov)
-
-# Acknowledgement
-
-Special thanks to David Poliakoff on earlier work on Kokkos Tools development.
+The full license statement is available [here](https://kokkos.org/kokkos-core-wiki/license.html) or in [LICENSE](./LICENSE).
