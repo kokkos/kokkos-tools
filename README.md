@@ -91,7 +91,7 @@ The following provides an overview of the tools available in the set of Kokkos T
 
 # Tutorial
 
-Given your installed tool shared library `lib<name_of_tool_shared_lib>.so` and an application executable called yourApplication.exe, type: 
+Given your installed tool shared library `lib<name_of_tool_shared_lib>.so` and an application executable called yourApplication.exe, type:
 
 `export KOKKOS_TOOLS_LIBS=${YOUR_KOKKOS_TOOLS_INSTALL_DIR}/lib<name_of_tool_shared_lib>.so; ./yourApplication.exe`
 
