@@ -10,6 +10,7 @@
 #include "kp_core.hpp"
 #include "kp_shared.h"
 #include <sstream>
+#include <locale>
 namespace KokkosTools {
 namespace KernelTimer {
 void print_ascii(std::map<std::string, KernelPerformanceInfo*>& count_map,
@@ -172,7 +173,8 @@ void kokkosp_finalize_library() {
     }
 
     std::ostringstream buffer;
-
+    // Ensure that JSON formatting won't be broken
+    buffer.imbue(std::locale::classic());
     json_format_kernel_list(totalExecuteTime, kernelList, buffer);
 
     const std::string& s = buffer.str();
