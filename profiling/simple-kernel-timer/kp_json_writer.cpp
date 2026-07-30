@@ -23,6 +23,7 @@ inline std::string to_string(KernelExecutionType t) {
     case PARALLEL_FOR: return "\"PARALLEL_FOR\"";
     case PARALLEL_REDUCE: return "\"PARALLEL_REDUCE\"";
     case PARALLEL_SCAN: return "\"PARALLEL_SCAN\"";
+    case SINGLE: return "\"SINGLE\"";
     case REGION: return "\"REGION\"";
     default: throw t;
   }

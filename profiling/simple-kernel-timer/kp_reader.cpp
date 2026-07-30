@@ -12,6 +12,17 @@
 
 using namespace KokkosTools::KernelTimer;
 
+inline const char* to_string(KernelExecutionType t) {
+  switch (t) {
+    case PARALLEL_FOR: return "\" (ParFor)  \"";
+    case PARALLEL_REDUCE: return "\" (ParRed)  \"";
+    case PARALLEL_SCAN: return "\" (ParScan) \"";
+    case SINGLE: return "\" (Single)  \"";
+    case REGION: return "\" (Region)  \"";
+    default: throw t;
+  }
+}
+
 int main(int argc, char* argv[]) {
   if (argc == 1) {
     fprintf(stderr, "Did you specify any data files on the command line!\n");
@@ -87,39 +98,31 @@ int main(int argc, char* argv[]) {
   printf("Regions: \n\n");
 
   for (unsigned int i = 0; i < kernelInfo.size(); i++) {
-    const double callCountDouble = (double)kernelInfo[i]->getCallCount();
+    const double callCountDouble =
+        (double)(std::max((uint64_t)1, kernelInfo[i]->getCallCount()));
 
     if (kernelInfo[i]->getKernelType() != REGION) continue;
+    const double avgTime = kernelInfo[i]->getTime() / callCountDouble;
+    const double pctKernels =
+        (totalKernelsTime > 0)
+            ? (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0
+            : 0.0;
+    const double pctTotal =
+        (totalExecuteTime > 0)
+            ? (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0
+            : 0.0;
     if (fixed_width)
       printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
              kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
-                 ? (" (ParFor)  ")
-                 : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
-                        ? (" (ParRed)  ")
-                        : ((kernelInfo[i]->getKernelType() == PARALLEL_SCAN)
-                               ? (" (ParScan) ")
-                               : (" (Region)  "))),
-             delimiter, kernelInfo[i]->getTime(), delimiter,
-             kernelInfo[i]->getCallCount(), delimiter,
-             kernelInfo[i]->getTime() / callCountDouble, delimiter,
-             (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0, delimiter,
-             (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0);
+             to_string(kernelInfo[i]->getKernelType()), delimiter,
+             kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
+             delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
     else
       printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
              kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
-                 ? (" (ParFor)  ")
-                 : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
-                        ? (" (ParRed)  ")
-                        : ((kernelInfo[i]->getKernelType() == PARALLEL_SCAN)
-                               ? (" (ParScan) ")
-                               : (" (REGION)  "))),
-             delimiter, kernelInfo[i]->getTime(), delimiter,
-             kernelInfo[i]->getCallCount(), delimiter,
-             kernelInfo[i]->getTime() / callCountDouble, delimiter,
-             (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0, delimiter,
-             (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0);
+             to_string(kernelInfo[i]->getKernelType()), delimiter,
+             kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
+             delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
   }
 
   printf("\n");
@@ -129,39 +132,31 @@ int main(int argc, char* argv[]) {
   printf("Kernels: \n\n");
 
   for (unsigned int i = 0; i < kernelInfo.size(); i++) {
-    const double callCountDouble = (double)kernelInfo[i]->getCallCount();
+    const double callCountDouble =
+        (double)(std::max((uint64_t)1, kernelInfo[i]->getCallCount()));
 
     if (kernelInfo[i]->getKernelType() == REGION) continue;
+    const double avgTime = kernelInfo[i]->getTime() / callCountDouble;
+    const double pctKernels =
+        (totalKernelsTime > 0)
+            ? (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0
+            : 0.0;
+    const double pctTotal =
+        (totalExecuteTime > 0)
+            ? (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0
+            : 0.0;
     if (fixed_width)
       printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
              kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
-                 ? (" (ParFor)  ")
-                 : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
-                        ? (" (ParRed)  ")
-                        : ((kernelInfo[i]->getKernelType() == PARALLEL_SCAN)
-                               ? (" (ParScan) ")
-                               : (" (Region)  "))),
-             delimiter, kernelInfo[i]->getTime(), delimiter,
-             kernelInfo[i]->getCallCount(), delimiter,
-             kernelInfo[i]->getTime() / callCountDouble, delimiter,
-             (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0, delimiter,
-             (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0);
+             to_string(kernelInfo[i]->getKernelType()), delimiter,
+             kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
+             delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
     else
       printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
              kernelInfo[i]->getName().c_str(),
-             (kernelInfo[i]->getKernelType() == PARALLEL_FOR)
-                 ? (" (ParFor)  ")
-                 : ((kernelInfo[i]->getKernelType() == PARALLEL_REDUCE)
-                        ? (" (ParRed)  ")
-                        : ((kernelInfo[i]->getKernelType() == PARALLEL_SCAN)
-                               ? (" (ParScan) ")
-                               : (" (REGION)  "))),
-             delimiter, kernelInfo[i]->getTime(), delimiter,
-             kernelInfo[i]->getCallCount(), delimiter,
-             kernelInfo[i]->getTime() / callCountDouble, delimiter,
-             (kernelInfo[i]->getTime() / totalKernelsTime) * 100.0, delimiter,
-             (kernelInfo[i]->getTime() / totalExecuteTime) * 100.0);
+             to_string(kernelInfo[i]->getKernelType()), delimiter,
+             kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
+             delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
   }
 
   printf("\n");
@@ -180,7 +175,8 @@ int main(int argc, char* argv[]) {
       "   -> Time outside Kokkos kernels:                     %20.5f seconds\n",
       (totalExecuteTime - totalKernelsTime));
   printf("   -> Percentage in Kokkos kernels:                    %20.2f %%\n",
-         (totalKernelsTime / totalExecuteTime) * 100);
+         (totalExecuteTime > 0) ? (totalKernelsTime / totalExecuteTime) * 100
+                                : 0.0);
   printf("Total Calls to Kokkos Kernels:                         %20" PRIu64
          "\n",
          totalKernelsCalls);

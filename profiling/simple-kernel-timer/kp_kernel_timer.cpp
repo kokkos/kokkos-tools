@@ -392,6 +392,22 @@ void kokkosp_end_parallel_reduce(const uint64_t /*kID*/) {
   currentEntry->addFromTimer();
 }
 
+void kokkosp_begin_single(const char* name, const uint32_t /*devID*/,
+                          uint64_t* kID) {
+  *kID = uniqID++;
+
+  if ((NULL == name) || (strcmp("", name) == 0)) {
+    fprintf(stderr, "Error: kernel is empty\n");
+    exit(-1);
+  }
+
+  increment_counter(name, SINGLE);
+}
+
+void kokkosp_end_single(const uint64_t /*kID*/) {
+  currentEntry->addFromTimer();
+}
+
 void kokkosp_push_profile_region(char const* regionName) {
   increment_counter_region(regionName, REGION);
 }
@@ -435,9 +451,11 @@ Kokkos::Tools::Experimental::EventSet get_event_set() {
   my_event_set.begin_parallel_for    = kokkosp_begin_parallel_for;
   my_event_set.begin_parallel_reduce = kokkosp_begin_parallel_reduce;
   my_event_set.begin_parallel_scan   = kokkosp_begin_parallel_scan;
+  my_event_set.begin_single          = kokkosp_begin_single;
   my_event_set.end_parallel_for      = kokkosp_end_parallel_for;
   my_event_set.end_parallel_reduce   = kokkosp_end_parallel_reduce;
   my_event_set.end_parallel_scan     = kokkosp_end_parallel_scan;
+  my_event_set.end_single            = kokkosp_end_single;
   my_event_set.push_region           = kokkosp_push_profile_region;
   my_event_set.pop_region            = kokkosp_pop_profile_region;
   return my_event_set;
@@ -456,6 +474,8 @@ EXPOSE_BEGIN_PARALLEL_FOR(impl::kokkosp_begin_parallel_for)
 EXPOSE_END_PARALLEL_FOR(impl::kokkosp_end_parallel_for)
 EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
 EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
+EXPOSE_BEGIN_SINGLE(impl::kokkosp_begin_single)
+EXPOSE_END_SINGLE(impl::kokkosp_end_single)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
 EXPOSE_PUSH_REGION(impl::kokkosp_push_profile_region)
