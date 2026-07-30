@@ -188,7 +188,7 @@ endif()
 if(KOKKOSTOOLS_HAS_VARIORUM)
   add_subdirectory(profiling/variorum-connector)
 else()
-  message(STATUS "Skipping variorum-connector (Variorum disabled)")
+  message(STATUS "Skipping variorum-connector (KOKKOSTOOLS_HAS_VARIORUM disabled)")
 endif()
 
 # GPU profilers
