@@ -5,6 +5,7 @@
 # Arguments:
 #   TARGET_NAME       : name of the test (required)
 #   SOURCE_FILE       : source file, defaults to <TARGET_NAME>.cpp (optional)
+#   RANKS             : number of MPI ranks to use for the test, defaults to 1 (optional)
 #   KOKKOS_TOOLS_LIBS : the test environment will receive the variable 'KOKKOS_TOOLS_LIBS' that is set as the path
 #                       to the target file of this argument (optional)
 #   KOKKOS_TOOLS_SAMPLER_VERBOSE : the test environment will receive the variable 'KOKKOS_TOOLS_SAMPLER_VERBOSE' that is set as the value of 1 for printing the sample has been taken
@@ -15,13 +16,18 @@
 
 
 function(kp_add_executable_and_test)
-	cmake_parse_arguments(kaeat_args "" "TARGET_NAME;SOURCE_FILE;KOKKOS_TOOLS_SAMPLER_VERBOSE;KOKKOS_TOOLS_GLOBALFENCES;KOKKOS_TOOLS_SAMPLER_SKIP;KOKKOS_TOOLS_SAMPLER_PROB;KOKKOS_TOOLS_RANDOM_SEED" "KOKKOS_TOOLS_LIBS" ${ARGN})
+	cmake_parse_arguments(kaeat_args "" "TARGET_NAME;SOURCE_FILE;RANKS;KOKKOS_TOOLS_SAMPLER_VERBOSE;KOKKOS_TOOLS_GLOBALFENCES;KOKKOS_TOOLS_SAMPLER_SKIP;KOKKOS_TOOLS_SAMPLER_PROB;KOKKOS_TOOLS_RANDOM_SEED" "KOKKOS_TOOLS_LIBS" ${ARGN})
     if(NOT DEFINED kaeat_args_TARGET_NAME)
         message(FATAL_ERROR "'TARGET_NAME' is a required argument.")
     endif()
 
     if(NOT DEFINED kaeat_args_SOURCE_FILE)
         set(kaeat_args_SOURCE_FILE "${kaeat_args_TARGET_NAME}.cpp")
+    endif()
+
+    if(DEFINED kaeat_args_RANKS AND NOT KokkosTools_ENABLE_MPI)
+        message(WARNING "Skipping ${kaeat_args_TARGET_NAME} test because MPI is not enabled.")
+        return()
     endif()
 
     add_executable(${kaeat_args_TARGET_NAME})
@@ -37,10 +43,18 @@ function(kp_add_executable_and_test)
             test_common
     )
 
-    add_test(
-        NAME ${kaeat_args_TARGET_NAME}
-        COMMAND $<TARGET_FILE:${kaeat_args_TARGET_NAME}>
-    )
+    if(DEFINED kaeat_args_RANKS)
+        add_test(
+            NAME ${kaeat_args_TARGET_NAME}
+            COMMAND ${MPIEXEC_EXECUTABLE} -n ${kaeat_args_RANKS} $<TARGET_FILE:${kaeat_args_TARGET_NAME}>
+        )
+        set_property(TEST ${kaeat_args_TARGET_NAME} PROPERTY PROCESSORS ${kaeat_args_RANKS})
+    else()
+        add_test(
+            NAME ${kaeat_args_TARGET_NAME}
+            COMMAND $<TARGET_FILE:${kaeat_args_TARGET_NAME}>
+        )
+    endif()
 
     if(DEFINED kaeat_args_KOKKOS_TOOLS_LIBS)
         set(TOOL_LIBS_FILES)
