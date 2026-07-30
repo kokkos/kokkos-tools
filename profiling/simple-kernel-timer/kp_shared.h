@@ -39,6 +39,14 @@ inline int find_index(const std::vector<KernelPerformanceInfo*>& kernels,
   return -1;
 }
 
+inline bool is_region(KernelPerformanceInfo const& kp) {
+  return kp.getKernelType() == REGION;
+}
+
+void json_format_kernel_list(double totalExecuteTime,
+                             std::vector<KernelPerformanceInfo*>& kernelInfo,
+                             std::ostream& fout);
+
 }  // namespace KokkosTools::KernelTimer
 
 #endif  // _H_KOKKOSP_KERNEL_SHARED

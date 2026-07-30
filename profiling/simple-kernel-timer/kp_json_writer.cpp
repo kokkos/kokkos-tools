@@ -9,36 +9,27 @@
 #include <map>
 #include <fstream>
 #include <iostream>
-
 #include "kp_shared.h"
 
 using namespace KokkosTools::KernelTimer;
 
-bool is_region(KernelPerformanceInfo const& kp) {
-  return kp.getKernelType() == REGION;
-}
+void fill_info(FILE* file, std::vector<KernelPerformanceInfo*>& kernelInfo) {
+  while (!feof(file)) {
+    KernelPerformanceInfo* new_kernel =
+        new KernelPerformanceInfo("", PARALLEL_FOR);
+    if (new_kernel->readFromFile(file)) {
+      if (!new_kernel->getName().empty()) {
+        int kernelIndex = find_index(kernelInfo, new_kernel->getName());
 
-inline std::string to_string(KernelExecutionType t) {
-  switch (t) {
-    case PARALLEL_FOR: return "\"PARALLEL_FOR\"";
-    case PARALLEL_REDUCE: return "\"PARALLEL_REDUCE\"";
-    case PARALLEL_SCAN: return "\"PARALLEL_SCAN\"";
-    case REGION: return "\"REGION\"";
-    default: throw t;
+        if (kernelIndex > -1) {
+          kernelInfo[kernelIndex]->addTime(new_kernel->getTime());
+          kernelInfo[kernelIndex]->addCallCount(new_kernel->getCallCount());
+        } else {
+          kernelInfo.push_back(new_kernel);
+        }
+      }
+    }
   }
-}
-
-inline void write_json(std::ostream& os, KernelPerformanceInfo const& kp,
-                       std::string indent = "") {
-  os << indent << "{\n";
-  os << indent << "  \"kernel-name\": \"" << kp.getName() << "\",\n";
-  os << indent << "  \"call-count\": " << kp.getCallCount() << ",\n";
-  os << indent << "  \"total-time\": " << kp.getTime() << ",\n";
-  os << indent << "  \"time-per-call\": "
-     << kp.getTime() / std::max((uint64_t)1, kp.getCallCount()) << ",\n";
-  os << indent << "  \"kernel-type\": " << to_string(kp.getKernelType())
-     << '\n';
-  os << indent << '}';
 }
 
 int main(int argc, char* argv[]) {
@@ -54,9 +45,8 @@ int main(int argc, char* argv[]) {
   }
 
   std::vector<KernelPerformanceInfo*> kernelInfo;
-  double totalKernelsTime    = 0;
-  double totalExecuteTime    = 0;
-  uint64_t totalKernelsCalls = 0;
+
+  double totalExecuteTime = 0;
 
   for (int i = commandline_args; i < argc; i++) {
     FILE* the_file = fopen(argv[i], "rb");
@@ -67,76 +57,12 @@ int main(int argc, char* argv[]) {
 
     totalExecuteTime += fileExecuteTime;
 
-    while (!feof(the_file)) {
-      KernelPerformanceInfo* new_kernel =
-          new KernelPerformanceInfo("", PARALLEL_FOR);
-      if (new_kernel->readFromFile(the_file)) {
-        if (!new_kernel->getName().empty()) {
-          int kernelIndex = find_index(kernelInfo, new_kernel->getName());
-
-          if (kernelIndex > -1) {
-            kernelInfo[kernelIndex]->addTime(new_kernel->getTime());
-            kernelInfo[kernelIndex]->addCallCount(new_kernel->getCallCount());
-          } else {
-            kernelInfo.push_back(new_kernel);
-          }
-        }
-      }
-    }
+    fill_info(the_file, kernelInfo);
 
     fclose(the_file);
   }
-
-  std::sort(kernelInfo.begin(), kernelInfo.end(), compareKernelPerformanceInfo);
-
-  for (unsigned int i = 0; i < kernelInfo.size(); i++) {
-    if (kernelInfo[i]->getKernelType() != REGION) {
-      totalKernelsTime += kernelInfo[i]->getTime();
-      totalKernelsCalls += kernelInfo[i]->getCallCount();
-    }
-  }
-
-  // std::string filename = "test.json";
-  // std::ofstream fout(filename);
-  auto& fout = std::cout;
-
-  fout << "{\n";
-
-  fout << "  \"total-app-time\" : " << totalExecuteTime << ",\n";
-  fout << "  \"total-kernel-time\" : " << totalKernelsTime << ",\n";
-  fout << "  \"total-non-kernel-time\" : "
-       << totalExecuteTime - totalKernelsTime << ",\n";
-  fout << "  \"percent-in-kernels\" : "
-       << 100. * totalKernelsTime / totalExecuteTime << ",\n";
-  fout << "  \"unique-kernel-calls\" : " << totalKernelsCalls << ",\n";
-
-  fout << "  \"region-data\" : [\n";
-  {
-    bool add_comma = false;
-    for (auto const& kp : kernelInfo) {
-      if (!is_region(*kp)) continue;
-      if (add_comma) fout << ",\n";
-      add_comma = true;
-      write_json(fout, *kp, "    ");
-    }
-    fout << '\n';
-  }
-  fout << "  ],\n";
-
-  fout << "  \"kernel-data\" : [\n";
-  {
-    bool add_comma = false;
-    for (auto const& kp : kernelInfo) {
-      if (is_region(*kp)) continue;
-      if (add_comma) fout << ",\n";
-      add_comma = true;
-      write_json(fout, *kp, "    ");
-    }
-    fout << '\n';
-  }
-  fout << "  ]\n";
-
-  fout << "}\n";
+  std::ostream& fout = std::cout;
+  json_format_kernel_list(totalExecuteTime, kernelInfo, fout);
 
   return 0;
 }

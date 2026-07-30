@@ -8,7 +8,6 @@
 #include <sys/time.h>
 #include <string>
 #include <cstring>
-
 #include "utils/demangle.hpp"
 
 namespace KokkosTools::KernelTimer {
@@ -137,30 +136,6 @@ class KernelPerformanceInfo {
     fwrite(&recordLen, sizeof(uint32_t), 1, output);
     fwrite(entry, recordLen, 1, output);
     free(entry);
-  }
-
-  void writeToJSONFile(FILE* output, const char* indent) {
-    fprintf(output, "%s{\n", indent);
-
-    char* indentBuffer = (char*)malloc(sizeof(char) * 256);
-    snprintf(indentBuffer, 256, "%s    ", indent);
-
-    fprintf(output, "%s\"kernel-name\"    : \"%s\",\n", indentBuffer,
-            kernelName.c_str());
-    // fprintf(output, "%s\"region\"         : \"%s\",\n", indentBuffer,
-    // regionName);
-    fprintf(output, "%s\"call-count\"     : %llu,\n", indentBuffer,
-            (unsigned long long)(callCount));
-    fprintf(output, "%s\"total-time\"     : %f,\n", indentBuffer, time);
-    fprintf(output, "%s\"time-per-call\"  : %16.8f,\n", indentBuffer,
-            (time / static_cast<double>(
-                        std::max(static_cast<uint64_t>(1), callCount))));
-    fprintf(output, "%s\"kernel-type\"    : \"%s\"\n", indentBuffer,
-            (kType == PARALLEL_FOR)      ? "PARALLEL-FOR"
-            : (kType == PARALLEL_REDUCE) ? "PARALLEL-REDUCE"
-                                         : "PARALLEL-SCAN");
-
-    fprintf(output, "%s}", indent);
   }
 
  private:
