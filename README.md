@@ -3,6 +3,8 @@
 Kokkos Tools provides a collection of lightweight profiling and debugging utilities that interface with instrumentation hooks in the Kokkos runtime. Unlike NVTX or ROCTx, Kokkos Tools emphasize Kokkos-centric analysis. Profiling hooks are included in Kokkos executables by default, so applications can load tools at runtime without recompilation.
 
 **Kokkos Tools is part of the [Kokkos C++ Performance Portability Programming Ecosystem](https://kokkos.org).**
+and meets the *maturing* life-cycle stage.
+
 
 ## Documentation
 
@@ -31,6 +33,9 @@ See the [wiki](https://github.com/kokkos/kokkos-tools/wiki) for Makefile builds,
 ## Support
 
 For questions, use Slack: https://kokkosteam.slack.com or open a [GitHub issue](https://github.com/kokkos/kokkos-tools/issues).
+
+As a *maturing* subproject in the Kokkos Ecosystem, Kokkos Tools' testing regime is not as rigorous as we'd like it to be.
+For details on the testing status of the 5.2 release please see [GitHub issue 338](https://github.com/kokkos/kokkos-tools/issues/338).
 
 ## Contributing
 
