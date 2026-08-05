@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(KokkosTools LANGUAGES CXX VERSION 5.1.99)
+project(KokkosTools LANGUAGES CXX VERSION 5.2.99)
 
 message(STATUS "KokkosTools version: ${KokkosTools_VERSION}")
 math(EXPR KOKKOSTOOLS_VERSION "${KokkosTools_VERSION_MAJOR} * 10000 + ${KokkosTools_VERSION_MINOR} * 100 + ${KokkosTools_VERSION_PATCH}")
