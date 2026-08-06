@@ -203,6 +203,8 @@ else()
   message(STATUS "Skipping variorum-connector (KOKKOSTOOLS_HAS_VARIORUM disabled)")
 endif()
 
+add_subdirectory(profiling/energy-profiler)
+  
 # GPU profilers
 if(KOKKOSTOOLS_HAS_NVTX)
   add_subdirectory(profiling/nvtx-connector)
