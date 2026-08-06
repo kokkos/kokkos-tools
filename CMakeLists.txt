@@ -180,6 +180,11 @@ if(NOT WIN32)
   add_subdirectory(profiling/perfetto-connector)
 endif()
 
+# Combined tool template
+if(NOT WIN32)
+  add_subdirectory(profiling/combined-tool-template)
+endif()
+
 # External lib connectors
 if(KokkosTools_ENABLE_PAPI)
   add_subdirectory(profiling/papi-connector)
