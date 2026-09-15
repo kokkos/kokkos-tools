@@ -19,7 +19,7 @@ endif()
 if(CMAKE_CXX_STANDARD LESS 20)
   message(FATAL_ERROR "KokkosTools requires C++20")
 endif()
-
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Include utilities
 include(cmake/utils.cmake)
