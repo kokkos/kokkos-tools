@@ -28,7 +28,7 @@ void Daemon::stop() {
 void Daemon::run() {
   std::unique_lock<std::mutex> lock(mutex_);
   while (running_) {
-    auto next_run = std::chrono::high_resolution_clock::now() + interval_;
+    auto next_run = std::chrono::steady_clock::now() + interval_;
     lock.unlock();
     func_();
     lock.lock();
