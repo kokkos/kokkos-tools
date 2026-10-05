@@ -16,6 +16,7 @@ class Daemon {
  public:
   Daemon(std::function<void()> func, std::chrono::nanoseconds interval)
       : interval_(interval), func_(std::move(func)){};
+  ~Daemon();
 
   void start();
   void stop();

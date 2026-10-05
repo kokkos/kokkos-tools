@@ -6,6 +6,8 @@
 #include <thread>
 
 namespace KokkosTools::EnergyProfiler {
+Daemon::~Daemon() { stop(); }
+
 void Daemon::start() {
   if (!running_) {
     running_ = true;
