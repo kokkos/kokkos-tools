@@ -4,8 +4,11 @@
 #ifndef KOKKOSP_ENERGY_PROFILER_DAEMON_HPP
 #define KOKKOSP_ENERGY_PROFILER_DAEMON_HPP
 
+#include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <functional>
+#include <mutex>
 #include <thread>
 
 namespace KokkosTools::EnergyProfiler {
@@ -22,9 +25,11 @@ class Daemon {
  private:
   void run();
   std::chrono::nanoseconds interval_;
-  bool running_{false};
+  std::atomic<bool> running_{false};
   std::function<void()> func_;
   std::thread thread_;
+  std::mutex mutex_;
+  std::condition_variable wake_;
 };
 }  // namespace KokkosTools::EnergyProfiler
 #endif

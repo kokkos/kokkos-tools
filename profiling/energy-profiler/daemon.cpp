@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "daemon.hpp"
-#include <stdexcept>
+#include <mutex>
 #include <thread>
 
 namespace KokkosTools::EnergyProfiler {
@@ -14,17 +14,24 @@ void Daemon::start() {
 }
 
 void Daemon::stop() {
-  if (running_) {
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!running_) return;
     running_ = false;
-    thread_.join();
   }
+  wake_.notify_one();
+  thread_.join();
 }
 
 void Daemon::run() {
+  std::unique_lock<std::mutex> lock(mutex_);
   while (running_) {
     auto next_run = std::chrono::high_resolution_clock::now() + interval_;
+    lock.unlock();
     func_();
-    std::this_thread::sleep_until(next_run);
+    lock.lock();
+    // Returns early when stop() clears the flag.
+    wake_.wait_until(lock, next_run, [this] { return !running_; });
   }
 }
 }  // namespace KokkosTools::EnergyProfiler
