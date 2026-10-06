@@ -6,9 +6,8 @@
 
 #include <atomic>
 #include <chrono>
-#include <condition_variable>
 #include <functional>
-#include <mutex>
+#include <stop_token>
 #include <thread>
 
 namespace KokkosTools::EnergyProfiler {
@@ -16,7 +15,6 @@ class Daemon {
  public:
   Daemon(std::function<void()> func, std::chrono::nanoseconds interval)
       : interval_(interval), func_(std::move(func)){};
-  ~Daemon();
 
   void start();
   void stop();
@@ -24,13 +22,13 @@ class Daemon {
   auto& get_thread() { return thread_; }
 
  private:
-  void run();
+  void run(std::stop_token stop);
   std::chrono::nanoseconds interval_;
   std::atomic<bool> running_{false};
   std::function<void()> func_;
-  std::thread thread_;
-  std::mutex mutex_;
-  std::condition_variable wake_;
+  // Declared last so that it is destroyed first: the thread is stopped and
+  // joined before the members it uses go away.
+  std::jthread thread_;
 };
 }  // namespace KokkosTools::EnergyProfiler
 #endif

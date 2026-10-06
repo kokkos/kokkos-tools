@@ -2,38 +2,35 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "daemon.hpp"
+#include <condition_variable>
 #include <mutex>
 #include <thread>
 
 namespace KokkosTools::EnergyProfiler {
-Daemon::~Daemon() { stop(); }
-
 void Daemon::start() {
   if (!running_) {
     running_ = true;
-    thread_  = std::thread(&Daemon::run, this);
+    thread_  = std::jthread([this](std::stop_token stop) { run(stop); });
   }
 }
 
 void Daemon::stop() {
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (!running_) return;
+  if (running_) {
+    thread_.request_stop();
+    thread_.join();
     running_ = false;
   }
-  wake_.notify_one();
-  thread_.join();
 }
 
-void Daemon::run() {
-  std::unique_lock<std::mutex> lock(mutex_);
-  while (running_) {
+void Daemon::run(std::stop_token stop) {
+  std::mutex mutex;
+  std::condition_variable_any wake;
+  std::unique_lock<std::mutex> lock(mutex);
+  while (!stop.stop_requested()) {
     auto next_run = std::chrono::steady_clock::now() + interval_;
-    lock.unlock();
     func_();
-    lock.lock();
-    // Returns early when stop() clears the flag.
-    wake_.wait_until(lock, next_run, [this] { return !running_; });
+    // Returns early when a stop is requested.
+    wake.wait_until(lock, stop, next_run, [] { return false; });
   }
 }
 }  // namespace KokkosTools::EnergyProfiler
