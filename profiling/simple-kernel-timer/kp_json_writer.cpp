@@ -32,17 +32,6 @@ void fill_info(FILE* file, std::vector<KernelPerformanceInfo*>& kernelInfo) {
   }
 }
 
-inline std::string to_string(KernelExecutionType t) {
-  switch (t) {
-    case PARALLEL_FOR: return "\"PARALLEL_FOR\"";
-    case PARALLEL_REDUCE: return "\"PARALLEL_REDUCE\"";
-    case PARALLEL_SCAN: return "\"PARALLEL_SCAN\"";
-    case SINGLE: return "\"SINGLE\"";
-    case REGION: return "\"REGION\"";
-    default: throw t;
-  }
-}
-
 int main(int argc, char* argv[]) {
   if (argc == 1) {
     fprintf(stderr, "Did you specify any data files on the command line!\n");

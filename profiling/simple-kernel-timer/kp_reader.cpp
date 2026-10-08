@@ -12,17 +12,6 @@
 
 using namespace KokkosTools::KernelTimer;
 
-inline const char* to_string(KernelExecutionType t) {
-  switch (t) {
-    case PARALLEL_FOR: return "\" (ParFor)  \"";
-    case PARALLEL_REDUCE: return "\" (ParRed)  \"";
-    case PARALLEL_SCAN: return "\" (ParScan) \"";
-    case SINGLE: return "\" (Single)  \"";
-    case REGION: return "\" (Region)  \"";
-    default: throw t;
-  }
-}
-
 int main(int argc, char* argv[]) {
   if (argc == 1) {
     fprintf(stderr, "Did you specify any data files on the command line!\n");
@@ -114,13 +103,13 @@ int main(int argc, char* argv[]) {
     if (fixed_width)
       printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
              kernelInfo[i]->getName().c_str(),
-             to_string(kernelInfo[i]->getKernelType()), delimiter,
+             to_string(kernelInfo[i]->getKernelType()).c_str(), delimiter,
              kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
              delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
     else
       printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
              kernelInfo[i]->getName().c_str(),
-             to_string(kernelInfo[i]->getKernelType()), delimiter,
+             to_string(kernelInfo[i]->getKernelType()).c_str(), delimiter,
              kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
              delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
   }
@@ -148,13 +137,13 @@ int main(int argc, char* argv[]) {
     if (fixed_width)
       printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
              kernelInfo[i]->getName().c_str(),
-             to_string(kernelInfo[i]->getKernelType()), delimiter,
+             to_string(kernelInfo[i]->getKernelType()).c_str(), delimiter,
              kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
              delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
     else
       printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
              kernelInfo[i]->getName().c_str(),
-             to_string(kernelInfo[i]->getKernelType()), delimiter,
+             to_string(kernelInfo[i]->getKernelType()).c_str(), delimiter,
              kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
              delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
   }
