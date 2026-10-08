@@ -8,6 +8,9 @@
 #include <limits>
 #include <cstring>
 
+#include <impl/Kokkos_Profiling_DeviceInfo.hpp>
+#include <impl/Kokkos_Profiling_Interface.hpp>
+
 std::vector<std::string> regions;
 static uint64_t uniqID;
 struct SpaceHandle {
@@ -23,12 +26,8 @@ void kokkosp_print_region_stack_indent(const int level) {
 }
 
 void kokkosp_print_stack_indent() {
-  printf("KokkosP: ");
-  int level = regions.size();
-
-  for (int i = 0; i < level; i++) {
-    printf("   ");
-  }
+  const int level = regions.size();
+  kokkosp_print_region_stack_indent(level);
 }
 
 int kokkosp_print_region_stack() {
@@ -42,6 +41,39 @@ int kokkosp_print_region_stack() {
   }
 
   return level;
+}
+
+std::string deviceId_to_string(const uint32_t deviceId) {
+  using namespace Kokkos::Tools::Experimental;
+  std::string device_label("(");
+  const ExecutionSpaceIdentifier eid = identifier_from_devid(deviceId);
+  switch (eid.type) {
+    case DeviceType::Serial: device_label += "Serial"; break;
+    case DeviceType::OpenMP: device_label += "OpenMP"; break;
+    case DeviceType::Cuda: device_label += "Cuda"; break;
+    case DeviceType::HIP: device_label += "HIP"; break;
+    case DeviceType::OpenMPTarget: device_label += "OpenMPTarget"; break;
+    case DeviceType::HPX: device_label += "HPX"; break;
+    case DeviceType::Threads: device_label += "Threads"; break;
+    case DeviceType::SYCL: device_label += "SYCL"; break;
+    case DeviceType::OpenACC: device_label += "OpenACC"; break;
+    case DeviceType::Unknown: device_label += "Unknown"; break;
+    default: device_label += "Unknown to KokkosTools"; break;
+  }
+
+  if (eid.instance_id ==
+      int_for_synchronization_reason(
+          SpecialSynchronizationCases::GlobalDeviceSynchronization)) {
+    device_label += " All Instances)";
+  } else if (eid.instance_id == int_for_synchronization_reason(
+                                    SpecialSynchronizationCases::
+                                        DeepCopyResourceSynchronization)) {
+    device_label += " DeepCopyResource)";
+  } else {
+    device_label += " Instance " + std::to_string(eid.instance_id) + ")";
+  }
+
+  return device_label;
 }
 
 extern "C" void kokkosp_init_library(const int loadSeq,
@@ -68,9 +100,9 @@ extern "C" void kokkosp_begin_parallel_for(const char* name,
   kokkosp_print_region_stack_indent(level);
 
   printf(
-      "Executing parallel-for kernel on device %d with unique "
+      "Executing parallel-for kernel on device %s with unique "
       "execution identifier %llu\n",
-      devID, (unsigned long long)(*kID));
+      deviceId_to_string(devID).c_str(), (unsigned long long)(*kID));
 
   kokkosp_print_stack_indent();
   printf("  %s\n", name);
@@ -90,9 +122,9 @@ extern "C" void kokkosp_begin_parallel_scan(const char* name,
   kokkosp_print_region_stack_indent(level);
 
   printf(
-      "Executing parallel-scan kernel on device %d with unique "
+      "Executing parallel-scan kernel on device %s with unique "
       "execution identifier %llu\n",
-      devID, (unsigned long long)(*kID));
+      deviceId_to_string(devID).c_str(), (unsigned long long)(*kID));
 
   kokkosp_print_stack_indent();
   printf("  %s\n", name);
@@ -112,9 +144,9 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
   kokkosp_print_region_stack_indent(level);
 
   printf(
-      "Executing parallel-reduce kernel on device %d with unique "
+      "Executing parallel-reduce kernel on device %s with unique "
       "execution identifier %llu\n",
-      devID, (unsigned long long)(*kID));
+      deviceId_to_string(devID).c_str(), (unsigned long long)(*kID));
 
   kokkosp_print_stack_indent();
   printf("  %s\n", name);
@@ -142,9 +174,9 @@ extern "C" void kokkosp_begin_fence(const char* name, const uint32_t devID,
     kokkosp_print_region_stack_indent(level);
 
     printf(
-        "Executing fence on device %d with unique execution "
+        "Executing fence on device %s with unique execution "
         "identifier %llu\n",
-        devID, (unsigned long long)(*kID));
+        deviceId_to_string(devID).c_str(), (unsigned long long)(*kID));
 
     kokkosp_print_stack_indent();
     printf("  %s\n", name);
