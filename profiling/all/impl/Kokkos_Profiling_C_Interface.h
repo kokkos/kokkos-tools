@@ -237,8 +237,6 @@ struct Kokkos_Profiling_EventSet {
   Kokkos_Profiling_endFunction end_parallel_reduce;
   Kokkos_Profiling_beginFunction begin_parallel_scan;
   Kokkos_Profiling_endFunction end_parallel_scan;
-  Kokkos_Profiling_beginFunction begin_single;
-  Kokkos_Profiling_endFunction end_single;
   Kokkos_Profiling_pushFunction push_region;
   Kokkos_Profiling_popFunction pop_region;
   Kokkos_Profiling_allocateDataFunction allocate_data;
@@ -258,6 +256,8 @@ struct Kokkos_Profiling_EventSet {
   Kokkos_Tools_provideToolProgrammingInterfaceFunction
       provide_tool_programming_interface;
   Kokkos_Tools_requestToolSettingsFunction request_tool_settings;
+  Kokkos_Profiling_beginFunction begin_single;
+  Kokkos_Profiling_endFunction end_single;
   char profiling_padding[7 * sizeof(Kokkos_Tools_functionPointer)];
   Kokkos_Tools_outputTypeDeclarationFunction declare_output_type;
   Kokkos_Tools_inputTypeDeclarationFunction declare_input_type;

@@ -21,6 +21,17 @@ void fill_info(FILE* file, std::vector<KernelPerformanceInfo*>& kernelInfo) {
       if (!new_kernel->getName().empty()) {
         int kernelIndex = find_index(kernelInfo, new_kernel->getName());
 
+        if (kernelIndex > -1) {
+          kernelInfo[kernelIndex]->addTime(new_kernel->getTime());
+          kernelInfo[kernelIndex]->addCallCount(new_kernel->getCallCount());
+        } else {
+          kernelInfo.push_back(new_kernel);
+        }
+      }
+    }
+  }
+}
+
 inline std::string to_string(KernelExecutionType t) {
   switch (t) {
     case PARALLEL_FOR: return "\"PARALLEL_FOR\"";

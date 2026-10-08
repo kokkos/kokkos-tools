@@ -166,6 +166,8 @@ extern "C" void kokkosp_init_library(const int loadSeq,
               (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_scan");
           beginReduceCallee = (beginFunction)dlsym(
               childLibrary, "kokkosp_begin_parallel_reduce");
+          beginSingleCallee =
+              (beginFunction)dlsym(childLibrary, "kokkosp_begin_single");
 
           endScanCallee =
               (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_scan");
@@ -173,6 +175,8 @@ extern "C" void kokkosp_init_library(const int loadSeq,
               (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_for");
           endReduceCallee =
               (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_reduce");
+          endSingleCallee =
+              (endFunction)dlsym(childLibrary, "kokkosp_end_single");
 
           initProfileLibrary =
               (initFunction)dlsym(childLibrary, "kokkosp_init_library");

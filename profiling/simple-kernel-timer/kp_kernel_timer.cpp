@@ -54,6 +54,7 @@ void print_ascii(std::map<std::string, KernelPerformanceInfo*>& count_map,
       case PARALLEL_FOR: typeStr = " (ParFor)  "; break;
       case PARALLEL_REDUCE: typeStr = " (ParRed)  "; break;
       case PARALLEL_SCAN: typeStr = " (ParScan) "; break;
+      case SINGLE: typeStr = " (Single) "; break;
       default: break;
     }
 
