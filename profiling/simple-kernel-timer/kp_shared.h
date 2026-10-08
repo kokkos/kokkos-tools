@@ -24,6 +24,17 @@ extern KernelPerformanceInfo* regions[512];
 void increment_counter(const char* name, KernelExecutionType kType);
 void increment_counter_region(const char* name, KernelExecutionType kType);
 
+inline std::string to_string(KernelExecutionType t) {
+  switch (t) {
+    case PARALLEL_FOR: return "\"PARALLEL_FOR\"";
+    case PARALLEL_REDUCE: return "\"PARALLEL_REDUCE\"";
+    case PARALLEL_SCAN: return "\"PARALLEL_SCAN\"";
+    case SINGLE: return "\"SINGLE\"";
+    case REGION: return "\"REGION\"";
+    default: throw t;
+  }
+}
+
 inline bool compareKernelPerformanceInfo(KernelPerformanceInfo* left,
                                          KernelPerformanceInfo* right) {
   return left->getTime() > right->getTime();

@@ -26,6 +26,8 @@ using Kokkos::Tools::SpaceHandle;
 #define EXPOSE_END_PARALLEL_SCAN(FUNC_NAME)
 #define EXPOSE_BEGIN_PARALLEL_REDUCE(FUNC_NAME)
 #define EXPOSE_END_PARALLEL_REDUCE(FUNC_NAME)
+#define EXPOSE_BEGIN_SINGLE(FUNC_NAME)
+#define EXPOSE_END_SINGLE(FUNC_NAME)
 #define EXPOSE_BEGIN_DEEP_COPY(FUNC_NAME)
 #define EXPOSE_END_DEEP_COPY(FUNC_NAME)
 #define EXPOSE_CREATE_PROFILE_SECTION(FUNC_NAME)
@@ -119,6 +121,17 @@ using Kokkos::Tools::SpaceHandle;
 #define EXPOSE_END_PARALLEL_REDUCE(FUNC_NAME)                                  \
   __attribute__((weak)) void kokkosp_end_parallel_reduce(const uint64_t kID) { \
     FUNC_NAME(kID);                                                            \
+  }
+
+#define EXPOSE_BEGIN_SINGLE(FUNC_NAME)                         \
+  __attribute__((weak)) void kokkosp_begin_single(             \
+      const char* name, const uint32_t devID, uint64_t* kID) { \
+    FUNC_NAME(name, devID, kID);                               \
+  }
+
+#define EXPOSE_END_SINGLE(FUNC_NAME)                                  \
+  __attribute__((weak)) void kokkosp_end_single(const uint64_t kID) { \
+    FUNC_NAME(kID);                                                   \
   }
 
 #define EXPOSE_BEGIN_DEEP_COPY(FUNC_NAME)                                   \
