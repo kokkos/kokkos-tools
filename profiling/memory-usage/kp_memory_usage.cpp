@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <atomic>
 #include <mutex>
+#include <string>
 
 #include <sys/resource.h>
 #include <unistd.h>
