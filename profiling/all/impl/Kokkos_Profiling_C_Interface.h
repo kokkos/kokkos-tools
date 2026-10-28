@@ -1,20 +1,7 @@
 /*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-//
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-*/
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ * SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+ */
 
 #ifndef KOKKOS_PROFILING_C_INTERFACE_HPP
 #define KOKKOS_PROFILING_C_INTERFACE_HPP
@@ -28,7 +15,7 @@
 #include <stdbool.h>
 #endif
 
-#define KOKKOSP_INTERFACE_VERSION 20211015
+#define KOKKOSP_INTERFACE_VERSION 20261022
 
 // Profiling
 
@@ -256,7 +243,9 @@ struct Kokkos_Profiling_EventSet {
   Kokkos_Tools_provideToolProgrammingInterfaceFunction
       provide_tool_programming_interface;
   Kokkos_Tools_requestToolSettingsFunction request_tool_settings;
-  char profiling_padding[9 * sizeof(Kokkos_Tools_functionPointer)];
+  Kokkos_Profiling_beginFunction begin_single;
+  Kokkos_Profiling_endFunction end_single;
+  char profiling_padding[7 * sizeof(Kokkos_Tools_functionPointer)];
   Kokkos_Tools_outputTypeDeclarationFunction declare_output_type;
   Kokkos_Tools_inputTypeDeclarationFunction declare_input_type;
   Kokkos_Tools_requestValueFunction request_output_values;
