@@ -35,9 +35,11 @@ static finalizeFunction finalizeProfileLibrary = NULL;
 static beginFunction beginForCallee            = NULL;
 static beginFunction beginScanCallee           = NULL;
 static beginFunction beginReduceCallee         = NULL;
+static beginFunction beginSingleCallee         = NULL;
 static endFunction endForCallee                = NULL;
 static endFunction endScanCallee               = NULL;
 static endFunction endReduceCallee             = NULL;
+static endFunction endSingleCallee             = NULL;
 
 void kokkosp_request_tool_settings(const uint32_t,
                                    Kokkos_Tools_ToolSettings* settings) {
@@ -148,6 +150,8 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
           (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_scan");
       beginReduceCallee =
           (beginFunction)dlsym(childLibrary, "kokkosp_begin_parallel_reduce");
+      beginSingleCallee =
+          (beginFunction)dlsym(childLibrary, "kokkosp_begin_single");
 
       endScanCallee =
           (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_scan");
@@ -155,6 +159,7 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
           (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_for");
       endReduceCallee =
           (endFunction)dlsym(childLibrary, "kokkosp_end_parallel_reduce");
+      endReduceCallee = (endFunction)dlsym(childLibrary, "kokkosp_end_single");
 
       initProfileLibrary =
           (initFunction)dlsym(childLibrary, "kokkosp_init_library");
@@ -174,12 +179,16 @@ void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                   << ((beginScanCallee == NULL) ? "no" : "yes") << "\n";
         std::cout << "KokkosP: begin-parallel-reduce:   "
                   << ((beginReduceCallee == NULL) ? "no" : "yes") << "\n";
+        std::cout << "KokkosP: begin-single:   "
+                  << ((beginSingleCallee == NULL) ? "no" : "yes") << "\n";
         std::cout << "KokkosP: end-parallel-for:        "
                   << ((endForCallee == NULL) ? "no" : "yes") << "\n";
         std::cout << "KokkosP: end-parallel-scan:       "
                   << ((endScanCallee == NULL) ? "no" : "yes") << "\n";
         std::cout << "KokkosP: end-parallel-reduce:     "
                   << ((endReduceCallee == NULL) ? "no" : "yes") << "\n";
+        std::cout << "KokkosP: end-single:     "
+                  << ((endSingleCallee == NULL) ? "no" : "yes") << "\n";
       }
     }
   }
@@ -410,6 +419,54 @@ void kokkosp_end_parallel_reduce(const uint64_t kID) {
   }
 }
 
+void kokkosp_begin_single(const char* name, const uint32_t devID,
+                          uint64_t* kID) {
+  *kID                          = uniqID++;
+  static uint64_t invocationNum = 0;
+  ++invocationNum;
+  if ((invocationNum % kernelSampleSkip) == 0) {
+    if ((rand() / (1.0 * RAND_MAX)) < (tool_prob_num / 100.0)) {
+      if (NULL != beginSingleCallee) {
+        if (tool_verbosity > 0) {
+          std::cout << "KokkosP: sample " << *kID
+                    << " calling child-begin function...\n";
+        }
+        uint64_t nestedkID = 0;
+        if (tool_globFence) {
+          invoke_ktools_fence(0);
+        }
+        (*beginSingleCallee)(name, devID, &nestedkID);
+        if (tool_verbosity > 0) {
+          std::cout << "KokkosP: sample " << *kID
+                    << " finished with child-begin function.\n";
+        }
+        infokIDSample.insert({*kID, nestedkID});
+      }
+    }
+  }
+}
+
+void kokkosp_end_single(const uint64_t kID) {
+  if (NULL != endSingleCallee) {
+    if (!(infokIDSample.find(kID) == infokIDSample.end())) {
+      uint64_t retrievedNestedkID = infokIDSample[kID];
+      if (tool_verbosity > 0) {
+        std::cout << "KokkosP: sample " << kID
+                  << " calling child-end function...\n";
+      }
+      if (tool_globFence) {
+        invoke_ktools_fence(0);
+      }
+      (*endSingleCallee)(retrievedNestedkID);
+      if (tool_verbosity > 0) {
+        std::cout << "KokkosP: sample " << kID
+                  << " finished with child-end function.\n";
+      }
+      infokIDSample.erase(kID);
+    }
+  }
+}
+
 }  // namespace Sampler
 }  // end namespace KokkosTools
 
@@ -427,5 +484,7 @@ EXPOSE_BEGIN_PARALLEL_SCAN(impl::kokkosp_begin_parallel_scan)
 EXPOSE_END_PARALLEL_SCAN(impl::kokkosp_end_parallel_scan)
 EXPOSE_BEGIN_PARALLEL_REDUCE(impl::kokkosp_begin_parallel_reduce)
 EXPOSE_END_PARALLEL_REDUCE(impl::kokkosp_end_parallel_reduce)
+EXPOSE_BEGIN_SINGLE(impl::kokkosp_begin_single)
+EXPOSE_END_SINGLE(impl::kokkosp_end_single)
 
 }  // end extern "C"
