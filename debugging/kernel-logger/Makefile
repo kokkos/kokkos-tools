@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-O3 -std=c++11 -g
+CXXFLAGS=-O3 -std=c++11 -g -I../../profiling/all
 SHARED_CXXFLAGS=-shared -fPIC
 
 all: kp_kernel_logger.so
