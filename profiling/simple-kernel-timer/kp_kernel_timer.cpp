@@ -49,14 +49,7 @@ void print_ascii(std::map<std::string, KernelPerformanceInfo*>& count_map,
 
   auto print_row = [&](KernelPerformanceInfo* info) {
     const double callCountDouble = (double)info->getCallCount();
-    const char* typeStr          = " (Region)  ";
-    switch (info->getKernelType()) {
-      case PARALLEL_FOR: typeStr = " (ParFor)  "; break;
-      case PARALLEL_REDUCE: typeStr = " (ParRed)  "; break;
-      case PARALLEL_SCAN: typeStr = " (ParScan) "; break;
-      case SINGLE: typeStr = " (Single) "; break;
-      default: break;
-    }
+    const char* typeStr          = kernel_type_to_string(info->getKernelType());
 
     printf(
         "- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n", info->getName().c_str(),

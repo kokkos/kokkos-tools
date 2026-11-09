@@ -103,13 +103,13 @@ int main(int argc, char* argv[]) {
     if (fixed_width)
       printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
              kernelInfo[i]->getName().c_str(),
-             to_string(kernelInfo[i]->getKernelType()).c_str(), delimiter,
+             kernel_type_to_string(kernelInfo[i]->getKernelType()), delimiter,
              kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
              delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
     else
       printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
              kernelInfo[i]->getName().c_str(),
-             to_string(kernelInfo[i]->getKernelType()).c_str(), delimiter,
+             kernel_type_to_string(kernelInfo[i]->getKernelType()), delimiter,
              kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
              delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
   }
@@ -137,13 +137,13 @@ int main(int argc, char* argv[]) {
     if (fixed_width)
       printf("- %100s\n%11s%c%15.5f%c%12" PRIu64 "%c%15.5f%c%7.3f%c%7.3f\n",
              kernelInfo[i]->getName().c_str(),
-             to_string(kernelInfo[i]->getKernelType()).c_str(), delimiter,
+             kernel_type_to_string(kernelInfo[i]->getKernelType()), delimiter,
              kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
              delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
     else
       printf("- %s\n%s%c%f%c%" PRIu64 "%c%f%c%f%c%f\n",
              kernelInfo[i]->getName().c_str(),
-             to_string(kernelInfo[i]->getKernelType()).c_str(), delimiter,
+             kernel_type_to_string(kernelInfo[i]->getKernelType()), delimiter,
              kernelInfo[i]->getTime(), delimiter, kernelInfo[i]->getCallCount(),
              delimiter, avgTime, delimiter, pctKernels, delimiter, pctTotal);
   }

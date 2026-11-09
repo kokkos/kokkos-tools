@@ -64,7 +64,8 @@ inline void write_json(std::ostream& os, KernelPerformanceInfo const& kp,
   os << indent << "  \"total-time\": " << kp.getTime() << ",\n";
   os << indent << "  \"time-per-call\": "
      << kp.getTime() / std::max((uint64_t)1, callcount) << ",\n";
-  os << indent << "  \"kernel-type\": " << to_string(kp.getKernelType())
+  os << indent
+     << "  \"kernel-type\": " << kernel_type_to_string(kp.getKernelType())
      << '\n';
   os << indent << '}';
 }
