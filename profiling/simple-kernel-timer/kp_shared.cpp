@@ -50,16 +50,6 @@ void increment_counter_region(const char* name, KernelExecutionType kType) {
   current_region_level++;
 }
 
-inline std::string to_string(KernelExecutionType t) {
-  switch (t) {
-    case PARALLEL_FOR: return "\"PARALLEL_FOR\"";
-    case PARALLEL_REDUCE: return "\"PARALLEL_REDUCE\"";
-    case PARALLEL_SCAN: return "\"PARALLEL_SCAN\"";
-    case REGION: return "\"REGION\"";
-    default: throw t;
-  }
-}
-
 inline void write_json(std::ostream& os, KernelPerformanceInfo const& kp,
                        std::string indent = "") {
   const uint64_t callcount = kp.getCallCount();
@@ -74,7 +64,8 @@ inline void write_json(std::ostream& os, KernelPerformanceInfo const& kp,
   os << indent << "  \"total-time\": " << kp.getTime() << ",\n";
   os << indent << "  \"time-per-call\": "
      << kp.getTime() / std::max((uint64_t)1, callcount) << ",\n";
-  os << indent << "  \"kernel-type\": " << to_string(kp.getKernelType())
+  os << indent
+     << "  \"kernel-type\": " << kernel_type_to_string(kp.getKernelType())
      << '\n';
   os << indent << '}';
 }
