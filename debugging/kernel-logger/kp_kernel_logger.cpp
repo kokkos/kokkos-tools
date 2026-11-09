@@ -108,6 +108,26 @@ extern "C" void kokkosp_begin_parallel_reduce(const char* name,
   printf("    %s\n", name);
 }
 
+extern "C" void kokkosp_begin_single(const char* name, const uint32_t devID,
+                                     uint64_t* kID) {
+  *kID = uniqID++;
+
+  printf(
+      "KokkosP: Executing single kernel on device %d with unique "
+      "execution identifier %llu\n",
+      devID, (unsigned long long)(*kID));
+
+  int level = kokkosp_print_region_stack();
+  kokkosp_print_region_stack_indent(level);
+
+  printf("    %s\n", name);
+}
+
+extern "C" void kokkosp_end_single(const uint64_t kID) {
+  printf("KokkosP: Execution of kernel %llu is completed.\n",
+         (unsigned long long)(kID));
+}
+
 extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
   printf("KokkosP: Execution of kernel %llu is completed.\n",
          (unsigned long long)(kID));
