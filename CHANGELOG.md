@@ -9,3 +9,4 @@
 
 ### Tools
 - mem-usage: added a missing `<string>` include (#353).
+- Added support for `Kokkos::single` to the kernel-filter, kokkos-sampler, kernel-logger and simple-kernel-timer tools (#331).
