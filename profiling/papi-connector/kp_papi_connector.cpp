@@ -155,7 +155,6 @@ extern "C" void kokkosp_start_profile_section(uint32_t sec_id) {
   if (it != profile_section.end()) {
     std::stringstream ss;
     ss << it->second << ":" << sec_id;
-    region_name.push(ss.str());
     PAPI_hl_region_begin(ss.str().c_str());
   }
 }
@@ -166,7 +165,6 @@ extern "C" void kokkosp_stop_profile_section(uint32_t sec_id) {
   if (it != profile_section.end()) {
     std::stringstream ss;
     ss << it->second << ":" << sec_id;
-    region_name.push(ss.str());
     PAPI_hl_region_end(ss.str().c_str());
   }
 }
