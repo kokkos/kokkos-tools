@@ -111,12 +111,6 @@ extern "C" void kokkosp_push_profile_region(const char* name) {
   PAPI_hl_region_begin(ss.str().c_str());
 }
 
-extern "C" void kokkosp_profile_event(const char* /*name*/) {
-  if (region_name.empty() == false) {
-    PAPI_hl_read(region_name.top().c_str());
-  }
-}
-
 extern "C" void kokkosp_pop_profile_region() {
   if (region_name.empty() == false) {
     PAPI_hl_region_end(region_name.top().c_str());
