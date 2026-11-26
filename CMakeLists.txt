@@ -178,6 +178,7 @@ if(NOT WIN32)
   add_subdirectory(profiling/chrome-tracing)
   add_subdirectory(profiling/space-time-stack)
   add_subdirectory(profiling/perfetto-connector)
+  add_subdirectory(profiling/energy-profiler)
 endif()
 
 # External lib connectors
